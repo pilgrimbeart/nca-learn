@@ -1,4 +1,5 @@
-"""Checks that every cell rule in rules/ keeps the golden rules (python test_rules.py):
+"""Checks that every cell rule in rules/ keeps the golden rules (python test_rules.py); a library the rules share (no
+update of its own) is checked for its imports only:
 
   - it imports nothing that knows about the grid, the body or the world (only numpy, numba, math and other rules);
   - its update takes exactly (me, mean, count, inp, out): it is given nothing else;
@@ -47,6 +48,8 @@ def check_rule(path: pathlib.Path) -> list:
     if bad:
         problems.append(f"imports {sorted(bad)}")
     rule = importlib.import_module(f"rules.{path.stem}")
+    if not hasattr(rule, "update"):
+        return problems                                         # a library the rules share (see.py): imports only
     params = list(inspect.signature(rule.update.py_func).parameters)
     if params != ["me", "mean", "count", "inp", "out"]:
         problems.append(f"update takes {params}")

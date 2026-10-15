@@ -16,7 +16,7 @@ def life(seed, warmup, trials=40, wait=300, after=60):
     """Each trial sends one pulse; counts how many reach the sink (exactly one is right) and when the first did."""
     s = sheet.Sheet(wiring, N, seed, update=UPDATE)
     s.step(warmup)
-    paths = [int((s.view(f"path_{c}") > 0.5).sum()) for c in "av"]
+    paths = [int((s.view(f"on_{c}") > 0.5).sum()) for c in "av"]
     got, late, extra = {}, {}, 0
     rng = np.random.default_rng(seed)
     for i in range(trials):

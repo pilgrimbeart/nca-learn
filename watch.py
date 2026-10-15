@@ -58,7 +58,7 @@ def watch(rule_name: str, n: int, seed: int, show: list) -> None:
             img = (255 * grey).astype(np.uint8).T.repeat(scale, 0).repeat(scale, 1)
             left = i * (side + 10)
             screen.blit(pygame.surfarray.make_surface(np.stack([img] * 3, axis=-1)), (left, 0))
-            screen.blit(font.render(f"{var} ({lo:.0f} to {hi:.0f})", True, (255, 255, 255)), (left + 4, side + 4))
+            screen.blit(font.render(f"{var} ({lo:.2g} to {hi:.2g})", True, (255, 255, 255)), (left + 4, side + 4))
             if "name" in s.index:
                 for r, c in np.argwhere(s.view("name") > 0.5):
                     letter = LETTERS.get(int(round(s.view("name")[r, c])), "?")
@@ -75,6 +75,6 @@ if __name__ == "__main__":
     parser.add_argument("rule")
     parser.add_argument("--size", type=int, default=49)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--show", nargs="+", default=["least", "a", "b"])
+    parser.add_argument("--show", nargs="+", default=["x", "y", "w"])
     args = parser.parse_args()
     watch(args.rule, args.size, args.seed, args.show)

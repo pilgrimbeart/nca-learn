@@ -30,7 +30,7 @@ import time
 import numpy as np
 
 import sheet
-from rules import brain
+from rules import brain, wiring
 
 SIZE = 49           # the brain: SIZE x SIZE cells
 UPDATE = 0.9        # the chance a brain cell updates in a tick (never all at once)
@@ -47,7 +47,6 @@ DRAG = 0.2          # speed and turning fade at this rate
 CHEW = 17           # ticks from a meal to its taste, eyes shut (news of the flavour crosses from R to B meanwhile)
 DAMAGE = 7          # watching: the radius of the disc of cells d replaces with new-born ones
 BAND = 4            # watching: the faint checkerboard's squares, in cells
-NEWS_GLOW = 12      # watching: news younger than this glows
 FAST, SLOW = 10, 1  # watching: ticks per frame, slow while the paths grow and pulses first run down them
 SETTLE = 200        # watching: ticks after the creature starts moving before speeding up again
 COLOURS = ("red", "blue")
@@ -202,10 +201,9 @@ def measure(lives: int, ticks: int = 8000) -> None:
 
 
 def watch(seed: int = 0, record: str | None = None, until: int = 8000) -> None:
-    """A life, live. Left, the brain, in greys: the cells' coordinates (rows and columns they
-    counted from two sides) as a faint checkerboard;
-    paths to A light grey and to V mid grey, pulses white, organs lettered
-    beside their cells (R and B with their balances); news of a kick spreading from R or B as a fading red glow, also
+    """A life, live. Left, the brain, in greys: the cells' coordinates (x and y, each running -1 to 1 across the
+    sheet) as a faint checkerboard; paths to A light grey and to V mid grey, pulses white, organs lettered beside their
+    cells (R and B with their balances); a wave of news of a kick, spreading from R or B, as a fading red glow, also
     brighter. Right, the world: blocks lettered R (dark) and B (light), the creature a square with its head marked.
     It runs FAST ticks a frame, but SLOW while the paths grow and until a little after the creature starts moving, so
     the pulses can be seen; up and down take over the speed. With record, no window: every frame is saved there as a
@@ -250,9 +248,9 @@ def watch(seed: int = 0, record: str | None = None, until: int = 8000) -> None:
                     rows, cols = np.mgrid[0:SIZE, 0:SIZE]
                     life.brain.damage((rows - my / scale) ** 2 + (cols - mx / scale) ** 2 < DAMAGE ** 2)
         named = set(np.unique(np.round(life.brain.view("name"))).astype(int)) - {0}
-        wiring = len(named) == 4 and (life.moving is None or life.t - life.moving < SETTLE)
+        growing = len(named) == 4 and (life.moving is None or life.t - life.moving < SETTLE)
         if auto:
-            per_frame = SLOW if wiring else FAST
+            per_frame = SLOW if growing else FAST
         if not paused:
             started = time.time()
             for i in range(per_frame):
@@ -261,14 +259,15 @@ def watch(seed: int = 0, record: str | None = None, until: int = 8000) -> None:
                     break
         screen.fill((0, 0, 0))
         view = life.brain.view
-        cx, cy = np.round(view("x")), np.round(view("y"))                 # the cells' coordinates (whole numbers)
-        bands = (np.floor(cx / BAND) + np.floor(cy / BAND)) % 2
-        shade = np.where((cx < brain.FAR / 2) & (cy < brain.FAR / 2), 0.06 + 0.08 * bands, 0.06)
+        cols = np.floor((view("x") + 1) / 2 * (SIZE - 1) / BAND + 0.5)     # the cells' coordinates, in bands of cells
+        rows = np.floor((view("y") + 1) / 2 * (SIZE - 1) / BAND + 0.5)
+        shade = 0.06 + 0.08 * ((cols + rows) % 2)
         names = np.round(view("name"))
         for c, level in (("v", 0.45), ("a", 0.75)):
-            shade = np.where(view(f"path_{c}") > 0.5, np.maximum(shade, level), shade)
-            shade = np.where(view(f"pulse_{c}") > 0.5, 1.0, shade)
-        glow = np.clip(1.0 - np.minimum(view("news_r"), view("news_b")) / NEWS_GLOW, 0.0, 1.0)            # news of a kick: a fading red glow
+            on = view(f"on_{c}") > 0.5
+            shade = np.where(on, np.maximum(shade, level), shade)
+            shade = np.where(on & (np.round(view(f"timer_{c}")) > wiring.REST), 1.0, shade)
+        glow = (np.round(view("nstate")) > brain.NR).astype(float)              # news: cells it excites glow red
         rgb = np.stack([np.maximum(shade, 0.8 * glow), np.maximum(shade * (1 - 0.6 * glow), 0.3 * glow),
                         np.maximum(shade * (1 - 0.6 * glow), 0.3 * glow)], axis=-1)
         rgb = (255 * rgb).astype(np.uint8).transpose(1, 0, 2).repeat(scale, 0).repeat(scale, 1)

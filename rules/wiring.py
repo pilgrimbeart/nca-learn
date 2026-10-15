@@ -1,120 +1,117 @@
 """Wiring, from averages only: once A and V have named themselves, each sends out a distance field; paths grow from R
 and B down each field to its sink (channel 0 to A, channel 1 to V), and pulses run down them. Built on organs (its
-numbers come first). Neighbours see only means.
+numbers come first). Neighbours see only means, of numbers from -1 to 1, with noise.
 
-  Distance. A sink shows 0; every other cell one more than the smallest its neighbours show (from the mean of
-  exp(-5 d), rounded). Nothing in the rule says where the sinks are: the field starts wherever a cell named itself A
-  or V. When a sink goes, its field's numbers rise by themselves (count to infinity) and fade.
-  Which way. In a settled field a neighbour is one step nearer, level, or one step farther. A path cell shows its mark
-  as 1, 9 or 81 by its distance mod 3; from the sum of its neighbours' marks a cell counts those one step nearer,
-  level and one step farther (three base-9 digits): it knows uphill from downhill. (Mod 3 only tells -1, 0 and +1
-  apart: it relies on the field having settled, so a source starts its path only once its own distance has held still
-  for STILL updates.)
-  Growth. R and B are on the path. A path cell with no path neighbour one step nearer is a tip. Its neighbours one step
-  nearer offer to carry on the path, each with a random whole number; the tip shows the smallest offer it sees (and
-  its distance mod 3, so they know it is one step farther); the cell whose offer it is joins. If two share the
-  smallest (the mean shows it), the tip asks for new offers. A tip keeps its choice for LEASE updates (so it can't
-  change its mind while the chosen cell is joining, and get two). A cell that would also be next to another path cell
-  one step farther offers a larger number, so is chosen only if no other cell offers (joining would give that other
-  cell a second way on, and its pulses would split in two). So a path grows one cell at a time. A path cell with no
-  path neighbour one step farther (it lost its way back to a source) leaves it.
-  Pulses. A path cell takes a pulse when a pulsing path neighbour is one step farther; so pulses only run down
-  towards the sink. It carries it ON updates, then rests REST more. A sink cell counts the pulses it takes (an
-  output: the body fires that thruster).
+  Distance. A sink is the source of a field (see.py): distance in steps, mod 5. Nothing in the rule says where the
+  sinks are: the field starts wherever a cell named itself A or V, and fades if it goes.
+  Path cells show their residue as a pattern on three flags, at a strength that says if they are a tip or carry a
+  pulse: so each cell knows what path cells are one step nearer, level and one step farther (see.py).
+  Growth. R and B are on the path once their distance has held still for STILL updates. A path cell with no path
+  cell one step nearer is a tip. The cells one step nearer than a tip (they see a tip one step farther) are
+  candidates: each raises a hand (a small step on the
+  offer flag) or not, at random, now and then; one with another path cell above it as well only rarely (joining
+  would give that path a second way on, splitting its pulses), so it is chosen only if no other cell offers. The tip shows "go" while it sees exactly one hand (twice
+  in a row to start, LEASE updates at most); a candidate whose hand is up and has seen "go" three reads in a row
+  joins. So a path grows one cell at a time, downhill, and a tip
+  can't take two (that would split its pulses). A path cell with no path cell one step farther (it lost its way back
+  to a source) leaves; so do cut-off paths, and their sources grow new ones.
+  Pulses. A path cell takes a pulse when a path cell one step farther shows one, carries it ON updates, then rests
+  REST more: pulses run only towards the sink. A sink counts the pulses it takes (an output: the body fires that
+  thruster).
 """
 
 import numpy as np
 from numba import njit
 
-from rules import organs
+from rules import organs, see
 
-FAR = organs.FAR
-D_BETA = 5.0        # distances: the mean of exp(-5 d) finds the smallest to within log 8 / 5 < 1/2
 STILL = 20          # updates a source's distance must hold before it starts a path
-OFFERS = 99         # offers are whole numbers 1..99: 1..49 from most cells, 50..99 from one that would touch another
-BAND = 49           # path cell above it (and give it a second way on: pulses would split)
-O_BETA = 5.0        # offers: the mean finds the smallest ...
-LEASE = 6           # updates a tip keeps its choice
-TIE = 0.07          # ... and if two share it, it comes out log 2 / 5 = 0.14 less than a whole number
-T_BETA = 0.7        # a tip shows 3 x (the smallest offer, or OFFERS + 1 if none) + its distance mod 3
+LEASE = 6           # updates a tip's "go" lasts at most
+GO_READS = 3        # reads of "go" in a row before a candidate joins
+GO, HAND = 2.0, 0.2  # what a tip saying go, and a raised hand, add to the offer flag's sum (units)
+REDRAW = 0.2        # chance per update that a candidate not yet told "go" redraws its hand
+SHY = 0.02          # chance its hand is up after a redraw, if it also has another path cell above it
 ON, REST = 6, 7     # updates a pulse is carried, then rested
 
-CH = ("dist", "path", "tip", "pulse", "offer", "timer", "fired", "lease", "still")
+FIELD = ("r", "pend", "times", "rest") + tuple(f"f{k}" for k in range(see.K))     # see.field's layout
+CH = FIELD + ("p0", "p1", "p2", "offer", "on", "timer", "hand", "lease", "ones", "gos", "held", "gone", "fired")
 VARS = organs.VARS + tuple(f"{v}_{c}" for c in "av" for v in CH)
-SHARED = organs.SHARED + tuple(x for c in "av" for x in ((f"dist_{c}", D_BETA), f"path_{c}", (f"tip_{c}", T_BETA),
-                                                               f"pulse_{c}", (f"offer_{c}", O_BETA)))
+SHARED = organs.SHARED + tuple(f"{v}_{c}" for c in "av" for v in tuple(f"f{k}" for k in range(see.K)) +
+                               ("p0", "p1", "p2", "offer"))
 INPUTS = ("send_a", "send_v")
 OUTPUTS = ("fired_a", "fired_v")
-BIRTH = {**organs.BIRTH, **{f"{v}_{c}": (FAR if v in ("dist", "tip", "offer") else 0.0) for c in "av" for v in CH}}
+BIRTH = {**organs.BIRTH, **{f"{v}_{c}": (-1.0 if v in FIELD[:2] + FIELD[4:] + ("p0", "p1", "p2", "offer") else 0.0)
+                            for c in "av" for v in CH}}
 BIRTH_NOISE = organs.BIRTH_NOISE
-BASE, M_BASE = len(organs.VARS), len(organs.SHARED)     # where each channel's numbers start: + 9 c, + 5 c
-DIST, PATH, TIP, PULSE, OFFER, TIMER, FIRED, LEASE, HELD = range(9)
+BASE, M_BASE = len(organs.VARS), len(organs.SHARED)
+NV, NS = len(CH), see.K + 4                             # numbers per channel, shared numbers per channel
+P0 = len(FIELD)                                         # the three path flags, then:
+OFFER, ONV, TIMER, HANDV, LEASEV, ONES, GOS, HELD, GONE, FIRED = range(P0 + 3, NV)
 SOURCES, SINKS = (organs.R, organs.B), (organs.A, organs.V)
-
-
-@njit
-def _digit(sum_, d):
-    """How many neighbours a distance with this residue (mod 3) away show a mark, from the sum of what they show."""
-    return (np.round(sum_) // 9 ** (d % 3)) % 9
 
 
 @njit
 def stage(me, mean, count, out, ch, send):
     """One channel: whether I am on the path (or a tip), my pulse. send: start a pulse, if I am a source."""
-    v, m = BASE + 9 * ch, M_BASE + 5 * ch
+    v, m = BASE + NV * ch, M_BASE + NS * ch
     name = np.round(out[organs.NAME])
     source, sink = name == SOURCES[0] or name == SOURCES[1], name == SINKS[ch]
-    heard = np.round(organs._smallest(count * mean[m], D_BETA))
-    d = 0.0 if sink else min(heard + 1.0, FAR)
-    out[v + DIST] = d
-    known = d < FAR / 2
-    held = min(np.round(me[v + HELD]) + 1.0, STILL) if known and d == np.round(me[v + DIST]) else 0.0
+    d = see.field(me, mean, count, out, v, m, sink)
+    known = d >= 0.0
+    held = min(np.round(me[v + HELD]) + 1.0, STILL) if known and d == np.round(me[v]) else 0.0
     out[v + HELD] = held
-    mark = 9.0 ** (d % 3) if known else 0.0
-    paths, pulses = count * mean[m + 1], count * mean[m + 3]
-    tip = np.round(organs._smallest(count * mean[m + 2], T_BETA))   # a tip next to me: its choice, distance mod 3
-    offers = organs._smallest(count * mean[m + 4], O_BETA)
-    on, offer = me[v + PATH] > 0.5, np.round(me[v + OFFER])
-    below, choice = False, 0.0
-    if known and tip < FAR / 2:
-        choice = tip // 3
-        below = tip % 3 == (d + 1) % 3                              # a tip one step farther
-    if source:
+    td = qd = pd = tu = qu = pu = 0.0
+    if known:
+        u = see.path_near(mean, m + see.K, count, d)
+        td, qd, pd = see.kinds(u[0])                            # one step nearer
+        tu, qu, pu = see.kinds(u[2])                            # one step farther
+    nearer, farther = td + qd + pd > 0.0, tu + qu + pu > 0.0
+    offers = count * mean[m + see.K + 3] + count                # units: GO per tip saying go, HAND per raised hand
+    go = offers > GO - HAND / 2.0
+    hands = np.round((offers - (GO if go else 0.0)) / HAND)
+    on, gone = me[v + ONV] > 0.5, np.round(me[v + GONE])
+    hand, gos = me[v + HANDV] > 0.5, np.round(me[v + GOS])
+    candidate = False
+    if sink:
+        on = known
+    elif source:
         on = known and (on or held >= STILL)
     elif on:
-        on = known and _digit(paths, d + 1) > 0                      # still a way back to a source
-    elif below:
-        if choice == offer:
-            on = True                                               # it chose me
-        elif offer > OFFERS or choice == 0:                         # (0: a tie; offer again)
-            band = 1.0 if _digit(paths, d + 1) > 1 else 0.0         # another path cell above me
-            offer = band * BAND + float(np.random.randint(1, BAND + 1))
-    out[v + OFFER] = offer if below and not on else FAR
-    out[v + PATH] = mark if on else 0.0
-    lease = max(np.round(me[v + LEASE]) - 1.0, 0.0)
-    if on and d > 0 and _digit(paths, d - 1) == 0:
-        choice = OFFERS + 1.0                                       # none yet
-        if lease > 0 and me[v + TIP] < FAR / 2:
-            choice = np.round(me[v + TIP]) // 3                     # still holding my choice
-        elif offers <= OFFERS:
-            choice = np.round(offers)
-            if choice - offers > TIE:
-                choice = 0.0                                        # two share the smallest: ask again
-            else:
-                lease = LEASE
-        out[v + TIP] = 3.0 * choice + d % 3
+        gone = gone + 1.0 if not farther else 0.0
+        on = known and gone < 2.0                               # no way back to a source: leave
+    elif known and tu > 0.0:
+        candidate = True                                        # below a tip
+        gos = gos + 1.0 if go and hand else 0.0
+        if gos >= GO_READS:
+            on = True                                           # chosen: join
+        elif not go and np.random.random() < REDRAW:
+            hand = np.random.random() < (0.5 if qu + pu == 0.0 else SHY)    # above me another path: offer rarely
+    if not candidate or on:
+        hand, gos = False, 0.0
+    out[v + ONV], out[v + GONE], out[v + HANDV], out[v + GOS] = 1.0 if on else 0.0, gone, 1.0 if hand else 0.0, gos
+    tip = on and not sink and not nearer
+    ones, lease = np.round(me[v + ONES]), max(np.round(me[v + LEASEV]) - 1.0, 0.0)
+    if tip:
+        ones = ones + 1.0 if hands == 1.0 else 0.0
+        if hands != 1.0:
+            lease = 0.0
+        elif ones == 2.0:
+            lease = float(LEASE)                                # exactly one hand, twice in a row: go
     else:
-        out[v + TIP], lease = FAR, 0.0
-    out[v + LEASE] = lease
+        ones, lease = 0.0, 0.0
+    out[v + ONES], out[v + LEASEV] = ones, lease
+    out[v + OFFER] = -1.0 + GO if lease > 0.0 else (-1.0 + HAND if hand else -1.0)
     timer = max(np.round(me[v + TIMER]) - 1.0, 0.0)
     fired = np.round(me[v + FIRED])
-    if on and timer == 0 and ((source and send) or _digit(pulses, d + 1) > 0):
+    if on and timer == 0.0 and ((source and send) or qu > 0.0):
         timer = ON + REST
         if sink:
             fired += 1.0
-    out[v + TIMER] = timer
-    out[v + PULSE] = mark if on and timer > REST else 0.0
-    out[v + FIRED] = fired
+    out[v + TIMER], out[v + FIRED] = timer, fired
+    kind = 0.0
+    if on:
+        kind = see.PULSE if timer > REST else (see.TIP if tip else see.PATH)
+    see.show_path(d, kind, out, v + P0)
 
 
 @njit

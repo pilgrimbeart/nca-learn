@@ -5,15 +5,14 @@ come first). Neighbours see only means.
   what it sees) with chance b, its balance; otherwise towards V (back off and turn). Born b = 0.9: a new-born
   creature is drawn to anything it sees. R and B also send towards V now and then by themselves: a tumble, so the
   creature searches.
-  The trace. A kicked cell keeps how many updates since its kick. Every cell keeps the news of each sensor: how old
-  the freshest kick of R it has heard of is (R itself 0 when kicked; otherwise one more than the smaller of its own
-  last news and its neighbours' smallest, from the mean of exp(-5 news)), and likewise of B. Without a new kick, no
-  cell's news ever gets fresher (its neighbours' only grow older), whatever the order cells update in. So when R's
-  news of B gets fresher, B has been kicked again; if that kick is younger than R's own, R forgets its own (and
-  likewise B). So of R and B only the more recently kicked keeps a trace.
+  The trace. A kicked cell keeps how many updates since its kick, and starts a news wave: every cell is excitable on
+  the news flag (excited for a moment, then resting a while, so a wave runs outwards and dies at the edges and where
+  waves meet). A sensor that sees news around it once its own has gone by (a few updates after its kick: a wave
+  never comes back) knows the other sensor was kicked since, and forgets its own kick, even if it is still resting
+  from sending its own. So of R and B only the more recently kicked keeps a trace.
   A taste (+1 good, -1 bad, delivered to R and B) moves b by taste x exp(-trace / TRACE), towards 0 or 1: two
   factors (a recent input and the taste; which way the cell sent its pulse doesn't enter). A bad taste also makes R and B recoil, sending pulses towards V, for a while.
-  Every number is a whole number, re-rounded at each update (b in twentieths), so the noise can't move it.
+  Every number a cell keeps is a whole number, re-rounded at each update (b in twentieths).
 """
 
 import numpy as np
@@ -21,23 +20,22 @@ from numba import njit
 
 from rules import organs, wiring
 
-FAR = organs.FAR
+FAR = 1e9          # "never": a kick long ago, or forgotten
 STEPS = 20.0        # b is kept in twentieths
 INNATE = 18.0       # born b = 0.9
 TRACE = 30.0        # how long a trace lasts (updates)
-NEWS_MAX = 120.0    # news older than this is no news (5 x 120 < 700, so exp(-5 x news) is still a number)
-N_BETA = 5.0
+NE, NR = 2.0, 10.0  # updates a cell is excited by news, then resting
 DISGUST = 40.0      # how long a bad taste lasts (updates) ...
 RECOIL = 0.2        # ... sending a pulse towards V with this chance at each update
 TUMBLE = 0.01       # R and B each send towards V by themselves with this chance at each update: a tumble
 
-VARS = wiring.VARS + ("balance", "kicked", "disgust", "news_r", "news_b")
-SHARED = wiring.SHARED + (("news_r", N_BETA), ("news_b", N_BETA))
+VARS = wiring.VARS + ("balance", "kicked", "disgust", "news", "nstate")
+SHARED = wiring.SHARED + ("news",)
 INPUTS = ("see", "taste", "learn")          # learn: the experiment's control (with it off, tastes don't move b)
 OUTPUTS = wiring.OUTPUTS
-BIRTH = {**wiring.BIRTH, "balance": INNATE, "kicked": FAR, "disgust": 0.0, "news_r": NEWS_MAX, "news_b": NEWS_MAX}
+BIRTH = {**wiring.BIRTH, "balance": INNATE, "kicked": FAR, "disgust": 0.0, "news": -1.0, "nstate": 0.0}
 BIRTH_NOISE = wiring.BIRTH_NOISE
-BALANCE, KICKED, DISGUSTED, NEWS = range(len(wiring.VARS), len(wiring.VARS) + 4)     # NEWS + 0: of R, + 1: of B
+BALANCE, KICKED, DISGUSTED, NEWS, NSTATE = range(len(wiring.VARS), len(wiring.VARS) + 5)
 M_NEWS = len(wiring.SHARED)
 SEE, TASTE, LEARN = range(3)
 
@@ -49,19 +47,24 @@ def update(me, mean, count, inp, out):
     source = name == wiring.SOURCES[0] or name == wiring.SOURCES[1]
     b = min(max(np.round(me[BALANCE]), 0.0), STEPS)
     kicked = min(np.round(me[KICKED]) + 1.0, FAR)
-    for k in range(2):                                      # news of R, of B
-        heard = np.round(organs._smallest(count * mean[M_NEWS + k], N_BETA)) + 1.0
-        if name != wiring.SOURCES[k] and heard < np.round(me[NEWS + k]) and heard < kicked:
-            kicked = FAR                                    # the other was kicked after me: forget my kick
-        out[NEWS + k] = min(np.round(me[NEWS + k]) + 1.0, heard, NEWS_MAX)
+    nstate = np.round(me[NSTATE])
+    news = mean[M_NEWS] > -1.0 + 1.0 / count                    # a neighbour is excited by news
+    heard = nstate == 0.0 and news                              # a news wave reaches me
+    if source and news and kicked > NE + 2.0:
+        kicked = FAR                                            # news, and not mine (gone by now): forget my kick
     send_a = send_v = False
     if source and inp[SEE] > 0.5:
-        kicked = 0.0
-        out[NEWS + (0 if name == wiring.SOURCES[0] else 1)] = 0.0
+        kicked, heard = 0.0, False
+        nstate = NE + NR                                    # my news
         if np.random.random() < b / STEPS:
             send_a = True
         else:
             send_v = True
+    elif heard:
+        nstate = NE + NR                                    # pass it on
+    elif nstate > 0.0:
+        nstate -= 1.0
+    out[NSTATE], out[NEWS] = nstate, 1.0 if nstate > NR else -1.0
     disgust = max(np.round(me[DISGUSTED]) - 1.0, 0.0)
     taste = inp[TASTE]
     if source and taste != 0.0:

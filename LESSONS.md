@@ -13,7 +13,9 @@ are lessons too.
   position in it.
 - **Stochastic updates only.** Every cell updates at random times, never in lockstep: lockstep lets rules lean on a
   shared rhythm and makes artefacts (flipping every tick, checkerboard oscillations).
-- **Robust to noise.** Every number gets noise at every update.
+- **Noise must matter.** Neighbours see a shared number as the cell shows it, clipped to -1..1 and with noise of 1%.
+  No encoding may squeeze information below the noise or spread it over orders of magnitude. What a cell keeps to
+  itself is not limited (counts and timers are whole numbers, re-rounded at each update).
 - **Inputs spike.** Sparse kicks, never continuous levels.
 - **No magic knowledge.** Every cell learns everything from its neighbours' signals. Above all, a path finds its
   target by a signal the target cell itself sends out, never by where the rule says the target should be.
@@ -29,107 +31,129 @@ are lessons too.
 - **What `sheet.py` does.** Only the engine knows the grid. A rule module declares its numbers, which are shared, and
   their birth values, and one compiled `update(me, mean, count, inp, out)`: its own numbers, its neighbours' mean of
   each shared one, how many neighbours it has, and what the body delivered. The engine updates each cell with chance
-  UPDATE, adds noise to every number at every update, and builds the sheet from one birth vector (identical bar
-  declared noise). The body reaches the sheet only through `cells()`, `give()`, `get()` and `take()`; watching uses
-  `view()`, and the experimenter's `damage()` replaces cells with new-born ones. `test_rules.py` checks every rule's
-  imports, signature and birth at two sizes, and that no body code reaches inside.
+  UPDATE, adds a little noise to every number a cell keeps, shows each shared number clipped to -1..1 with noise of
+  1% (drawn afresh every tick), and builds the sheet from one birth vector (identical bar declared noise). The body
+  reaches the sheet only through `cells()`, `give()`, `get()` and `take()`; watching uses `view()`, and the
+  experimenter's `damage()` replaces cells with new-born ones. `test_rules.py` checks every rule's imports, signature
+  and birth at two sizes, and that no body code reaches inside.
 - **A loophole, closed.** The engine once passed a rule its own numbers as a view into the sheet's memory, and
   compiled code doesn't check bounds: a rule indexing past its own numbers would have read its neighbour's. The engine
   now copies into the rule's own small arrays, and `test_rules.py` runs every rule with bounds checking on.
-- **Speed.** About a million cell-updates a second on one core for the whole brain: the rules' logs, exps and random
-  numbers dominate; the neighbour means are cheap.
+- **A cheat, closed.** The engine once let a rule share exp(-beta d): it showed exp(-5 d), but added the noise to d
+  first, so the tiny number shown (about 1e-300 at d = 140) was in effect free of noise, and the mean gave the
+  neighbours' smallest d exactly. It broke the spirit of the noise rule. Twelve of the 18 shared numbers of that
+  version used it: the election, ring counts, x, y, both distance fields, tips, offers and news. The engine now
+  encodes nothing; the user set the range (-1..1) and the noise (first 10%, then 5%, settled at 1%).
 
-## What averages can do
+## What averages can do, honestly
 
-- **Any, all, and the smallest.** A 0/1 flag's mean says "any neighbour" (> 0) or "all" (= 1). If a cell shares
-  exp(-beta d), the mean gives the smallest d to within log(count) / beta: -log(mean) / beta is biased up, at most
-  that much, when one neighbour holds the minimum; -log(count x mean) / beta down, by log(how many hold it) / beta.
-  With whole numbers and rounding, that is exact. The engine applies the encoding (a shared entry `("d", beta)`), so
-  the noise is added to d, not to a tiny exp(-beta d). The range is the limit: exp(-700) is about the smallest
-  number, so beta x d must stay under 700 (election tags 0..139 at beta 5; ring counts to 466 at beta 1.5).
-- **Which way.** A cell that shows 1, 9 or 81 by its distance mod 3 lets each neighbour count, from the sum, how many
-  are one step nearer, level or farther (three base-9 digits): which way is downhill, from one shared number. Mod 3
-  is enough at any distance because in a settled field neighbours differ by at most one step; while a field is still
-  spreading they can differ by more and would be misread, so a source starts its path only once its distance has held
-  still.
-- **Ties show.** Two neighbours sharing the smallest value make -log(count x mean) / beta come out log 2 / beta off a
-  whole number (0.14 at beta 5), so a cell can tell a tie from a single smallest.
-- **Under noise in every number, a cell can only remember whole numbers.** A number a rule just keeps random-walks
-  (about 0.1 over 10,000 updates at noise 0.001), so tags, counts, timers and the balance are whole numbers re-rounded
-  at each update. Two traps: flooring a whole number plus a little negative noise drops it by one (round, don't
-  floor), and the minimum of noisy numbers drifts down (round after taking it). The view must round too: flooring
-  drew a blotchy checkerboard from exact numbers.
+- **Read sums, not means.** A neighbour moves the mean by at most 2 / count, so a cell works with the sum over its
+  neighbours (count x mean), whose noise is about 0.03 at 1%.
+- **Flags count exactly.** Shown as +1 or -1, a flag's sum counts the neighbours showing +1. At noise 10% (the
+  first setting) a count of 8 was wrong once in 2,500 reads, and a single misread could seed a whole false field
+  (below); at 1% it doesn't happen.
+- **A few levels, if every mix stays apart.** A number shown at a few strengths tells a cell how many neighbours
+  show each, as long as every mix that can occur sums clearly apart. Trap: path + tip summed exactly to two pulses
+  (2 + 0.8 = 1.4 + 1.4), so cells beside parallel paths took pulses that weren't there and paths pulsed by
+  themselves. The strengths now leave every mix of up to two cells at least 0.4 apart (`rules/see.py`).
+- **Gradients for where.** Hold some cells fixed and let every other cell take its neighbours' mean: the sheet
+  settles into a smooth field, read closely from means. The obvious tool for coordinates; I first veered away from
+  it, trying to keep the counted coordinates of the old version.
+- **Waves.** An excitable flag runs outwards from where it starts and dies at the edges and where waves meet.
+- **Not the smallest.** No mean gives the smallest of the neighbours' numbers. What a cell can get instead: a count
+  mod K, shown one-hot on K flags (below).
+
+## Distance mod 5 (`rules/see.py`)
+
+- **What it is.** A field from some source cells: each cell shows its distance mod K on K flags. In a settled field
+  a cell's neighbours are one step nearer, level or farther, three residues in a row, so the lowest is the one after
+  the gap, and a cell is one more than that.
+- **Mod 4 isn't enough.** On a diagonal of a square ring a cell has only one neighbour one step nearer. If that one is
+  wrong, the next cell sees "lowest = level" and shifts up one; the cell at the break then sees four residues, which
+  mod 4 can't place, and the defect locks in. Mod 5 sees the gap: 20 single-source fields of 20 exact, against 8 of
+  20 at mod 4.
+- **A value may only fall.** If one more than its lowest neighbour would be higher than what a cell has (or there is
+  none), it lets go and rests a few updates before taking a value again. Without that, a single misread (at 10%
+  noise) seeded a false field that counted up for ever, a perpetual source of waves; and a field whose source has
+  gone fades instead of counting up.
+- **Only from one source, at any size.** Where waves from several sources meet, one can arrive a few steps early by
+  chance; mod 5 can't tell distance 45 from 50, and the meeting line settles in the wrong place for good. At 97 that
+  happened in 8 lives of 10 (mod 6: 1 of 10; slower, steadier fronts helped but not enough); the unevenness of fronts
+  grows with size, so no fixed K is safe at any size. A first plan placed the organs where the corners' fields meet
+  (the edge midpoints and the centre lie on that cross); it was dropped for this. Fields from one source (A, V) are
+  fine.
 
 ## Where am I (`rules/organs.py`)
 
-- **Election.** Corners (3 neighbours) elect the smallest whole-number tag. The stale counts of corners that lose rise
-  away by themselves (count to infinity, bounded because the true counts are finite), so nothing needs to know who
-  won. Election ties (two corners with the same tag of 140) would make two origins: about 2% of lives; not handled.
-- **Handedness in one shared number.** The origin shows 1 − 2 × the sum of what its neighbours show; the two edge cells
-  next to it show minus a tag each, and recognise themselves by seeing a positive sum. With 1 − the sum it failed:
-  the two are diagonal neighbours of each other, so each one's sum also held the other's minus-tag, which cancelled
-  it (each saw only 1 + its own tag). With the factor 2 each sees 1 + 2 × its own + the other's. (This replaced an
-  origin flag and two tag numbers.)
-- **Ring counts.** The smaller tag starts count a round the edge, the other count b, each blocking the other's. Each
-  edge cell knows a / (a + b), its place round the perimeter, and so its side (a quarter each). Trap: the cell that
-  starts count a never sees count b (it is blocked), so didn't know its side; it is the first side by definition.
-- **Coordinates from straight edges, not from points.** A checkerboard drawn from steps to two named points came late
-  and never formed a grid: square rings round two points don't cross squarely. Steps in from two straight edges do:
-  with 8 neighbours, steps from a straight edge are exactly the row. Exact in 8 lives of 8 from about tick 470.
-- **Names must stand still before anything is wired to them.** At first every corner thinks it won and starts ring
-  counts; the losers' counts take about 300 ticks to rise away, and the places they give drift along the edge (up to
-  21 named cells at tick 50), with paths growing towards them. So a cell takes a name only after holding the place for
-  80 updates in a row: with 40, a few wrong names held for about 30 ticks; with 80, none in 8 lives, all four standing
-  by about tick 510.
+- **The race.** Corners beat as pacemakers at random periods; one reached by another's wave before its own beat
+  stands down. Exactly one left in 20 lives of 20, typically by tick 100-500 (worst about 1,100). Traps:
+  - with a rest of 4 updates after excitation, waves re-entered and circled (about 600 cells excited at all times),
+    and in 4 lives of 10 every corner stood down; a rest of 10 cured it;
+  - damage started circling waves (spirals) anyway, which beat faster than V and knocked it out. Each beat now
+    carries its number mod 3 (two flags), and a cell takes only the next beat after the last it took: a wave curling
+    back, or a stray piece of an older beat, is refused. Alternating two parities wasn't enough: a stray piece of the
+    previous beat has the other parity and was still taken, by V too.
+- **Labels need their own pulses.** Labels first rode V's waves along the edges. But V's waves sweep each far edge all
+  at once (every cell of it is the same distance from V), so a label started at a far corner had only the rest time
+  to travel, and reached about 11 cells. Labels now run as their own pulses along the edges, started by V's two
+  coin-tossed neighbours at each of V's beats.
+- **Labels must expire.** Before the race is decided, a corner that later loses labels the edges; when it stands down,
+  edges and corners it labelled get no more pulses and kept the old labels for ever (in 1 life of 8 a far corner held
+  an old -1 and never started its +1). A label now lapses after 3 of V's beats with no pulse to renew it.
+- **A label stops at a corner.** The two edge cells beside a corner are each other's neighbours, so a label would leak
+  round the corner. The cell at the end of an edge shows its label at half strength, which edge cells ignore and
+  corners take; a corner starts the next edge's label at 0.75, which the edge cell beside it takes only when it sees
+  no full label.
+- **Gradients settle slowly, so: momentum while drifting.** Plain averaging settles in about size^2 updates (at 49,
+  labels right by tick 750, x within a column by about 3,000). With a cell carrying on 0.9 of its last move while its
+  short and long averages of x differ by more than 0.03, about 1,500. Momentum always on amplified the noise (x
+  wobbled by 1-2 columns).
+- **The noise keeps slow wobbles up**, about half a column at 49 at 1% (at 5%, up to 5 columns at 97): no stillness
+  test finer than that can pass, and a cell exactly on a threshold flips. So a mark (the band that places a name)
+  flips only when x is 0.05 past its threshold, and stillness is judged at 0.03.
+- **Names must stand still, and stay.** Names taken early drifted a cell or two as x settled, and each move re-grew a
+  field and its paths. Now: a cell takes a place only while still; a name after 300 updates of holding it (80 let a
+  turning point of the momentum pass for still: one life named A three cells off, and a second A appeared later); a
+  named cell keeps its name while its x stays within 0.15 of the place's, and shows 0 on mark so no neighbour takes
+  the same name. 12 lives of 12 named by tick 1,270-2,160; in 10 no name ever changed, in 2 one was lost and retaken
+  once; A, R and B within 2 cells of where they belong. A slower average for the marks (600 updates) was worse: it
+  lagged while x settled.
 
 ## Wiring (`rules/wiring.py`)
 
 - **Breadcrumbs are impossible from averages** (a cell remembering which neighbour a wave came from). Instead a cell
-  needs its distance to each sink, and the mod-3 marks tell it which way is downhill.
+  needs its distance to each sink, and which neighbours are one step nearer or farther.
 - **The sinks send the distance fields: no magic knowledge.** To save two shared numbers, the wiring once took a
   cell's distance to A to be its row (making A the whole tail edge to fit) and to V the larger of x and y. That built
-  into the rule where the organs were meant to be: the paths would have grown to the same places with no A or V
-  there. It broke the first principle, and it changed what A was (the whole edge, not a cell) without saying so. Now
-  each sink, once named, sends out its own distance field, and the paths follow it.
-- **A handshake, not a chance.** Cells below a tip joining at random made fans, not paths (about 300 path cells for
-  two routes of 48). Now the cells below a tip offer random whole numbers, the tip shows the smallest it sees, and
-  only that cell joins. Trap: a cell kept its offer after the tip moved on, so a cell level with the new tip won and
-  never joined, and growth stopped; offers now stand only while the cell is right below a tip.
-- **Forks, three causes, each traced in a recorded growth** (a path cell with two path neighbours one step nearer
-  passes each pulse down both, so pulses arrived 2 to 5 times):
-  - tied offers (1 in 99 per pair): the tip now sees the tie and asks again;
-  - a race: the tip switched to a smaller offer while its first choice was joining, and got both; a tip now keeps its
-    choice for 6 updates;
-  - paths passing: a cell joining one path sat just below another's, giving it a second way on. Forbidding such cells
-    to offer stalled paths (in half the lives B never reached V); now they offer from the highest band, so are chosen
-    only when nothing else offers.
-
-  That brought duplicates down from about 1 life in 2 to 1 send in 64; now, down the distance fields, none in 320.
-- **Straight paths, withdrawn.** Picking among the cells below at random makes paths wander a few cells over 48 rows.
-  A version had the tip show its x and y mod 3, and the cell on the straight way to the target offered lower: but
-  "straight at the target" used where the target was meant to be (magic knowledge again), so it went with the
-  coordinate distances. Paths now wander a little, and R's and B's paths to A sometimes join before A; pulses still
-  arrive once each.
-- **Fading and pulses.** A path cell with no path neighbour one step farther leaves, so paths from passing names, or
-  cut off by damage, fade. A pulse is carried for 6 of the carrier's updates; the next cell must update at least once
-  meanwhile. Carried for 3, a pulse was lost about half the time over 48 steps. Carried for 6 it is a race the next
-  cell almost always wins at update 0.9 (every pulse arrived exactly once, 320 of 320 sends in 8 lives, about 54
-  ticks); at 0.5 it loses it often enough that about 1 pulse in 10 dies over 48 steps (traced cell by cell). So the
-  wiring test runs at the creature's 0.9.
+  into the rule where the organs were meant to be. Now each sink, once named, sends out its own field.
+- **Path cells show their residue as a pattern on three flags** (any three residues in a row independent, so the
+  sums untangle into nearer, level and farther), at a strength for path, tip or pulse. The patterns chosen add the
+  least noise when untangled (at most 1.41 times one sum's); the first choice added up to 1.73, and at residue 4 a
+  misread started a pulse every few hundred ticks. None now in 12,000 ticks.
+- **The tip must show itself on the path flags.** Tips announcing themselves on the offer flag instead let cells level
+  with a tip (beside it, below its parent) offer too, and paths spread into fans of 300-590 cells. Excluding cells
+  with a path cell level with them stopped the fans but stranded tips on a field's diagonal, where the only cell one
+  step nearer sat beside another path. Now a candidate is a cell that sees a tip one step farther: exact.
+- **A handshake by counting.** The tip says "go" while it sees exactly one raised hand (twice in a row to start);
+  a candidate joins after three "go"s in a row with its hand up. A candidate with another path cell above it as well
+  raises its hand rarely: joining would give that path a second way on and split its pulses.
+- **Two copies of one pulse must read as a pulse.** Where paths run side by side a cell can have two parents, and a
+  pulse coming down one splits; the copies may meet again at once. With strengths where two pulses summed like a
+  tip and a path, the cell where they met took neither and the pulse died.
+- **Result.** 8 lives of 49: 319 of 320 pulses arrived, 1 extra arrival, about 53 ticks each.
+- **Fading and pulses.** A path cell with no path cell one step farther leaves (after 2 reads). A pulse is carried
+  for 6 updates, then rested 7; the next cell must update at least once meanwhile (it almost always does at 0.9).
 
 ## Learning (`rules/brain.py`)
 
-- **Lateral inhibition from averages: compare news only with news, and watch for it getting fresher.** Each step was a
-  trace to a cause.
-  - A min-age news field ages more slowly than a cell's own count since its kick, because a neighbour that hasn't
-    updated lately holds an older, fresher-looking value. So "news fresher than my kick" fired on a cell's own echo,
-    and the eaten colour's trace was gone at most tastes.
-  - Keeping news in fractions of an update froze the field: a uniform field can only age as fast as news travels.
-  - What is exact: without a new kick, no cell's news ever gets fresher, whatever order the cells update in. So a
-    fall in a cell's news means a new kick elsewhere, and echoes can't cause one.
-  - One field for both sensors conflated kicks a few updates apart. One field per sensor, and a cell forgets its kick
-    when the other's news falls to fresher than its own kick: the eaten colour alone keeps its trace at almost every
-    meal.
+- **News as a wave.** The news of a kick used to be a min-age field (the withdrawn exp trick). Now a kick starts a wave
+  across the sheet, and a sensor that sees news around it after its own has gone by forgets its own kick: of R and
+  B, only the more recently kicked keeps a trace. Trap: a sensor still resting from sending its own news ignored the
+  other's, so both kept their traces and a bad taste lowered the food's balance too (food ended at 0.83); a sensor
+  now notices news whenever its own has gone by (food ended at 0.97).
+- **Earlier, with the min-age field** (kept for its lessons): a field ages more slowly than a cell's own count, so
+  "news fresher than my kick" fired on a cell's own echo; and one field for both sensors conflated kicks a few
+  updates apart.
 - **Two factors, honestly.** The balance moves by taste × the cell's recent-input trace; which way it sent its pulse
   doesn't enter. The creature learns what each colour is worth, and its choices follow.
 - **Tumbles from R and B** (now and then a pulse to V by themselves), so a creature that sees nothing still searches.
@@ -147,14 +171,12 @@ are lessons too.
   | 18 shared numbers, distance fields, V near a far corner | 32%, 21%, 26% |
   | 20: names that hold, x and y, V halfway down a side | 38%, 23%, 33% |
   | 16: coordinates as distances (magic knowledge, withdrawn), V at the tail corner, straight paths | 45%, 34%, 34% |
-  | 18: A one cell again, A and V send distance fields, no straight-path rule | 35%, 39%, 34% (no learning 43%, 47%, 51%) |
+  | 18: A one cell again, A and V send distance fields (the exp cheat, withdrawn) | 35%, 39%, 34% (no learning 43%, 47%, 51%) |
+  | 27, honest: flags and gradients, -1..1 at 1% noise | 43%, 39%, 42% (no learning 49%, 48%, 54%); balances poison 0.20, food 0.84 |
 
   V in the far corner (so R's and B's paths are easier to tell apart) doubles the way to V, and the recoil arrives
   later. The individual-neighbour version before this project had 43%, 27%, 24%.
-- **Damage, as with the lizard.** Cells replaced by new-born ones relearn their coordinates within about 30 ticks
-  (about 200 when the damage takes A or V, which must hold its name again); paths cut off from their source fade and
-  regrow down the distance fields; every route carries pulses again within about 500 ticks (a band 7 rows deep across
-  the middle, 6 lives of 6). But damaging the corner that won the election kills the frame (6 lives of 8):
-  every cell remembers the smallest tag it has heard, so the dead winner's tag lives on with no corner to own it. A
-  self-healing election needs stale tags to die out (a tag's age, rising with no source, as the ring counts do): a
-  17th shared number, or a cap that assumes a size. Open.
+- **Damage, as with the lizard.** A band 7 rows deep across the middle, replaced by new-born ones at tick 4,000, 6
+  lives of 6: x and y back within 1.5 columns in 90-180 ticks, names kept (or retaken where the band took one), every
+  route carrying pulses again. Damaging V is no longer fatal in principle (any surviving corner can't restart the race,
+  but a new-born V corner is a pacemaker again); not yet measured.

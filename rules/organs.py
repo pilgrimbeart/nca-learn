@@ -1,105 +1,212 @@
-"""Where am I, from averages only: every cell comes to know its row and column, and the sheet names its organs: R and B
-(two cells on the head's edge), A (the middle of the tail's edge) and V (a tail corner). Neighbours see only means.
+"""Where am I, from averages only: every cell comes to know its place across the sheet (x and y, from -1 to 1), and
+the sheet names its organs: V (a tail corner), A (the middle of the tail's edge), R and B (either side of the middle
+of the head's edge). Neighbours see only means, of numbers from -1 to 1, with noise.
 
-  Every number a cell keeps is a whole number, re-rounded at each update, so the noise can't move it.
-  1. Election. Corners (3 neighbours) put up a whole-number tag (random from birth, 0..139); every cell holds the
-     smallest it has heard: the smallest of its neighbours', found from the mean of exp(-5 x least) and rounded. The
-     corner whose own tag survives is the origin.
-  2. Handedness. The origin shows 1 - 2 x the sum of what its neighbours show (count x the mean). An edge cell (5
-     neighbours) that sees a positive sum is next to the origin: it shows minus a second tag of its own, so the
-     origin shows 1 + 2 x both tags; the two are also each other's neighbours, so each sees 1 + 2 x its own + the
-     other's, and so learns the other's. The smaller starts ring
-     count a, the other ring count b, and each blocks the other's count (as the origin blocks both).
-  3. Ring counts. Edge cells (fewer than 8 neighbours) count steps round the edge: one more than the smallest of
-     their neighbours' (inner cells show nothing). So an edge cell knows a, b and the perimeter a + b, and so its side
-     (a quarter of the perimeter each).
-  4. Coordinates. The first side's cells hold y = 0, every other cell one more than its neighbours' smallest (a corner
-     touching that side, 0): with 8 neighbours that is exactly the row. The next side round counts x likewise.
-  5. Naming. The first side (y = 0) is the tail: the cell at its middle (1/8 of the perimeter round the edge) names
-     itself A, and its corner at x = 0, V. Two cells on the far side, the head, name themselves R and B: their place
-     round the edge is 5/8 of the perimeter, 3 cells either way. A cell takes a
-     name once it has held it for HOLD updates in a row: at first every corner thinks it won the election, and the
-     losers' counts take a while to rise away, giving places that drift as they rise, so never hold.
+  1. The race. Every cell is excitable (the wave: excited for a moment, then resting a while). Each corner (3
+     neighbours) is a pacemaker with its own random period; a corner reached by a wave while resting stands down for
+     good. The faster corner's waves reach the slower ones before they fire, so in the end one corner is left: V. It
+     goes on beating. Each beat carries its number mod 3 (on two flags: +-, -+, ++), and a cell takes only the next
+     beat after the last it took: a wave curling back on cells it has excited, or a stray piece of an older beat, is
+     refused, so no wave can circle for ever (a spiral, which damage would otherwise start, and which would knock V
+     out).
+  2. Handedness. Corners show 1 on hand while they stand, 0.75 once they have stood down; so an edge cell knows if
+     it is next to a corner, and if that corner stands. V's two edge neighbours (each other's neighbours too) each
+     show a coin, +-0.5, and toss again while the other's is the same. The one with +0.5 is on the tail's edge.
+  3. Edge labels. Each time V beats, its two coin-tossed neighbours start a label pulse along their edges: the tail's
+     edge (yl -1) and the other (xl -1). An edge cell takes the label an edge neighbour shows, shows it a moment,
+     then rests (so pulses run one way). Next to a corner it shows it at half strength, which edge cells ignore and
+     corners take: a label stops at the corner instead of leaking round it. A corner that holds -1 on one axis starts
+     +1 on the other (at 0.75, taken by the edge cell beside it when it sees no full label): the far edges get +1. A
+     cell holds a label once two pulses in a row agree, and forgets it after STALE of V's beats with none: if the
+     winner changes, the labels follow it.
+  4. Coordinates. Cells holding a label hold x (or y) at it; every other cell takes its neighbours' mean, so x runs
+     straight from -1 to 1 across the sheet, and y likewise. While a cell's place is still drifting (a short and a
+     long average of it differ) it also carries on part of its last move (momentum): settling then takes about
+     size updates instead of size^2.
+  5. Naming. A cell on the tail's edge shows mark +1 where x > 0, on the head's edge where -W < x < W (each with a
+     margin, so a mark doesn't flicker). The cell on the tail's edge outside the mark but next to it is A; on the
+     head's edge, R (x < 0) and B. V is the standing corner. A cell takes a place only once its x and y have stopped
+     drifting, and a name once it has held the place for HOLD updates. A named cell shows 0 on mark (between a mark
+     and none), so no neighbour takes the same name, and keeps its name while its x stays within TOL of the place's.
 """
 
 import numpy as np
 from numba import njit
 
-FAR = 1e9
-TAGS = 139          # election tags are whole numbers 0..TAGS (exp(-5 x 139) is still a number)
-E_BETA = 5.0        # the mean of exp(-5 v) finds the smallest v to within log 8 / 5 < 1/2
-R_BETA = 1.5        # ring counts: an edge cell has one neighbour nearer round the ring, so the sum is sharp
-HOLD = 80           # updates a cell must hold a name before it takes it
-PLACES = np.array([(0.625, -3.0), (0.625, 3.0), (0.125, 0.0)])   # R, B, A: (fraction of the perimeter from the
-                                                                 # origin, offset in cells)
+EX, RF = 2.0, 10.0          # updates a cell is excited, then resting before it can be excited again
+LE, LR = 3.0, 8.0           # updates an edge cell shows a label pulse, then rests from them
+PMIN, PMAX = 30.0, 90.0     # a corner's period, random from birth (updates)
+W = 0.125                   # R and B sit at x = -W and +W on the head's edge
+TAU = 50.0                  # updates over which a cell averages its x and y for naming
+SLOW = 150.0                # ... and over a longer time: when the two agree, x and y have stopped drifting
+BETA = 0.9                  # momentum, while a cell's place is still drifting
+STILL = 0.03                # (above the slow wobbles the noise keeps up: about half a column at 49)
+TOL = 0.15                  # how far a named cell's x may stray before it gives the name up
+SURE = 0.05                 # how far past a place's x a cell must be to change its mark
+STALE = 3.0                 # beats of V's without a label pulse before a cell forgets its label
+HOLD = 300                  # updates a cell must hold a name before it takes it
 R, B, A, V = 1.0, 2.0, 3.0, 4.0                     # names
 
-VARS = ("tag", "tag2", "least", "origin", "hand", "role", "a", "b", "y", "x", "place", "held", "name")
-SHARED = (("least", E_BETA), "hand", ("a", R_BETA), ("b", R_BETA), ("y", E_BETA), ("x", E_BETA))
+VARS = ("w", "w2", "state", "par", "timer", "period", "standing", "hand", "coin", "xl", "yl", "lstate", "cx", "cy", "start", "px",
+        "py", "missx", "missy", "lx", "ly", "x", "y", "xv", "yv", "xs", "ys", "xss", "yss", "mark", "place", "held",
+        "name")
+SHARED = ("w", "w2", "hand", "xl", "yl", "x", "y", "mark")
 INPUTS = ()
-BIRTH = {"tag": 0.0, "tag2": 0.0, "least": FAR, "origin": 0.0, "hand": 0.0, "role": 0.0, "a": FAR, "b": FAR,
-         "y": FAR, "x": FAR, "place": 0.0, "held": 0.0, "name": 0.0}
-BIRTH_NOISE = {"tag": TAGS + 1.0, "tag2": 1e6}      # whole numbers once rounded
-TAG, TAG2, LEAST, ORIGIN, HAND, ROLE, RA, RB, Y, X, PLACE, HELD, NAME = range(13)
-M_LEAST, M_HAND, M_A, M_B, M_Y, M_X = range(6)
-
-
-@njit
-def _smallest(sum_, beta):
-    """The smallest of the neighbours' values, from the sum of exp(-beta x value); FAR if none."""
-    return -np.log(sum_) / beta if sum_ > 1e-300 else FAR
+BIRTH = {v: 0.0 for v in VARS}
+BIRTH.update({"w": -1.0, "w2": -1.0, "period": PMIN, "standing": 1.0, "hand": -1.0, "coin": -0.5, "mark": -1.0})
+BIRTH_NOISE = {"timer": PMAX, "period": PMAX - PMIN, "coin": 1.0}     # coin: -0.5 or +0.5 once rounded to its sign
+(WV, WV2, STATE, PAR, TIMER, PERIOD, STANDING, HAND, COIN, XL, YL, LSTATE, CX, CY, START, PX, PY, MISSX, MISSY, LX, LY, X, Y,
+ XV, YV, XS, YS, XSS, YSS, MARK, PLACE, HELD, NAME) = range(len(VARS))
+M_W, M_W2, M_HAND, M_XL, M_YL, M_X, M_Y, M_MARK = range(8)
 
 
 @njit
 def update(me, mean, count, inp, out):
-    corner, ring = count == 3, count < 8
-    mine = min(np.round(me[TAG]), TAGS)                 # numbers a cell keeps are whole, so noise can't move them
-    out[TAG], out[TAG2] = mine, np.round(me[TAG2])
-    # 1. election (the mean finds the smallest to within log(count) / 5: rounding takes it to the whole number)
-    least = np.round(min(me[LEAST], _smallest(mean[M_LEAST], E_BETA)))
-    if corner:
-        least = min(least, mine)
-    out[LEAST] = least
-    origin = corner and least == mine
-    out[ORIGIN] = 1.0 if origin else 0.0
-    # 2. handedness
-    hands = np.round(count * mean[M_HAND])
-    candidate = count == 5 and hands > 0.5
-    role = 0.0
-    if origin:
-        out[HAND] = 1.0 - 2.0 * hands                   # 1 + 2 x both tags (they show minus theirs)
-    elif candidate:
-        out[HAND] = -out[TAG2]
-        role = 1.0 if out[TAG2] < hands - 1.0 - 2.0 * out[TAG2] else -1.0
-    else:
-        out[HAND] = 0.0
-    out[ROLE] = role
-    # 3. ring counts
-    for v, m, seed in ((RA, M_A, 1.0), (RB, M_B, -1.0)):
-        if role == seed:
-            out[v] = 1.0
-        elif not ring or origin or role == -seed:
-            out[v] = FAR
+    corner, edge = count == 3, count < 8
+    # 1. the race
+    state, timer, period = np.round(me[STATE]), np.round(me[TIMER]), np.round(me[PERIOD])
+    par = np.round(me[PAR])
+    standing = corner and me[STANDING] > 0.5
+    fire = False
+    a = np.round(count * (mean[M_W] + 1.0) / 2.0)              # excited neighbours showing +1 on the first wave flag
+    b = np.round(count * (mean[M_W2] + 1.0) / 2.0)             # ... and on the second
+    phase = 0.0 if a > b else (1.0 if b > a else 2.0)           # the phase they show (+-, -+, ++)
+    if state == 0.0 and a + b >= 1.0 and phase == (par + 1.0) % 3.0:
+        fire, standing, par = True, False, phase                # the next beat (another's wave reached me first)
+    if standing:
+        timer -= 1.0
+        if timer <= 0.0 and state == 0.0:
+            fire, timer, par = True, period, (par + 1.0) % 3.0
+    if fire:
+        state = EX + RF
+    elif state > 0.0:
+        state -= 1.0
+    out[STATE], out[TIMER], out[PERIOD], out[STANDING], out[PAR] = state, timer, period, 1.0 if standing else 0.0, par
+    excited = state > RF
+    out[WV] = 1.0 if excited and par != 1.0 else -1.0
+    out[WV2] = 1.0 if excited and par != 0.0 else -1.0
+    # 2. handedness: z is what my neighbours show on hand, above all of them showing -1
+    z = count * mean[M_HAND] + count
+    q = np.round(4.0 * z)                                       # a corner adds 8 (standing) or 7, a coin 2 or 6
+    by_corner = edge and not corner and z > 1.625
+    by_v = by_corner and q % 2 == 0
+    coin = 0.5 if me[COIN] > 0.0 else -0.5
+    other = 0.0                                                 # the other's coin, or 0 if it shows none
+    if by_v:
+        rest = z - 2.0
+        other = 0.5 if rest > 1.0 else (-0.5 if rest > 0.25 else 0.0)
+        if other == coin and np.random.random() < 0.5:
+            coin = -coin                                        # the same: toss again
+    out[COIN] = coin
+    out[HAND] = (1.0 if standing else 0.75) if corner else (coin if by_v else -1.0)
+    role = coin if by_v and other == -coin else 0.0             # +0.5: the tail's edge starts here; -0.5: the other
+    # 3. edge labels: pulses along the edges, started at V each time it fires
+    lstate = np.round(me[LSTATE])
+    cx, cy, start = np.round(me[CX]), np.round(me[CY]), np.round(me[START])
+    took = False
+    if lstate == 0.0 and edge and not standing:
+        sx, sy = count * mean[M_XL], count * mean[M_YL]
+        if role != 0.0:
+            if fire:                                            # V fired: start the labels of its two edges
+                cx, cy, start, took = (0.0, -1.0, 1.0, True) if role > 0.0 else (-1.0, 0.0, 1.0, True)
+        elif corner:                                            # a corner takes half-strength labels too
+            if abs(sx) > 0.375 or abs(sy) > 0.375:
+                cx = np.sign(sx) if abs(sx) > 0.375 else 0.0
+                cy = np.sign(sy) if abs(sy) > 0.375 else 0.0
+                start, took = 0.0, True
+        elif not by_v:
+            if abs(sy) > 0.875:
+                cx, cy, start, took = 0.0, np.sign(sy), 0.0, True
+            elif abs(sx) > 0.875:
+                cx, cy, start, took = np.sign(sx), 0.0, 0.0, True
+            elif abs(sy) > 0.625:
+                cx, cy, start, took = 0.0, np.sign(sy), 1.0, True       # from a corner: the start of an edge
+            elif abs(sx) > 0.625:
+                cx, cy, start, took = np.sign(sx), 0.0, 1.0, True
+    if took:
+        lstate = LE + LR
+    elif lstate > 0.0:
+        lstate -= 1.0
+    out[LSTATE], out[CX], out[CY], out[START] = lstate, cx, cy, start
+    lx, ly = np.round(me[LX]), np.round(me[LY])
+    px, py = np.round(me[PX]), np.round(me[PY])
+    missx, missy = np.round(me[MISSX]), np.round(me[MISSY])
+    if fire:                                                    # a beat of V's: one more since each label was renewed
+        missx, missy = missx + 1.0, missy + 1.0
+    if lstate == 1.0:                                           # the pulse has passed: two in a row agree?
+        if corner:                                              # a corner keeps each axis apart
+            if cx != 0.0:
+                lx = cx if cx == px else lx
+                px, missx = cx, 0.0
+            if cy != 0.0:
+                ly = cy if cy == py else ly
+                py, missy = cy, 0.0
         else:
-            out[v] = min(np.round(_smallest(count * mean[m], R_BETA)) + 1.0, FAR)
-    counted = count == 5 and out[RA] < FAR / 2 and out[RB] < FAR / 2
-    side = -1.0
-    if role == 1.0:
-        side = 0.0                                      # where count a starts: the first side
-    elif counted:
-        side = np.floor(4.0 * out[RA] / (out[RA] + out[RB]))
+            if cx == px and cy == py:
+                lx, ly = cx, cy
+            px, py, missx, missy = cx, cy, 0.0, 0.0
+    if missx > STALE:
+        lx, px = 0.0, 0.0                                       # no pulse for several beats: forget the label
+    if missy > STALE:
+        ly, py = 0.0, 0.0
+    out[PX], out[PY], out[MISSX], out[MISSY] = px, py, min(missx, STALE + 1.0), min(missy, STALE + 1.0)
+    sx_, sy_ = 0.0, 0.0                                         # what a corner starts: +1 on its other axis
+    if corner and not standing:
+        if ly == -1.0 and lx != -1.0:
+            sx_ = 1.0
+        elif lx == -1.0 and ly != -1.0:
+            sy_ = 1.0
+    showing = lstate > LR
+    if not (showing and edge):
+        out[XL], out[YL] = 0.0, 0.0
+    elif corner:                                                # a corner passing a pulse starts its own
+        out[XL], out[YL] = (0.75 * sx_, 0.75 * sy_) if not standing else (0.0, 0.0)
+    else:
+        strength = 0.5 if by_corner and start == 0.0 else 1.0  # the end of an edge: only a corner takes it
+        out[XL], out[YL] = strength * cx, strength * cy
+    hx, hy = (sx_ if sx_ != 0.0 else lx), (sy_ if sy_ != 0.0 else ly)   # a corner also holds what it starts
+    if standing:
+        hx, hy = -1.0, -1.0
+    if not edge:
+        lx, ly, hx, hy = 0.0, 0.0, 0.0, 0.0
+    out[LX], out[LY] = lx, ly
     # 4. coordinates
-    for v, m, k in ((Y, M_Y, 0.0), (X, M_X, 1.0)):
-        heard = np.round(_smallest(count * mean[m], E_BETA))
-        out[v] = 0.0 if side == k or (corner and heard == 0.0) else min(heard + 1.0, FAR)
+    drift = abs(me[XS] - me[XSS]) > STILL or abs(me[YS] - me[YSS]) > STILL
+    beta = BETA if drift else 0.0                               # while drifting, carry on part of the last move
+    x = hx if hx != 0.0 else min(max(mean[M_X] + beta * me[XV], -1.0), 1.0)
+    y = hy if hy != 0.0 else min(max(mean[M_Y] + beta * me[YV], -1.0), 1.0)
+    out[XV], out[YV] = x - me[X], y - me[Y]
+    out[X], out[Y] = x, y
+    xs, ys = me[XS] + (x - me[XS]) / TAU, me[YS] + (y - me[YS]) / TAU
+    xss, yss = me[XSS] + (x - me[XSS]) / SLOW, me[YSS] + (y - me[YSS]) / SLOW
+    out[XS], out[YS], out[XSS], out[YSS] = xs, ys, xss, yss
+    still = abs(xs - xss) < STILL and abs(ys - yss) < STILL     # my place has stopped drifting
     # 5. naming
-    place = 0.0
-    if out[Y] == 0.0 and out[X] == 0.0:
-        place = V
-    elif counted:
-        for k in range(PLACES.shape[0]):
-            if out[RA] == np.round(PLACES[k, 0] * (out[RA] + out[RB])) + PLACES[k, 1]:
-                place = k + 1.0
-    held = min(np.round(me[HELD]) + 1.0, HOLD) if place == np.round(me[PLACE]) else 0.0
-    out[PLACE], out[HELD] = place, held
-    out[NAME] = place if held >= HOLD else 0.0
+    tail, head = edge and not corner and hy == -1.0, edge and not corner and hy == 1.0
+    was = me[MARK] > 0.5                                        # hysteresis: a mark flips only when x is clearly past
+    h = -SURE if was else SURE
+    mark = (xs > h) if tail else ((-W + h < xs < W - h) if head else False)
+    seen = np.round(count * (mean[M_MARK] + 1.0))              # units: 2 per mark, 1 per named cell
+    marks, named_by = np.floor(seen / 2.0), seen % 2.0 == 1.0
+    name = np.round(me[NAME])
+    if name != 0.0:                                             # named: keep it while still about right
+        keep = ((name == V and standing) or (name == A and tail and abs(xs) < TOL) or
+                (name == R and head and abs(xs + W) < TOL) or (name == B and head and abs(xs - W) < TOL))
+        if not keep:
+            name = 0.0
+        place, held = name, 0.0
+    else:
+        place = 0.0
+        if standing:
+            place = V
+        elif tail and not mark and marks >= 1.0:
+            place = A
+        elif head and not mark and marks >= 1.0:
+            place = R if xs < 0.0 else B
+        if not still and not corner or named_by:
+            place = 0.0                                         # still drifting, or a neighbour has the name already
+        held = min(np.round(me[HELD]) + 1.0, HOLD) if place == np.round(me[PLACE]) and place != 0.0 else 0.0
+        if held >= HOLD:
+            name = place
+    out[PLACE], out[HELD], out[NAME] = place, held, name
+    out[MARK] = 0.0 if name != 0.0 and name != V else (1.0 if mark else -1.0)

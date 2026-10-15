@@ -3,9 +3,8 @@
 A rule is a module that declares its cell's numbers and one compiled function:
 
     VARS = ("a", "b", ...)          # every number a cell holds, in order (its layers)
-    SHARED = ("a", ("d", 2.0), ...) # the ones its neighbours can read: they only ever get the MEAN of each; for
-                                    # ("d", beta) the mean of exp(-beta d) (with it a cell can find its neighbours'
-                                    # smallest d: -log(count x mean) / beta, to within log(count) / beta)
+    SHARED = ("a", ...)             # the ones its neighbours can read: they only ever get the MEAN of what each
+                                    # neighbour shows: the number held, clipped to -1..1, plus noise of SHOW
     INPUTS = ("kick", ...)          # what the body can deliver to a cell
     OUTPUTS = ("fired", ...)        # (optional) counts the body may take away (reading them sets them to 0)
     BIRTH = {"a": 0.0, ...}         # every cell is born with these ...
@@ -18,8 +17,11 @@ A rule is a module that declares its cell's numbers and one compiled function:
         # since it last updated; out: write its new numbers here (out starts as a copy of me).
 
 Each tick, every cell, with chance UPDATE, updates (never all in lockstep); the others keep their numbers, and
-what the body delivered to them waits for their next update. After an update every number gets a little noise
-(NOISE): rules must be robust to it. The rule is given nothing else: not the grid, not its position, not the size,
+what the body delivered to them waits for their next update. After an update every number it keeps gets a little
+noise (NOISE). What a cell shows its neighbours is cruder: each shared number is clipped to -1..1 and gets noise of SHOW
+(0.01), drawn afresh every tick. A neighbour moves a cell's mean by at most 2 / its count, so a shared number carries
+little: a flag (+1 or -1) is read exactly, a smooth value shared by many neighbours (a gradient) closely, a value
+squeezed small or spread over orders of magnitude not at all. The rule is given nothing else: not the grid, not its position, not the size,
 not a clock, not its neighbours one by one.
 
 A rule may build on another by extending its VARS and SHARED (its numbers keep their places) and calling its update.
@@ -35,7 +37,8 @@ import numpy as np
 from numba import njit
 
 UPDATE = 0.5        # the chance that a cell updates in a tick
-NOISE = 1e-3        # noise added to every number at every update
+NOISE = 1e-3        # noise added to every number a cell keeps, at every update
+SHOW = 0.01         # noise on what a cell shows its neighbours (each shared number clipped to -1..1), every tick
 
 
 @njit(cache=True)
@@ -44,17 +47,16 @@ def _seed(seed):
 
 
 @njit
-def _ticks(s, s2, mean, count, inp, shared, beta, update, ticks, p, noise):
+def _ticks(s, s2, mean, count, inp, shared, update, ticks, p, noise, show):
     n = s.shape[0]
     nv, ns, ni = s.shape[2], shared.shape[0], inp.shape[2]
     me, out, avg, got = np.empty(nv), np.empty(nv), np.empty(mean.shape[2]), np.empty(ni)   # the rule's own arrays:
-    shown = np.empty((n, n, ns))                            # what each cell shows: a shared number, or exp(-beta x it)
+    shown = np.empty((n, n, ns))                            # what each cell shows: a shared number, clipped, noisy
     for _ in range(ticks):                                  # (the rule never holds a view into the sheet)
         for y in range(n):
             for x in range(n):
                 for k in range(ns):
-                    v, b = shared[k], beta[k]
-                    shown[y, x, k] = s[y, x, v] if b == 0.0 else np.exp(-b * s[y, x, v])
+                    shown[y, x, k] = min(max(s[y, x, shared[k]], -1.0), 1.0) + show * np.random.standard_normal()
         for y in range(n):                                  # each cell's neighbours' means of what they show
             for x in range(n):
                 for k in range(ns):
@@ -83,12 +85,11 @@ def _ticks(s, s2, mean, count, inp, shared, beta, update, ticks, p, noise):
 class Sheet:
     """n x n cells running one rule."""
 
-    def __init__(self, rule, n: int, seed: int = 0, update: float = UPDATE, noise: float = NOISE):
-        self.rule, self.n, self.p, self.noise = rule, n, update, noise
+    def __init__(self, rule, n: int, seed: int = 0, update: float = UPDATE, noise: float = NOISE, show: float = SHOW):
+        self.rule, self.n, self.p, self.noise, self.show = rule, n, update, noise, show
         self.index = {name: i for i, name in enumerate(rule.VARS)}
         self.inputs = {name: i for i, name in enumerate(rule.INPUTS)}
-        shared = [(x, 0.0) if isinstance(x, str) else x for x in rule.SHARED]
-        assert {name for name, _ in shared} <= set(rule.VARS) and set(rule.BIRTH) == set(rule.VARS)
+        assert set(rule.SHARED) <= set(rule.VARS) and set(rule.BIRTH) == set(rule.VARS)
         rng = np.random.default_rng(seed)
         self._s = np.empty((n, n, len(rule.VARS)))
         for name, i in self.index.items():
@@ -98,16 +99,15 @@ class Sheet:
         self._s2 = np.empty_like(self._s)
         self._mean = np.zeros((n, n, max(1, len(rule.SHARED))))
         self._inp = np.zeros((n, n, max(1, len(rule.INPUTS))))
-        self._shared = np.array([self.index[name] for name, _ in shared], dtype=np.int64)
-        self._beta = np.array([b for _, b in shared], dtype=float)
+        self._shared = np.array([self.index[name] for name in rule.SHARED], dtype=np.int64)
         edge = lambda i: 2 if i in (0, n - 1) else 3
         self._count = np.array([[edge(y) * edge(x) - 1 for x in range(n)] for y in range(n)], dtype=float)
         self.t = 0
         _seed(seed)
 
     def step(self, ticks: int = 1) -> None:
-        _ticks(self._s, self._s2, self._mean, self._count, self._inp, self._shared, self._beta, self.rule.update, ticks,
-               self.p, self.noise)
+        _ticks(self._s, self._s2, self._mean, self._count, self._inp, self._shared, self.rule.update, ticks, self.p,
+               self.noise, self.show)
         self.t += ticks
 
     # The body's only ways in and out.

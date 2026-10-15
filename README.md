@@ -1,11 +1,15 @@
-# nca-learn: a brain that builds itself from averages, then learns
+# nca-learn: a brain that builds itself then learns
+
+Is it possible to design a self-constructing neural network that is useful?
+
+Here we define "useful" as "capable of learning 1 bit of information during its lifetime". 
 
 A sheet of identical cells, each born the same bar random noise, each running one local rule, and each seeing
 nothing of its neighbours but the **average** of each number they share. Like the "lizard" of
 [Growing Neural Cellular Automata](https://distill.pub/2020/growing-ca/) (Mordvintsev et al., Distill 2020), it
-builds something from nothing and repairs itself when damaged. But it doesn't grow a picture. It grows a nervous
-system: it works out where it is, names its organs, wires its sensors to its thrusters, and then the creature it
-drives learns, within its own lifetime, which of two colours is food.
+builds something from nothing and repairs itself when damaged. But instead of growing a picture, it grows a nervous
+system: cells work out where they are, differentiate, wire sensors to thrusters, and then drive a creature 
+that learns, within its own lifetime, which of two colours is food.
 
 ![A life: the brain (left) builds a coordinate frame, names its organs and grows its wiring, then the creature
 (right) learns to avoid the poison](media/life.gif)
@@ -44,19 +48,20 @@ In the live view:
 ### What you're seeing
 
 - **Left, the brain** (49 × 49 cells), in greys:
-  - a faint **checkerboard**: the coordinates each cell has worked out for itself, in squares of 4 cells;
+  - a faint **checkerboard**: the coordinates each cell has worked out for itself (x and y, each running from -1 to
+    1 across the sheet), in squares of about 4 cells;
   - its organs, lettered: **R** and **B** (the red and blue sensors, with each one's balance, its learned chance
     of approaching what it sees), **A** (the middle of the tail edge: forward thrust) and **V** (the tail's corner: back off and
     turn);
   - **paths**: light grey from R and B to A, mid grey to V; **pulses** running down them, white;
-  - a fading **red glow** (also brighter) as news of a kick to R or B spreads.
+  - a **red glow** (also brighter): a wave of news of a kick to R or B, spreading across the sheet.
 - **Right, the world:** red blocks (dark, lettered R) and blue blocks (light, lettered B), and the creature, a
   square with its head marked. A ring at the tail or the side shows a thruster firing. "yuck!" is a poison meal.
 - **Below:** the tick, the stage of life, which colour is poison this life, and the recent meals.
 
 The view runs at 10 ticks a frame, but slows to 1 while the paths grow and until a little after the creature starts
-moving, so the pulses can be seen running down them. A life goes: "where am I" (to about tick 510), "wiring" (to
-about tick 950), then "moving and learning". Within a few thousand ticks the poison sensor's balance falls towards 0
+moving, so the pulses can be seen running down them. A life goes: "where am I" (to about tick 1,700), "wiring", then
+"moving and learning". Within a few thousand ticks the poison sensor's balance falls towards 0
 and the creature mostly backs away from poison.
 
 ## Other commands
@@ -81,72 +86,85 @@ python creature.py --record frames  # save a life's frames as PNGs, headless (me
 - **A rule never holds a view into the sheet.** The engine copies a cell's numbers and its neighbours' means into the
   rule's own small arrays, and `test_rules.py` runs every rule with array bounds checked, so an index past the end
   can't reach another cell's numbers.
-- **The engine does the rest.** Each tick each cell updates with some chance, never all at once. Every number gets a
-  little noise at every update. Every cell is born from one birth vector, identical bar declared noise.
+- **The engine does the rest.** Each tick each cell updates with some chance, never all at once. Every number a
+  cell keeps gets a little noise at every update. What it shows its neighbours is cruder: every shared number is
+  clipped to -1..1 and shown with noise of 1%, drawn afresh every tick. So a shared number can't carry much: no
+  encoding can squeeze information below the noise or spread it over orders of magnitude. Every cell is born from one
+  birth vector, identical bar declared noise.
 - **The body touches the brain only at cells, by the names they gave themselves:** `cells()`, `give()`, `get()`,
   `take()`. Only the cells named R and B get sensory input (and the taste); only A and V are read. Watching uses
   `view()`; the experimenter's `damage()` replaces cells with new-born ones. `test_rules.py` checks every rule's
   imports, signature and birth, and that no body code reaches inside.
-- Numba-compiled: about a million cell-updates a second on one core for the whole brain (about 375 ticks a second at
+- Numba-compiled: about 330,000 cell-updates a second on one core for the whole brain (about 150 ticks a second at
   49 × 49).
 
-## Averages are enough
+## What a cell can read from averages
 
-- **Any and all.** A cell that shares a 0/1 flag tells its neighbours "any of you" (mean > 0) or "all" (mean = 1).
-- **The smallest.** A cell that shares exp(-5 d) (the engine does this for a shared `("d", 5)`) lets its neighbours
-  find the smallest d among them from the mean, to within log 8 / 5 < 1/2: rounded, it is exact. So cells can count
-  steps and elect.
-- **Which way.** In a settled distance field (each cell one more than its neighbours' smallest, a whole number), a
-  neighbour is always one step nearer, level, or one step farther. A cell that shows 1, 9 or 81 by its distance mod 3
-  lets each neighbour count, from the sum, how many of them are each (three base-9 digits). Mod 3 is enough because
-  it only has to tell -1, 0 and +1 apart, at any distance. It does rely on the field having settled: while one is
-  still spreading, a neighbour two steps away would be misread.
-- **Whole numbers.** With noise in every number at every update, a cell can only remember whole numbers, re-rounded at
-  each update. So tags, counts, timers and even the balance (in twentieths) are whole numbers.
+Each shared number is between -1 and 1, with noise of 1%, and a cell sees only its neighbours' mean of it. A
+neighbour moves that mean by at most 2 / (the cell's number of neighbours), so what a cell reads is the sum over its
+neighbours, with noise of about 0.03.
+
+- **Flags.** A number shown as +1 or -1: the sum counts the neighbours showing +1, exactly.
+- **A few levels.** A number shown at a few well-spaced strengths: the sum says how many neighbours show each, as long
+  as every mix that can occur sums to something clearly different (`rules/see.py` chooses the strengths so).
+- **Gradients.** A smooth number many neighbours share: if each cell takes its neighbours' mean, with a few cells
+  held fixed, the sheet settles into a smooth field, and the mean reads it closely. That is how cells learn where
+  they are.
+- **Waves.** An excitable flag (excited for a moment, then resting): a cell that sees an excited neighbour is excited
+  in turn, so a wave runs outwards from wherever it starts, and dies at the edges and where waves meet.
+- **Not the smallest.** A mean can't give the smallest of the neighbours' numbers. An earlier version found it by
+  sharing exp(-5 d), with the noise added to d before the exp, so the tiny number shown was in effect free of noise:
+  a cheat on the noise rule, withdrawn. Distances are now counted mod 5 (below).
+- **Whole numbers.** What a cell keeps to itself is not limited: it keeps counts and timers as whole numbers,
+  re-rounded at each update so its own small noise can't move them.
 
 ## What happens in a life
 
-The rules are layered: `rules/brain.py` runs `rules/wiring.py`, which runs `rules/organs.py`.
+The rules are layered: `rules/brain.py` runs `rules/wiring.py`, which runs `rules/organs.py`; `rules/see.py` holds
+what they share.
 
 1. **Where am I** (`rules/organs.py`).
-   - **Election.** The four corners know they are corners: they have three neighbours. They elect an origin: the
-     smallest random tag wins.
-   - **Handedness.** The origin's two edge neighbours pick a direction round the edge (the one with the smaller of two
-     more random tags goes first).
-   - **Ring counts.** Edge cells count steps round the edge both ways, so each knows its place round the perimeter,
-     and so its side.
-   - **Coordinates.** One side counts rows in, the next columns: every cell gets x and y (with 8 neighbours, steps from
-     a straight edge are exactly the row).
-   - **Organs.** The first side is the tail: the cell in its middle names itself A, and its corner, V. Two cells in the
-     middle of the far side, the head, 6 apart, name themselves R and B. A cell takes a name only once it has held it
-     for 80 updates in a row: at first every corner thinks it won, and the losers' counts take a while to rise away,
-     giving places that drift. So nothing is wired until the organs stand still.
+   - **The race.** The four corners know they are corners: they have three neighbours. Each beats like a pacemaker,
+     sending waves across the sheet, each at its own random pace. A corner reached by another's wave before its own
+     beat stands down for good, so the fastest is left: V. It keeps beating. Each beat carries its number mod 3, and
+     a cell takes only the next beat after the last it took, so no wave can circle back (as damage would otherwise
+     make it).
+   - **Handedness.** V's two edge neighbours toss coins until they differ: the one with heads is on the tail's edge.
+   - **Edge labels.** At each of V's beats those two start a label pulse along their edges: "tail" (y = -1) and
+     "x = -1". Each corner at the far end of an edge starts the opposite label (+1) along its other edge. A label
+     stops at a corner instead of leaking round it, and a cell forgets a label no beat renews, so if the winner
+     changes, the labels follow it.
+   - **Coordinates.** Labelled edges hold x (or y) at their label; every other cell takes the mean of its neighbours'.
+     So x runs straight from -1 to 1 across the sheet, and y too: a gradient, read well from averages. While a cell's
+     place still drifts it carries on part of its last move (momentum), which speeds the settling.
+   - **Organs.** Once its place has stopped drifting, the cell in the middle of the tail's edge names itself A, and
+     two cells either side of the middle of the head's edge (x = -1/8 and +1/8) R and B; the standing corner is V. A
+     name is taken after holding its place for 300 updates, and then kept: a named cell shows that it is named, so
+     no neighbour takes the name too.
 2. **Wiring** (`rules/wiring.py`).
-   - **Signals from the sinks.** Once A and V have named themselves, each sends out a distance field: it shows 0, and
-     every other cell one more than the smallest of its neighbours'. Nothing in the wiring knows where A and V are:
-     the paths follow the fields, so if A or V named itself somewhere else, the paths would grow there.
-   - **Growth.** R and B start a path down each field once their distance has held still for 20 updates. The end of a
-     path (a tip) asks its neighbours one step nearer for offers, each a random whole number; it shows the smallest
-     offer it sees, and that cell joins. So a path grows one cell at a time, downhill, until it reaches A (or V). Paths
-     wander a little, and R's and B's paths to A sometimes join before they reach it. Three refinements, each traced
-     from a fault:
-     - if two cells share the smallest offer, the tip sees it (the mean comes out a little off a whole number) and
-       asks again;
-     - a tip keeps its choice for a few updates, so it can't change its mind while the chosen cell joins, and get two;
-     - a cell that would also touch another path offers a bigger number, so it is chosen only if no other cell offers.
-   - **Fading.** A path cell with no path neighbour one step farther leaves, so a path cut off from its source fades
-     and its source grows a new one.
-   - **Pulses.** A pulse runs down a path, from a cell to its neighbour one step nearer, and A (or V) counts the pulses
-     it takes: the body fires that thruster.
+   - **Signals from the sinks.** Once A and V have named themselves, each sends out a distance field: it shows 0,
+     and every other cell one more than the nearest of its neighbours, counted mod 5 (shown on five flags). A
+     cell's neighbours are one step nearer, level or one step farther, three residues of the five in a row, so the
+     lowest is the one after the gap. Nothing in the wiring knows where A and V are: the paths follow the fields, so if
+     A or V named itself somewhere else, the paths would grow there.
+   - **Path cells** show their residue as a pattern on three flags, at a strength that says if they are a tip or
+     carry a pulse, so every cell knows what path cells are one step nearer, level and one step farther.
+   - **Growth.** R and B start a path down each field once their distance has held still. The end of a path (a tip)
+     shows itself; the cells one step nearer raise hands at random, and the tip says "go" only while it sees exactly
+     one hand; that cell joins. So a path grows one cell at a time, downhill, until it reaches A (or V), and a tip
+     never takes two. A cell that would also give another path a second way on rarely raises its hand.
+   - **Fading.** A path cell with no path cell one step farther leaves, so a path cut off from its source fades and
+     its source grows a new one.
+   - **Pulses.** A pulse runs down a path, from a cell to its neighbour one step nearer, and A (or V) counts the
+     pulses it takes: the body fires that thruster.
 3. **Choosing** (`rules/brain.py`). When a sensor kicks R or B, that cell sends a pulse towards A (forward, at what
    it sees) with chance b, its balance; otherwise towards V (back off and turn). Born b = 0.9, so a new-born creature
    is drawn to anything it sees. R and B also send towards V now and then by themselves: a tumble, so it searches.
 4. **Learning, in R and B only** (`rules/brain.py`).
    - **The trace.** A kicked cell keeps how many updates since its kick.
-   - **News.** Every cell keeps the news of each sensor: how old the freshest kick of R it has heard of is, and of B.
-     A cell's news never gets fresher unless there was a new kick, whatever order the cells update in. So when R's
-     news of B gets fresher than R's own kick, B has been kicked since, and R forgets its own kick (and likewise B).
-     Of R and B, only the more recently kicked keeps a trace.
+   - **News.** A kick also starts a wave of news across the sheet. A sensor that sees news around it after its own
+     has gone by knows the other was kicked since, and forgets its own kick. Of R and B, only the more recently
+     kicked keeps a trace.
    - **A meal** kicks the eaten colour's cell once (its flavour), and the creature chews with its eyes shut, so the
      news has time to cross.
    - **The taste** (delivered to R and B) then moves b by taste × exp(-trace / 30), towards 0 or 1. So the change
@@ -160,10 +178,11 @@ No stage waits a fixed time: each starts when the one before has produced what i
 
 ## The numbers a cell shares
 
-18, all seen only as averages over the neighbours (the lizard used 16: getting there honestly is the next step):
-- where am I: 6 (the election, handedness, two ring counts, x and y);
-- wiring: 5 for each of the two channels (distance, path, tip, pulse, offer);
-- learning: 2 (news of R, news of B).
+27, each between -1 and 1 and seen only as averages over the neighbours, most of them in effect flags (the lizard
+used 16 continuous numbers):
+- where am I: 8 (the race's wave on two flags, hand, two edge labels, x, y, and the mark that places the organs);
+- wiring: 9 for each of the two channels (five for the distance, three for the path, one for offers);
+- learning: 1 (the news wave).
 
 ## Result
 
@@ -172,33 +191,35 @@ red as poison and half with blue (`python creature.py --measure 16`).
 
 |  | first third | second | last | balance at the end |
 |---|---|---|---|---|
-| learning on | 35% | 39% | 34% | poison 0.19, food 0.97 |
-| learning off | 43% | 47% | 51% | both 0.90 |
+| learning on | 43% | 39% | 42% | poison 0.20, food 0.84 |
+| learning off | 49% | 48% | 54% | both 0.90 |
 
-Most of the learning happens within the first third: a creature usually eats each colour within its first few
-meals. With learning it also eats less (376 meals against 592), as it backs away from the poison more often.
+The balances move the right way: the poison's falls to 0.2. The behaviour improves less than in the earlier version
+(35%, 39%, 34%, measured with a trick since withdrawn: see LESSONS), and the creature now starts moving later (its
+coordinates take longer to settle), so it has less of its life to learn in. The food's balance also falls a little
+in some lives: the news of a kick doesn't always single out the more recent one. With learning the creature also
+eats less (272 meals against 389), as it backs away from the poison more often.
 
-The balances come out right; the behaviour is at the body's limit. With balances fixed perfect from birth, poison is
-still about a third of meals (37%, 29%, 30%; 16 lives, measured with the previous wiring). Mostly that's because both colours are often in view at once:
-food drives the creature forward into the poison. It also acts on old news: a pulse takes about 55 ticks to cross the
-brain.
+The behaviour is near the body's limit: with balances fixed perfect from birth, poison was still about a third of
+meals (37%, 29%, 30%; 16 lives, measured with an earlier wiring). Mostly that's because both colours are often in
+view at once: food drives the creature forward into the poison. It also acts on old news: a pulse takes about 53
+ticks to cross the brain.
 
 ## Damage
 
-Press `d` in the live view to replace a disc of cells under the mouse with new-born ones, as with the lizard. The new
-cells relearn their coordinates from their neighbours within about 30 ticks (about 200 if the damage took A or V,
-whose new cell must hold its name for 80 updates again); a path cut off from its source fades and regrows down the
-distance fields, and every route carries pulses again within about 500 ticks (a band 7 rows deep across the middle,
-6 lives of 6). Damage R or B and the
-new cell takes the name again, but what the old one had learned is gone. Damage the corner that won the election and
-the frame dies (6 lives of 8): every cell remembers the smallest tag it has heard, so the dead winner's tag lives on
-with no corner to own it, and no corner wins again. Not yet handled.
+Press `d` in the live view to replace a disc of cells under the mouse with new-born ones, as with the lizard. A band 7
+rows deep across the middle (6 lives of 6): the new cells relearn x and y within 90-180 ticks, names are kept (or
+retaken, where the band took one), and paths cut off from their source fade and regrow, so every route carries pulses
+again. Damage the corner V (a disc of radius 4, 6 lives of 6): it takes up beating again and is V once more, at the
+same corner; but if its two coin-tossed neighbours went too, the toss can come out the other way, and R and B swap
+places. Damage R or B and a new cell takes the name, but what the old one had learned is gone.
 
 ## Not yet
 
-- It is tuned for a 49 × 49 sheet only; the rules are meant to work at any size, but haven't been tested beyond it.
-- Election ties (two corners with the same tag, about 2% of lives) would make two origins.
-- Damaging the winning corner kills the frame (above).
+- Odd sizes only, and tested at 49 × 49: on an even sheet the middle of an edge falls between two cells.
+- Learning shows in the balances more than in the behaviour (above), and the food's balance sometimes falls too.
+- The coordinates take about 1,500 ticks to settle (they are averages, and averages spread slowly).
+- 27 shared numbers, against the lizard's 16 (but nearly all are flags, -1 or +1).
 - The starvation trap: a creature that learns to avoid everything stops eating.
 
 ## Files
@@ -207,9 +228,10 @@ with no corner to own it, and no corner wins again. Not yet handled.
 |---|---|
 | `creature.py` | the body, the world, the live view and the measurement |
 | `sheet.py` | the engine: the only code that knows the grid |
-| `rules/organs.py` | where am I: election, handedness, ring counts, coordinates, names |
+| `rules/organs.py` | where am I: the race, handedness, edge labels, coordinates, names |
 | `rules/wiring.py` | growing paths and running pulses, built on `rules/organs.py` |
 | `rules/brain.py` | choosing and learning, built on `rules/wiring.py` |
+| `rules/see.py` | what cells read from averages, and the distance field and path signs the rules share |
 | `test_rules.py` | checks every rule and every body file keep the rules |
 | `watch.py`, `organs_test.py`, `wiring_test.py` | each stage on its own, live or measured |
 | `LESSONS.md` | how it got here: what was tried, what failed and why |
