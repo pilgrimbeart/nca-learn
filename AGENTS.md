@@ -3,6 +3,10 @@
 When changing the code, prefer a rip-up-and-rewrite to a cleaner, smaller design over incremental edits that keep
 legacy structure. Work directly on `main`. Commit and push only when the user says "Push".
 
+Before pushing, run the CI steps (`.github/workflows/test.yml`) in a fresh venv built from `requirements.txt` alone:
+another environment may have extra packages that hide a missing dependency (numba's `@` needs scipy, which isn't
+required, so a push once failed). After pushing, check the run passed (`gh run list`, `gh run view --log-failed`).
+
 The user is colour-blind: views in greys, no cue by colour alone.
 
 ## The rules (see the README)

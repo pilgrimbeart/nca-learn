@@ -123,10 +123,12 @@ INVERSES = _inverses()
 def path_near(mean, m, count, r):
     """What path cells my neighbours one step nearer, level and one step farther show, in units (sums of PATH, PULSE
     and TIP), from the sums of the three path flags at m. r: my residue."""
-    u = np.empty(3)
+    inv, out = INVERSES[int(r)], np.zeros(3)
     for j in range(3):
-        u[j] = count * mean[m + j] + count
-    return INVERSES[int(r)] @ u
+        u = count * mean[m + j] + count
+        for i in range(3):
+            out[i] += inv[i, j] * u                         # by hand: numba's @ needs scipy
+    return out
 
 
 @njit
