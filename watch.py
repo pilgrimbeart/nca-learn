@@ -1,7 +1,7 @@
 """Watch a rule run, live, in greys: python watch.py RULE [--size N] [--seed N] [--show VAR ...]
 
-Each shown number is drawn as a grey level (its smallest value black, its largest white; FAR as black), side by side.
-Named cells (a number called "name", if the rule has one) are lettered R, B, A, V. Keys: r new seed, space pause,
+Each shown number is drawn as a grey level (its smallest value black, its largest white), side by side.
+Named cells (a number called "name", if the rule has one) are labelled S1, S2, M1, M2. Keys: r new seed, space pause,
 up/down speed, Escape quit.
 """
 
@@ -15,7 +15,7 @@ import numpy as np
 
 import sheet
 
-LETTERS = {1: "R", 2: "B", 3: "A", 4: "V"}
+LETTERS = {1: "S1", 2: "S2", 3: "M1", 4: "M2"}
 
 
 def watch(rule_name: str, n: int, seed: int, show: list) -> None:
@@ -52,9 +52,8 @@ def watch(rule_name: str, n: int, seed: int, show: list) -> None:
         screen.fill((0, 0, 0))
         for i, var in enumerate(show):
             v = s.view(var)
-            known = v < 1e8
-            lo, hi = (v[known].min(), v[known].max()) if known.any() else (0.0, 1.0)
-            grey = np.where(known, (v - lo) / max(hi - lo, 1e-9), 0.0)
+            lo, hi = v.min(), v.max()
+            grey = (v - lo) / max(hi - lo, 1e-9)
             img = (255 * grey).astype(np.uint8).T.repeat(scale, 0).repeat(scale, 1)
             left = i * (side + 10)
             screen.blit(pygame.surfarray.make_surface(np.stack([img] * 3, axis=-1)), (left, 0))

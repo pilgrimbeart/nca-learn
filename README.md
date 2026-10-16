@@ -12,10 +12,17 @@ system: cells work out where they are, differentiate, wire sensors to thrusters,
 that learns, within its own lifetime, which of two colours is food.
 
 ![A life: the brain (left) builds a coordinate frame, names its organs and grows its wiring, then the creature
-(right) learns to avoid the poison](media/life.gif)
+(right) learns which colour is food](media/life.gif)
 
 Nothing in the cells is told which colour is poison, where it is in the sheet, or how big the sheet is. No clock, no
 global signal, no lockstep: cells update at random, with noise in every number.
+
+Nor does any cell know what the organs are for. The brain grows two sensors and two actuators, the two of each kind
+alike in everything but name, and wires each sensor to both actuators. Only the body knows that one sensor sees red
+and the other blue, and that the actuators drive thrusters at the left and right corners of its tail, and it draws
+that wiring at random each life. The rule a cell runs is unchanged if the two sensors, or the two actuators, are
+swapped. What a sensor learns is only whether to fire both thrusters at what it senses (the creature drives straight
+at it) or one (it veers): approaching and avoiding are behaviour, not concepts in the cells.
 
 ## Quick start
 
@@ -39,7 +46,7 @@ In the live view:
 
 | key | |
 |---|---|
-| `r` | a new life (a new seed; poison alternates red and blue) |
+| `r` | a new life (a new seed, a new wiring; poison alternates red and blue) |
 | `d` | damage the brain: replace a disc of cells under the mouse with new-born ones |
 | space | pause |
 | up / down | faster / slower (takes over from the automatic speed; `r` hands it back) |
@@ -50,30 +57,33 @@ In the live view:
 - **Left, the brain** (49 × 49 cells), in greys:
   - a faint **checkerboard**: the coordinates each cell has worked out for itself (x and y, each running from -1 to
     1 across the sheet), in squares of about 4 cells;
-  - its organs, lettered: **R** and **B** (the red and blue sensors, with each one's balance, its learned chance
-    of approaching what it sees), **A** (the middle of the tail edge: forward thrust) and **V** (the tail's corner: back off and
-    turn);
-  - **paths**: light grey from R and B to A, mid grey to V; **pulses** running down them, white;
-  - a **red glow** (also brighter): a wave of news of a kick to R or B, spreading across the sheet.
+  - its organs, labelled with the names they gave themselves, **S1** and **S2** (the sensors, on one edge) and
+    **M1** and **M2** (the actuators, on the opposite edge), and then with what the body wired them to this life:
+    **red** or **blue** (the sensor that sees that colour, with its chance of firing both thrusters, which it has
+    learned) and **left** or **right** (the thruster it drives);
+  - **paths**: light grey from the sensors to M1, mid grey to M2; **pulses** running down them, white.
 - **Right, the world:** red blocks (dark, lettered R) and blue blocks (light, lettered B), and the creature, a
-  square with its head marked. A ring at the tail or the side shows a thruster firing. "yuck!" is a poison meal.
+  square with its head marked, and what its eyes see: a pale beam ahead, the corridor its mouth will sweep, fading
+  with distance, each of its rays stopping at the first block it meets (so a near block casts a shadow). A ring at a
+  corner of the tail shows that thruster firing. "yuck!" is a poison meal.
 - **Below:** the tick, the stage of life, which colour is poison this life, and the recent meals.
 
 The view runs at 10 ticks a frame, but slows to 1 while the paths grow and until a little after the creature starts
 moving, so the pulses can be seen running down them. A life goes: "where am I" (to about tick 1,700), "wiring", then
-"moving and learning". Within a few thousand ticks the poison sensor's balance falls towards 0
-and the creature mostly backs away from poison.
+"moving and learning". Within a few thousand ticks the poison sensor's chance of firing both falls towards 0, and the
+food sensor's rises towards 1.
 
 ## Other commands
 
 ```bash
 python creature.py --seed 3         # a particular life
-python creature.py --measure 16     # 16 lives with learning, 16 without, headless: how much poison it eats
+python creature.py --measure 16     # 16 lives with learning, 16 without, headless: how soon it learns, what it eats
 python test_rules.py                # check every rule keeps the rules below
 python watch.py organs              # one stage on its own (organs, wiring; --show picks the numbers drawn)
 python organs_test.py               # when the coordinates and names come right, life by life
-python wiring_test.py               # pulses sent from R and B: how many arrive, and how soon
-python creature.py --record frames  # save a life's frames as PNGs, headless (media/life.gif is --seed 1 --ticks 4000)
+python wiring_test.py               # pulses sent from S1 and S2: how many arrive, and how soon
+python creature.py --record frames  # save a life's frames as PNGs, headless (media/life.gif: --seed 1 --ticks 5000,
+                                    # 180 frames taken evenly by tick)
 ```
 
 ## The rules can't be broken by accident
@@ -92,7 +102,7 @@ python creature.py --record frames  # save a life's frames as PNGs, headless (me
   encoding can squeeze information below the noise or spread it over orders of magnitude. Every cell is born from one
   birth vector, identical bar declared noise.
 - **The body touches the brain only at cells, by the names they gave themselves:** `cells()`, `give()`, `get()`,
-  `take()`. Only the cells named R and B get sensory input (and the taste); only A and V are read. Watching uses
+  `take()`. Only the cells named S1 and S2 get input (a stimulus, and the reward); only M1 and M2 are read. Watching uses
   `view()`; the experimenter's `damage()` replaces cells with new-born ones. `test_rules.py` checks every rule's
   imports, signature and birth, and that no body code reaches inside.
 - Numba-compiled: about 330,000 cell-updates a second on one core for the whole brain (about 150 ticks a second at
@@ -126,101 +136,98 @@ what they share.
 1. **Where am I** (`rules/organs.py`).
    - **The race.** The four corners know they are corners: they have three neighbours. Each beats like a pacemaker,
      sending waves across the sheet, each at its own random pace. A corner reached by another's wave before its own
-     beat stands down for good, so the fastest is left: V. It keeps beating. Each beat carries its number mod 3, and
-     a cell takes only the next beat after the last it took, so no wave can circle back (as damage would otherwise
-     make it).
-   - **Handedness.** V's two edge neighbours toss coins until they differ: the one with heads is on the tail's edge.
-   - **Edge labels.** At each of V's beats those two start a label pulse along their edges: "tail" (y = -1) and
+     beat stands down for good, so the fastest is left: the organiser. It keeps beating. It organises the sheet's
+     coordinates, and is not an organ. Each beat carries its number mod 3, and a cell takes only the next beat after
+     the last it took, so no wave can circle back (as damage would otherwise make it).
+   - **Handedness.** The organiser's two edge neighbours toss coins until they differ: the one with heads is on the
+     edge that will be y = -1.
+   - **Edge labels.** At each of the organiser's beats those two start a label pulse along their edges: "y = -1" and
      "x = -1". Each corner at the far end of an edge starts the opposite label (+1) along its other edge. A label
-     stops at a corner instead of leaking round it, and a cell forgets a label no beat renews, so if the winner
-     changes, the labels follow it.
+     stops at a corner instead of leaking round it, and a cell forgets a label after six of the organiser's beats
+     with no pulse to renew it, so if the winner changes, the labels follow it. (Not three: a cell that misses one
+     beat refuses the next two as out of turn.)
    - **Coordinates.** Labelled edges hold x (or y) at their label; every other cell takes the mean of its neighbours'.
      So x runs straight from -1 to 1 across the sheet, and y too: a gradient, read well from averages. While a cell's
      place still drifts it carries on part of its last move (momentum), which speeds the settling.
-   - **Organs.** Once its place has stopped drifting, the cell in the middle of the tail's edge names itself A, and
-     two cells either side of the middle of the head's edge (x = -1/8 and +1/8) R and B; the standing corner is V. A
-     name is taken after holding its place for 300 updates, and then kept: a named cell shows that it is named, so
-     no neighbour takes the name too.
+   - **Organs.** Once its place has stopped drifting, a cell either side of the middle of the y = 1 edge (x = -1/8
+     and +1/8) names itself a sensor, S1 or S2, and likewise on the y = -1 edge an actuator, M1 or M2: 1 on the
+     x < 0 side. Both of a kind are placed by one rule. A name is taken after holding its place for 300 updates, and
+     then kept: a named cell shows that it is named, so no neighbour takes the name too.
 2. **Wiring** (`rules/wiring.py`).
-   - **Signals from the sinks.** Once A and V have named themselves, each sends out a distance field: it shows 0,
+   - **Signals from the sinks.** Once M1 and M2 have named themselves, each sends out a distance field: it shows 0,
      and every other cell one more than the nearest of its neighbours, counted mod 5 (shown on five flags). A
      cell's neighbours are one step nearer, level or one step farther, three residues of the five in a row, so the
-     lowest is the one after the gap. Nothing in the wiring knows where A and V are: the paths follow the fields, so if
-     A or V named itself somewhere else, the paths would grow there.
+     lowest is the one after the gap. Nothing in the wiring knows where M1 and M2 are: the paths follow the fields, so
+     if one named itself somewhere else, the paths would grow there.
    - **Path cells** show their residue as a pattern on three flags, at a strength that says if they are a tip or
      carry a pulse, so every cell knows what path cells are one step nearer, level and one step farther.
-   - **Growth.** R and B start a path down each field once their distance has held still. The end of a path (a tip)
+   - **Growth.** Each sensor starts a path down each field once its distance has held still. The end of a path (a tip)
      shows itself; the cells one step nearer raise hands at random, and the tip says "go" only while it sees exactly
-     one hand; that cell joins. So a path grows one cell at a time, downhill, until it reaches A (or V), and a tip
+     one hand; that cell joins. So a path grows one cell at a time, downhill, until it reaches its actuator, and a tip
      never takes two. A cell that would also give another path a second way on rarely raises its hand.
    - **Fading.** A path cell with no path cell one step farther leaves, so a path cut off from its source fades and
      its source grows a new one.
-   - **Pulses.** A pulse runs down a path, from a cell to its neighbour one step nearer, and A (or V) counts the
-     pulses it takes: the body fires that thruster.
-3. **Choosing** (`rules/brain.py`). When a sensor kicks R or B, that cell sends a pulse towards A (forward, at what
-   it sees) with chance b, its balance; otherwise towards V (back off and turn). Born b = 0.9, so a new-born creature
-   is drawn to anything it sees. R and B also send towards V now and then by themselves: a tumble, so it searches.
-4. **Learning, in R and B only** (`rules/brain.py`).
-   - **The trace.** A kicked cell keeps how many updates since its kick.
-   - **News.** A kick also starts a wave of news across the sheet. A sensor that sees news around it after its own
-     has gone by knows the other was kicked since, and forgets its own kick. Of R and B, only the more recently
-     kicked keeps a trace.
-   - **A meal** kicks the eaten colour's cell once (its flavour), and the creature chews with its eyes shut, so the
-     news has time to cross.
-   - **The taste** (delivered to R and B) then moves b by taste × exp(-trace / 30), towards 0 or 1. So the change
-     needs a recent input (the trace, sharpened by the news) and the taste; it doesn't depend on which way the cell
-     sent its pulse. Strictly that is two factors, a stimulus trace and a reward, not the three of a three-factor rule
-     (pre, post, reward): the creature learns what each colour is worth, and its choices follow from that. A bad taste
-     also makes R and B send towards V for a while: the creature recoils.
-   - All other cells only build and carry: frame, paths, pulses, news.
+   - **Pulses.** A pulse runs down a path, from a cell to its neighbour one step nearer, and the actuator counts
+     the pulses it takes: the body fires the thruster it wired to that actuator.
+3. **Choosing** (`rules/brain.py`). A sensor fires when the body stimulates it (its colour is in view), and now and
+   then by itself. Each time, it sends a pulse to both actuators with chance p, otherwise to one: always the same one,
+   its side, chosen by a coin toss. Both thrusters fire forward, one from each corner of the tail: both together drive
+   the creature straight ahead, one alone makes it veer. Born p = 1/2.
+4. **Learning, in the sensors only** (`rules/brain.py`). When a block touches the mouth it is eaten, and its colour's
+   sensor gets the reward at once: +1 for food, -1 for poison. The reward moves p half the way towards 1 or 0. Two
+   factors, the sensor's own input and the reward: a sensor learns how hard to drive at what it senses. All other
+   cells only build and carry: frame, paths, pulses.
 
 No stage waits a fixed time: each starts when the one before has produced what it needs.
 
 ## The numbers a cell shares
 
-27, each between -1 and 1 and seen only as averages over the neighbours, most of them in effect flags (the lizard
-used 16 continuous numbers):
+26, each between -1 and 1 and seen only as averages over the neighbours, most of them in effect flags. The lizard
+used 16, but not like for like: its cells saw each one through Sobel filters, which weight neighbours by where they
+are, so they saw direction for free, in full-precision numbers with no noise on what neighbours show. Ours see no
+direction at all, only means, so they build it from signals: the coordinates and the distance fields are most of the
+26.
 - where am I: 8 (the race's wave on two flags, hand, two edge labels, x, y, and the mark that places the organs);
 - wiring: 9 for each of the two channels (five for the distance, three for the path, one for offers);
-- learning: 1 (the news wave).
+- learning: none (everything a sensor learns from is delivered to it by the body).
 
 ## Result
 
-Poison's share of meals in each third of life after the creature starts moving: 32 lives of 8,000 ticks, half with
-red as poison and half with blue (`python creature.py --measure 16`).
+Two scores, both per unit of time: how soon the sensors learn (set by the rules), and how much more food than poison
+the creature then eats (set by the sheet's behaviour and the body). 16 lives of 8,000 ticks with learning and 16
+without, half with red as poison and half blue, each with its own random wiring (`python creature.py --measure 16`).
+"Learned": both sensors' chance of firing both thrusters within 0.2 of right (poison's at most 0.2, food's at least
+0.8), counted from when the creature starts moving.
 
-|  | first third | second | last | balance at the end |
+|  | learned | food minus poison per 1,000 ticks, by third of life after moving | poison's share of meals | firing both at the end |
 |---|---|---|---|---|
-| learning on | 43% | 39% | 42% | poison 0.20, food 0.84 |
-| learning off | 49% | 48% | 54% | both 0.90 |
+| learning on | 16 of 16 lives, median 997 ticks | -0.20, +2.15, +0.48 | 52%, 38%, 47% | poison's sensor 0.00, food's 1.00 |
+| learning off | none | 0, 0, 0 | 50% | both 0.50 |
 
-The balances move the right way: the poison's falls to 0.2. The behaviour improves less than in the earlier version
-(35%, 39%, 34%, measured with a trick since withdrawn: see LESSONS), and the creature now starts moving later (its
-coordinates take longer to settle), so it has less of its life to learn in. The food's balance also falls a little
-in some lives: the news of a kick doesn't always single out the more recent one. With learning the creature also
-eats less (272 meals against 389), as it backs away from the poison more often.
-
-The behaviour is near the body's limit: with balances fixed perfect from birth, poison was still about a third of
-meals (37%, 29%, 30%; 16 lives, measured with an earlier wiring). Mostly that's because both colours are often in
-view at once: food drives the creature forward into the poison. It also acts on old news: a pulse takes about 53
-ticks to cross the brain.
+The sensors learn fast and fully. What the creature eats improves much less, and that is the body's limit, not the
+learning's: with p set perfect from birth by hand, poison was still 48%, 42% and 47% of meals. Every poison meal was
+seen clearly before it was eaten; but the creature charges straight at the food it sees, its eyes can't tell left
+from right, so it can't steer round poison in the strip ahead, and a pulse takes about 53 ticks to cross the brain.
+Once learned, the thirds differ by noise (16 lives are few).
 
 ## Damage
 
 Press `d` in the live view to replace a disc of cells under the mouse with new-born ones, as with the lizard. A band 7
 rows deep across the middle (6 lives of 6): the new cells relearn x and y within 90-180 ticks, names are kept (or
 retaken, where the band took one), and paths cut off from their source fade and regrow, so every route carries pulses
-again. Damage the corner V (a disc of radius 4, 6 lives of 6): it takes up beating again and is V once more, at the
-same corner; but if its two coin-tossed neighbours went too, the toss can come out the other way, and R and B swap
-places. Damage R or B and a new cell takes the name, but what the old one had learned is gone.
+again (measured with an earlier version of the organs). Damage the organiser's corner (a disc of radius 4, 6 lives
+of 6): it takes up beating again, at the same corner; but if its two coin-tossed neighbours went too, the toss can come
+out the other way, and the sensors swap names, so each now gets the other colour and what each learned is about the
+wrong one. Damage a sensor and a new cell takes the name, but what the old one had learned is gone.
 
 ## Not yet
 
 - Odd sizes only, and tested at 49 × 49: on an even sheet the middle of an edge falls between two cells.
-- Learning shows in the balances more than in the behaviour (above), and the food's balance sometimes falls too.
+- Learning shows in the sensors far more than in the behaviour (above): the body caps it.
 - The coordinates take about 1,500 ticks to settle (they are averages, and averages spread slowly).
-- 27 shared numbers, against the lizard's 16 (but nearly all are flags, -1 or +1).
-- The starvation trap: a creature that learns to avoid everything stops eating.
+- 26 shared numbers: fewer would be better, though the lizard's 16 also carried direction, which ours must build.
+- Every life starts from scratch: the brain builds itself again (about 2,500 ticks before the creature moves), and
+  the sensors learn again.
 
 ## Files
 

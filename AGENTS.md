@@ -21,7 +21,7 @@ The user is colour-blind: views in greys, no cue by colour alone.
   neighbours' smallest d: a cheat, withdrawn. What a cell keeps to itself is not limited, though simplicity is wanted.
 - No magic knowledge: everything a cell knows comes from its neighbours' signals. A path finds its target by a
   signal the target cell itself sends out, never by where the rule says the target should be.
-- Keep the shared numbers few (27 now, nearly all flags; the lizard used 16) and count them in the README when
+- Keep the shared numbers few (26 now, nearly all flags; the lizard used 16) and count them in the README when
   they change.
 - Never change the task's ground rules (what an organ is, what connects to what) without asking the user first and
   saying so plainly.

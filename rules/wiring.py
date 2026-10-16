@@ -1,23 +1,22 @@
-"""Wiring, from averages only: once A and V have named themselves, each sends out a distance field; paths grow from R
-and B down each field to its sink (channel 0 to A, channel 1 to V), and pulses run down them. Built on organs (its
-numbers come first). Neighbours see only means, of numbers from -1 to 1, with noise.
+"""Wiring, from averages only: once the actuators have named themselves, each sends out a distance field; paths grow
+from each sensor down each field to its sink (channel 1 to M1, channel 2 to M2), and pulses run down them. The two
+channels run the same code. Built on organs (its numbers come first). Neighbours see only means, of numbers from -1
+to 1, with noise.
 
   Distance. A sink is the source of a field (see.py): distance in steps, mod 5. Nothing in the rule says where the
-  sinks are: the field starts wherever a cell named itself A or V, and fades if it goes.
+  sinks are: the field starts wherever a cell named itself M1 or M2, and fades if it goes.
   Path cells show their residue as a pattern on three flags, at a strength that says if they are a tip or carry a
   pulse: so each cell knows what path cells are one step nearer, level and one step farther (see.py).
-  Growth. R and B are on the path once their distance has held still for STILL updates. A path cell with no path
-  cell one step nearer is a tip. The cells one step nearer than a tip (they see a tip one step farther) are
-  candidates: each raises a hand (a small step on the
-  offer flag) or not, at random, now and then; one with another path cell above it as well only rarely (joining
-  would give that path a second way on, splitting its pulses), so it is chosen only if no other cell offers. The tip shows "go" while it sees exactly one hand (twice
-  in a row to start, LEASE updates at most); a candidate whose hand is up and has seen "go" three reads in a row
-  joins. So a path grows one cell at a time, downhill, and a tip
-  can't take two (that would split its pulses). A path cell with no path cell one step farther (it lost its way back
-  to a source) leaves; so do cut-off paths, and their sources grow new ones.
+  Growth. A sensor is on the path once its distance has held still for STILL updates. A path cell with no path cell
+  one step nearer is a tip. The cells one step nearer than a tip (they see a tip one step farther) are candidates:
+  each raises a hand (a small step on the offer flag) or not, at random, now and then; one with another path cell
+  above it as well only rarely (joining would give that path a second way on, splitting its pulses), so it is chosen
+  only if no other cell offers. The tip shows "go" while it sees exactly one hand (twice in a row to start, LEASE
+  updates at most); a candidate whose hand is up and has seen "go" three reads in a row joins. So a path grows one
+  cell at a time, downhill, and a tip can't take two (that would split its pulses). A path cell with no path cell one
+  step farther (it lost its way back to a source) leaves; so do cut-off paths, and their sources grow new ones.
   Pulses. A path cell takes a pulse when a path cell one step farther shows one, carries it ON updates, then rests
-  REST more: pulses run only towards the sink. A sink counts the pulses it takes (an output: the body fires that
-  thruster).
+  REST more: pulses run only towards the sink. A sink counts the pulses it takes (an output the body takes).
 """
 
 import numpy as np
@@ -35,19 +34,19 @@ ON, REST = 6, 7     # updates a pulse is carried, then rested
 
 FIELD = ("r", "pend", "times", "rest") + tuple(f"f{k}" for k in range(see.K))     # see.field's layout
 CH = FIELD + ("p0", "p1", "p2", "offer", "on", "timer", "hand", "lease", "ones", "gos", "held", "gone", "fired")
-VARS = organs.VARS + tuple(f"{v}_{c}" for c in "av" for v in CH)
-SHARED = organs.SHARED + tuple(f"{v}_{c}" for c in "av" for v in tuple(f"f{k}" for k in range(see.K)) +
+VARS = organs.VARS + tuple(f"{v}_{c}" for c in "12" for v in CH)
+SHARED = organs.SHARED + tuple(f"{v}_{c}" for c in "12" for v in tuple(f"f{k}" for k in range(see.K)) +
                                ("p0", "p1", "p2", "offer"))
-INPUTS = ("send_a", "send_v")
-OUTPUTS = ("fired_a", "fired_v")
+INPUTS = ("send_1", "send_2")
+OUTPUTS = ("fired_1", "fired_2")
 BIRTH = {**organs.BIRTH, **{f"{v}_{c}": (-1.0 if v in FIELD[:2] + FIELD[4:] + ("p0", "p1", "p2", "offer") else 0.0)
-                            for c in "av" for v in CH}}
+                            for c in "12" for v in CH}}
 BIRTH_NOISE = organs.BIRTH_NOISE
 BASE, M_BASE = len(organs.VARS), len(organs.SHARED)
 NV, NS = len(CH), see.K + 4                             # numbers per channel, shared numbers per channel
 P0 = len(FIELD)                                         # the three path flags, then:
 OFFER, ONV, TIMER, HANDV, LEASEV, ONES, GOS, HELD, GONE, FIRED = range(P0 + 3, NV)
-SOURCES, SINKS = (organs.R, organs.B), (organs.A, organs.V)
+SOURCES, SINKS = (organs.S1, organs.S2), (organs.M1, organs.M2)
 
 
 @njit
