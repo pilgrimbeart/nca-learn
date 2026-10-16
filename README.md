@@ -82,7 +82,8 @@ python test_rules.py                # check every rule keeps the rules below
 python watch.py organs              # one stage on its own (organs, wiring; --show picks the numbers drawn)
 python organs_test.py               # when the coordinates and names come right, life by life
 python wiring_test.py               # pulses sent from S1 and S2: how many arrive, and how soon
-python creature.py --record frames  # save a life's frames as PNGs, headless (media/life.gif: --seed 1 --ticks 5000,
+python diagram.py                   # redraw media/cell.svg, what runs inside one cell
+python creature.py --record frames  # save a life's frames as PNGs, headless (media/life.gif: --seed 0 --ticks 8000,
                                     # 180 frames taken evenly by tick)
 ```
 
@@ -229,6 +230,14 @@ wrong one. Damage a sensor and a new cell takes the name, but what the old one h
 - Every life starts from scratch: the brain builds itself again (about 2,500 ticks before the creature moves), and
   the sensors learn again.
 
+## Inside one cell
+
+Everything a cell does, as a block diagram: the rule's three layers and their stages, with what each reads from its
+neighbours' means and the body on the left, and what it shows its neighbours and gives the body on the right.
+
+![What runs inside one cell: organs (the race, handedness, edge labels, coordinates, naming), the brain (choose
+and learn, in sensors only) and the wiring for each of the two channels](media/cell.svg)
+
 ## Files
 
 | | |
@@ -241,6 +250,7 @@ wrong one. Damage a sensor and a new cell takes the name, but what the old one h
 | `rules/see.py` | what cells read from averages, and the distance field and path signs the rules share |
 | `test_rules.py` | checks every rule and every body file keep the rules |
 | `watch.py`, `organs_test.py`, `wiring_test.py` | each stage on its own, live or measured |
+| `diagram.py` | draws `media/cell.svg`, the diagram above (by hand from the rules: redraw it when one changes) |
 | `LESSONS.md` | how it got here: what was tried, what failed and why |
 
 ## Licence
