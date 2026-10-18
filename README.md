@@ -269,6 +269,15 @@ hush each other. Over 64 lives of 10,000 ticks it ate 4.3 food for each poison, 
 p set perfect by hand; it nets about twice as much food as the grown brain. The comparison says what the sheet costs:
 building takes time, and a big brain is slow.
 
+## Next: mixed feedback, simplicity and recruitment
+
+The mixed-signal brain does the job with a handful of neurons where the sheet uses thousands of cells, so the next
+step explores brains built from mixed-feedback parts: evolved in graph form with a strong preference for simplicity,
+and then, from a local perspective only, recruiting more parts in a life when the task needs them.
+`MIXED_FEEDBACK.md` summarises the mixed-feedback approach (Sepulchre and colleagues), what is new in it and what it
+suggests here; `RECRUITMENT.md` gathers how brains might recruit more computational power with no god, and the
+phased plan.
+
 ## Damage
 
 Press `d` in the live view to replace a disc of cells under the mouse with new-born ones, as with the lizard. A band 7
@@ -320,6 +329,7 @@ taste, ping and learn, in sensors and T cells) and the wiring for each of the tw
 | `schematic.py` | draws `media/mixed_signal.svg` and `.png`, the mixed-signal brain as a circuit (by hand: redraw it when the brain changes) |
 | `LESSONS.md` | how it got here: what was tried, what failed and why |
 | `MIXED_FEEDBACK.md` | the mixed-feedback approach (Sepulchre and colleagues): what is new in it, the literature, and what it suggests here |
+| `RECRUITMENT.md` | how a brain might recruit more computational power locally, with no god: the literature, insights and plan |
 
 ## Licence
 
