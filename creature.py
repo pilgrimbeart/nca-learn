@@ -1,194 +1,92 @@
-"""A new-born creature whose brain builds itself, then learns which colour is food. The body, the world and the views;
-everything the brain's cells are and do is in rules/brain.py (on rules/wiring.py, on rules/organs.py), run by sheet.py,
-where each cell sees only its own numbers and the mean of each shared number over its neighbours.
+"""A new-born creature that learns which colour is food: a body in a world (world.py), and a brain (brains/). Life
+joins them; measure compares brains on the same lives; watch shows a life.
 
-    python creature.py                  # watch a life (r: new life, d: damage the brain at the mouse, space: pause,
+    python creature.py                  # watch a life with the grown brain (r: new life, d: damage the brain at the
+                                        # mouse, b: the other brain, s: its schematic (mixed signal), space: pause,
                                         # up/down: speed, Esc: quit)
-    python creature.py --measure 16     # 16 lives with learning and 16 without: how soon it learns, what it eats
+    python creature.py --measure 16     # 16 lives with learning and 16 without, for each brain: how soon it learns,
+                                        # what it eats
     python test_rules.py                # every rule keeps the golden rules
     python creature.py --record frames  # save a life's frames, headless, as PNGs (for a GIF)
 
-The brain names two sensors (S1, S2) and two actuators (M1, M2), alike in all but name; nothing in a cell knows what
-they are for. The body gives them their meaning, by a wiring it draws at random each life: one sensor sees red, the
-other blue; one actuator's pulses fire the thruster at the tail's left corner, the other's the one at its right. It
-touches the brain only at cells by the names they took, cell by cell: it stimulates a sensor when its colour is seen,
-gives that sensor the reward when a block of its colour touches the mouth, and fires a thruster for each pulse
-arriving at its actuator. Nothing else goes in or out, and the body keeps nothing of the brain's.
+A brain has two sensors and two motors, numbered 0 and 1, alike in all but number; it doesn't know what they are for.
+The body gives them their meaning, by a wiring it draws at random each life: one sensor sees red, the other blue; one
+motor fires the thruster at the tail's left corner, the other the one at its right. It stimulates a sensor when its
+colour is seen, and fires a thruster for each time its motor fires. Its one other input is taste: a pulse, +1 for food
+and -1 for poison, as soon as a block touches the mouth (otherwise nothing). Taste doesn't say which sensor saw the
+block: the brain must work out what earned it. Nothing else goes in or out.
 
-The body: a square. Both thrusters push it forward; one alone also turns it, away from its own side, so the creature
-veers; both at once drive it straight ahead. Its eyes at the head look along parallel rays across the corridor its
-mouth will sweep, up to RANGE; each ray stops at the first block it meets, so a near block hides what is behind it. A
-block counts less the farther off it is, and each eye sees only its own colour. A block the head moves into is
-eaten, and its colour's sensor gets the reward at once: +1, or -1 if it was poison. The world: a torus
-of red and blue blocks; an eaten block reappears elsewhere.
+Brains: "grown" (brains/grown.py), a sheet of identical cells that builds itself, then learns; "mixed-signal"
+(brains/mixed_signal.py), a small designed circuit of excitable neurons.
 """
 
 from __future__ import annotations
 
 import argparse
-import math
 import time
 
 import numpy as np
 
-import sheet
-from rules import brain, wiring
+from brains.grown import GrownBrain
+from brains.mixed_signal import MixedSignalBrain
+from world import COLOURS, SENSE, THRUSTERS, WORLD, Body
 
-SIZE = 49           # the brain: SIZE x SIZE cells
-UPDATE = 0.9        # the chance a brain cell updates in a tick (never all at once)
-BODY = 4.0          # the body's side, in world units
-WORLD = 60.0        # the world's side (a torus)
-BLOCKS = 18         # blocks of each colour
-EAT = 1.0           # a block this near the front edge (the mouth: the whole head end) is eaten
-SENSE = 0.21        # stimuli per tick to a sensor that sees its colour at full strength
-REACH = 5.0         # a block this far off counts half as much as one at the eyes
-RANGE = 15.0        # how far the eyes see
-RAYS = 25           # the eyes' rays, side by side across the corridor ahead: each stops at the first block it meets
-BLOCK = 1.0         # a block's radius (what it hides behind it)
-PUSH = 0.5          # a thruster firing adds this much forward speed ...
-TURN = 0.08         # ... and this much turning speed, away from its side (radians per tick): both at once go straight
-DRAG = 0.2          # speed and turning fade at this rate
-DAMAGE = 7          # watching: the radius of the disc of cells d replaces with new-born ones
-BAND = 4            # watching: the faint checkerboard's squares, in cells
-FAST, SLOW = 10, 1  # watching: ticks per frame, slow while the paths grow and pulses first run down them
+BRAINS = {"grown": GrownBrain, "mixed-signal": MixedSignalBrain}
+FAST, SLOW = 10, 1  # watching: ticks per frame, slow while the brain wires itself and first drives the body
+SCHEMATIC = "media/mixed_signal.png"    # watching: the mixed-signal brain's circuit (drawn by schematic.py)
 SETTLE = 200        # watching: ticks after the creature starts moving before speeding up again
-COLOURS = ("red", "blue")
-THRUSTERS = ("left", "right")                           # at the tail's two corners, both pushing forward
-NAME = {"S1": 1, "S2": 2, "M1": 3, "M2": 4}             # the names cells give themselves
-
-
-class Body:
-    """Where the creature is and how it moves; the world's blocks."""
-
-    def __init__(self, rng):
-        self.rng = rng
-        self.pos = np.array([WORLD / 2, WORLD / 2])
-        self.heading = rng.uniform(0, 2 * math.pi)
-        self.speed, self.spin = np.zeros(2), 0.0
-        self.blocks = [[*self.somewhere(), c] for c in COLOURS for _ in range(BLOCKS)]
-
-    def somewhere(self):
-        while True:
-            p = self.rng.uniform(0, WORLD, 2)
-            if np.linalg.norm(self.wrap(p - self.pos)) > 3 * EAT + BODY:
-                return p
-
-    @staticmethod
-    def wrap(d):
-        return (d + WORLD / 2) % WORLD - WORLD / 2
-
-    def forward(self):
-        return np.array([math.cos(self.heading), math.sin(self.heading)])
-
-    def head(self):
-        return self.pos + self.forward() * BODY / 2
-
-    def look(self) -> tuple:
-        """The eyes' rays, parallel, across the corridor its mouth will sweep: for each, its offset across, how far it
-        goes (to the first block it meets, or RANGE), and that block's colour (or None)."""
-        f, h = self.forward(), self.head()
-        side, w = np.array([f[1], -f[0]]), BODY / 2 + EAT / 2
-        across = -w + (np.arange(RAYS) + 0.5) * 2 * w / RAYS
-        far, colour = np.full(RAYS, RANGE), [None] * RAYS
-        for x, y, c in self.blocks:
-            d = self.wrap(np.array([x, y]) - h)
-            ahead, off = d @ f, d @ side
-            if ahead <= -BLOCK or ahead - BLOCK >= RANGE or abs(off) >= w + BLOCK:
-                continue
-            gap = BLOCK ** 2 - (across - off) ** 2
-            for k in np.nonzero(gap > 0)[0]:
-                hit = max(0.0, ahead - np.sqrt(gap[k]))
-                if hit < far[k]:
-                    far[k], colour[k] = hit, c
-        return across, far, colour
-
-    def sees(self) -> dict:
-        """How strongly each colour is seen, at most 1: a block wholly in view counts 1 / (1 + (distance / REACH)^2),
-        less if part of it is hidden or out of the corridor."""
-        _, far, colour = self.look()
-        share = (2 * (BODY / 2 + EAT / 2) / RAYS) / (2 * BLOCK)     # one ray's share of a block's width
-        seen = {c: 0.0 for c in COLOURS}
-        for d, c in zip(far, colour):
-            if c is not None:
-                seen[c] += share / (1 + (d / REACH) ** 2)
-        return {c: min(1.0, v) for c, v in seen.items()}
-
-    def fire(self, thruster: str) -> None:
-        self.speed += PUSH * self.forward()
-        self.spin += TURN if thruster == "right" else -TURN    # the left one turns it right, and the right one left
-
-    def move(self) -> list:
-        """Moves on a tick; returns the colours of blocks eaten (each reappears elsewhere)."""
-        self.pos = (self.pos + self.speed) % WORLD
-        self.heading += self.spin
-        self.speed *= math.exp(-DRAG)
-        self.spin *= math.exp(-DRAG)
-        eaten, f = [], self.forward()
-        if self.speed @ f <= 0:                             # it only eats what it moves forward into
-            return eaten
-        for b in self.blocks:
-            d = self.wrap(np.array(b[:2]) - self.pos)
-            if 0 < d @ f < BODY / 2 + EAT and abs(d @ np.array([f[1], -f[0]])) < BODY / 2 + EAT / 2:
-                eaten.append(b[2])
-                b[0], b[1] = self.somewhere()
-        return eaten
+LEARNED = 0.2       # measuring: a sensor has learned once its chance of firing both is this near right
 
 
 class Life:
-    """A brain and a body in a world. step() runs one tick."""
+    """A body and a brain in a world. step() runs one tick."""
 
-    def __init__(self, seed: int = 0, poison: str = "red", learning: bool = True):
-        self.rng = np.random.default_rng(seed)
+    def __init__(self, seed: int = 0, poison: str = "red", learning: bool = True, brain: str = "grown"):
+        self.rng = np.random.default_rng(seed)                  # the world's: the same for every brain
         self.poison, self.learning = poison, learning
-        self.brain = sheet.Sheet(brain, SIZE, seed, update=UPDATE)
+        self.brain = BRAINS[brain](seed)
         self.body = Body(self.rng)
-        s, m = ("S1", "S2")[:: self.rng.choice((1, -1))], ("M1", "M2")[:: self.rng.choice((1, -1))]
-        self.organ = dict(zip(COLOURS + THRUSTERS, s + m))  # the body's wiring: colour -> sensor, thruster -> actuator
+        s, m = (0, 1)[:: self.rng.choice((1, -1))], (0, 1)[:: self.rng.choice((1, -1))]
+        self.sensor = dict(zip(COLOURS, s))                     # the body's wiring: colour -> sensor,
+        self.motor = dict(zip(THRUSTERS, m))                    # thruster -> motor
         self.t = 0
-        self.meals, self.firings = [], []                   # (tick, colour), (tick, "left" or "right")
-        self.yuck = -1e9                                    # when poison was last eaten
-        self.moving = None                                  # when the first pulse reached a thruster
-
-    def named(self, organ: str) -> np.ndarray:
-        """The cells named as this organ (a cell's own name, or what the body wired to a colour or thruster)."""
-        return self.brain.cells("name", NAME[self.organ.get(organ, organ)])
+        self.meals, self.firings = [], []                       # (tick, colour), (tick, "left" or "right")
+        self.yuck = -1e9                                        # when poison was last eaten
+        self.moving = None                                      # when a thruster first fired
 
     def step(self) -> None:
-        for c, seen in self.body.sees().items():            # sensors fire at what they see
+        for c, seen in self.body.sees().items():                # sensors fire at what they see
             if self.rng.random() < SENSE * seen:
-                self.brain.give(self.named(c), "stimulus")
-        self.brain.step(1)
-        fired = [f for f in THRUSTERS
-                 for _ in range(int(self.brain.take(self.named(f), f"fired_{self.organ[f][1]}").sum()))]
+                self.brain.stimulate(self.sensor[c])
+        motors = self.brain.step()
+        fired = [f for f in THRUSTERS for _ in range(motors.count(self.motor[f]))]
         if fired and self.moving is None:
             self.moving = self.t
         for f in fired:
             self.body.fire(f)
             self.firings.append((self.t, f))
-        for c in self.body.move():                          # a meal: its colour's sensor gets the reward
+        taste = 0.0
+        for c in self.body.move():                              # a meal: taste, good or bad
             self.meals.append((self.t, c))
-            if self.learning:
-                self.brain.give(self.named(c), "reward", -1.0 if c == self.poison else 1.0)
+            taste += -1.0 if c == self.poison else 1.0
             if c == self.poison:
                 self.yuck = self.t
+        if self.learning and taste != 0.0:
+            self.brain.taste(min(max(taste, -1.0), 1.0))            # one pulse, however many meals at once
         self.t += 1
 
     def drive(self, colour: str) -> float:
-        """The chance that this colour's sensor fires both thrusters (watching only)."""
-        p = self.brain.get(self.named(colour), "p")
-        return min(max(float(p.mean()) / brain.STEPS, 0.0), 1.0) if p.size else 0.5
-
-
-LEARNED = 0.2       # measuring: a sensor has learned once its chance of firing both is this near right
+        """Watching and measuring: the chance that this colour's sensor fires both motors."""
+        return self.brain.drive(self.sensor[colour])
 
 
 def one_life(job):
-    """(seed, poison, learning, ticks) -> per third of life after moving began, (poison eaten, food eaten, ticks);
-    each sensor's chance of firing both at the end; and how many ticks after moving began both sensors had learned
-    (None: not in this life)."""
-    seed, poison, learning, ticks = job
+    """(brain, seed, poison, learning, ticks) -> per third of life after moving began, (poison eaten, food eaten,
+    ticks); each sensor's chance of firing both at the end; and how many ticks after moving began both sensors had
+    learned (None: not in this life)."""
+    brain, seed, poison, learning, ticks = job
     food = "blue" if poison == "red" else "red"
-    life, learned = Life(seed, poison, learning), None
+    life, learned = Life(seed, poison, learning, brain), None
     while life.t < ticks:
         life.step()
         if learned is None and life.moving is not None and life.t % 50 == 0:
@@ -203,55 +101,91 @@ def one_life(job):
     return out, life.drive(poison), life.drive(food), learned
 
 
-def measure(lives: int, ticks: int = 8000) -> None:
-    """Half the lives with red as poison, half blue; with learning and without. Two scores, both per unit of time:
-    how soon the sensors learn (the rules), and food minus poison eaten per 1,000 ticks (the sheet and the body)."""
+def measure(lives: int, ticks: int = 10000, brains=tuple(BRAINS)) -> None:
+    """Each brain on the same lives (the same worlds and wirings): half with red as poison, half blue; with learning
+    and without. Three scores: how soon the sensors learn, food minus poison eaten per 1,000 ticks, and food eaten
+    for each poison."""
     import multiprocessing
     from concurrent.futures import ProcessPoolExecutor
-    for learning in (True, False):
-        jobs = [(i // 2, COLOURS[i % 2], learning, ticks) for i in range(lives)]
-        with ProcessPoolExecutor(mp_context=multiprocessing.get_context("spawn")) as pool:
-            results = list(pool.map(one_life, jobs))
-        thirds = [[sum(r[0][i][k] for r in results) for k in range(3)] for i in range(3)]
-        net = "  ".join(f"{1000 * (f - p) / max(1, t):+5.2f}" for p, f, t in thirds)
-        share = "  ".join(f"{100 * p / max(1, p + f):3.0f}%" for p, f, _ in thirds)
-        done = sorted(r[3] for r in results if r[3] is not None)
-        when = (f"{len(done)} of {len(results)} lives, median {done[len(done) // 2]} ticks after moving"
-                if done else f"0 of {len(results)} lives")
-        print(f"learning {'on ' if learning else 'off'}: net food per 1,000 ticks in each third of life: {net}"
-              f" (poison's share {share});  learned in {when};  firing both at the end: poison"
-              f" {np.mean([r[1] for r in results]):.2f}, food {np.mean([r[2] for r in results]):.2f}")
+    for brain in brains:
+        for learning in (True, False):
+            jobs = [(brain, i // 2, COLOURS[i % 2], learning, ticks) for i in range(lives)]
+            with ProcessPoolExecutor(mp_context=multiprocessing.get_context("spawn")) as pool:
+                results = list(pool.map(one_life, jobs))
+            thirds = [[sum(r[0][i][k] for r in results) for k in range(3)] for i in range(3)]
+            net = "  ".join(f"{1000 * (f - p) / max(1, t):+5.2f}" for p, f, t in thirds)
+            ratio = "  ".join(f"{f / p:4.1f}" if p else f"{f}:0" for p, f, _ in thirds)
+            done = sorted(r[3] for r in results if r[3] is not None)
+            when = (f"{len(done)} of {len(results)} lives, median {done[len(done) // 2]} ticks after moving"
+                    if done else f"0 of {len(results)} lives")
+            print(f"{brain}, learning {'on ' if learning else 'off'}: net food per 1,000 ticks in each third of life:"
+                  f" {net} (food:poison {ratio});  learned in {when};  firing both at the end: poison"
+                  f" {np.mean([r[1] for r in results]):.2f}, food {np.mean([r[2] for r in results]):.2f}")
 
 
-def watch(seed: int = 0, record: str | None = None, until: int = 8000) -> None:
-    """A life, live. Left, the brain, in greys: the cells' coordinates (x and y, each running -1 to 1 across the
-    sheet) as a faint checkerboard; paths to M1 light grey and to M2 mid grey, pulses white, organs labelled beside
-    their cells with their own names and, after them, what the body wired them to (the sensors with their chance of
-    firing both thrusters). Right, the world: blocks lettered R (dark) and B (light), the creature a square with its
-    head marked, and what its eyes see.
-    It runs FAST ticks a frame, but SLOW while the paths grow and until a little after the creature starts moving, so
-    the pulses can be seen; up and down take over the speed. With record, no window: every frame is saved there as a
-    PNG, until the given tick."""
+def watch(seed: int = 0, brain: str = "grown", record: str | None = None, until: int = 10000) -> None:
+    """A life, live. Left, the brain's own panel, in greys. Right, the world: blocks lettered R (dark) and B (light),
+    the creature a triangle with its point marked, and what its eyes see. It runs FAST ticks a frame, but SLOW while the
+    brain wires itself and until a little after the creature starts moving; up and down take over the speed. Buttons
+    below: switch brain (a new world, the same seed), and with the mixed-signal brain, its schematic (the life waits
+    while it is open). With record, no window: every frame is saved there as a PNG, until the given tick."""
     import os
+    import pathlib
+    from world import EAT, RAYS, REACH
     if record:
         os.environ["SDL_VIDEODRIVER"] = "dummy"
         os.makedirs(record, exist_ok=True)
     import pygame
     pygame.init()
-    scale = max(1, 490 // SIZE)
-    side, wpx = SIZE * scale, 490
-    screen = pygame.display.set_mode((side + 12 + wpx, max(side, wpx) + 72))
-    pygame.display.set_caption("a brain builds itself, then learns which colour is food")
+    side = wpx = 490
+    base = max(side, wpx)
+    screen = pygame.display.set_mode((side + 12 + wpx, base + 108))
+    pygame.display.set_caption("a brain learns which colour is food")
     font, small = pygame.font.SysFont(None, 22), pygame.font.SysFont(None, 18)
     per_frame, auto, paused, clock = FAST, True, False, pygame.time.Clock()   # auto: speed set by the stage
     poison = COLOURS[seed % 2]
-    life = Life(seed, poison)
+    life = Life(seed, poison, brain=brain)
     to_px = lambda p: (side + 12 + int(p[0] / WORLD * wpx), int((WORLD - p[1]) / WORLD * wpx))
+    viewer = None                                                   # the schematic, while it is open
+
+    def buttons():
+        """The buttons below, as (key, label, rect)."""
+        other = next(b for b in BRAINS if b != brain) if len(BRAINS) == 2 else "next"
+        out, x = [], 6
+        for key, label in (("b", f"brain: {brain}   switch to {other}  (b)"),) + \
+                          ((("s", "schematic  (s)"),) if brain == "mixed-signal" else ()):
+            w = font.size(label)[0] + 20
+            out.append((key, label, pygame.Rect(x, base + 74, w, 28)))
+            x += w + 10
+        return out
+
+    def press(key):
+        nonlocal brain, life, auto, viewer
+        if key == "b":                                              # another brain, in a new world
+            names = list(BRAINS)
+            brain = names[(names.index(brain) + 1) % len(names)]
+            life, auto, viewer = Life(seed, poison, brain=brain), True, None
+        elif key == "s" and brain == "mixed-signal":
+            viewer = SchematicViewer(pygame, screen, pathlib.Path(__file__).parent / SCHEMATIC, font)
+
     while True:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+            if event.type == pygame.QUIT:
                 pygame.quit()
                 return
+            if viewer is not None:                                  # the schematic has the mouse and keys
+                if not viewer.handle(event):
+                    viewer = None
+                continue
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                return
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                for key, _, rect in buttons():
+                    if rect.collidepoint(event.pos):
+                        press(key)
+            if event.type == pygame.KEYDOWN and event.key in (pygame.K_b, pygame.K_s):
+                press("b" if event.key == pygame.K_b else "s")
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     paused = not paused
@@ -262,18 +196,20 @@ def watch(seed: int = 0, record: str | None = None, until: int = 8000) -> None:
                 elif event.key == pygame.K_r:
                     seed += 1
                     poison = COLOURS[seed % 2]
-                    life = Life(seed, poison)
+                    life = Life(seed, poison, brain=brain)
                     auto = True
-                elif event.key == pygame.K_d:                       # damage: new-born cells in a disc at the mouse
+                elif event.key == pygame.K_d and hasattr(life.brain, "damage_at"):    # damage, at the mouse
                     mx, my = pygame.mouse.get_pos()
-                    if not (0 <= mx < side and 0 <= my < side):
-                        mx, my = side // 2, side // 2
-                    rows, cols = np.mgrid[0:SIZE, 0:SIZE]
-                    life.brain.damage((rows - my / scale) ** 2 + (cols - mx / scale) ** 2 < DAMAGE ** 2)
-        named = set(np.unique(np.round(life.brain.view("name"))).astype(int)) - {0}
-        growing = len(named) == 4 and (life.moving is None or life.t - life.moving < SETTLE)
+                    inside = 0 <= mx < side and 0 <= my < side
+                    life.brain.damage_at(mx / side if inside else 0.5, my / side if inside else 0.5)
         if auto:
-            per_frame = SLOW if growing else FAST
+            settling = life.moving is None or life.t - life.moving < SETTLE
+            per_frame = SLOW if life.brain.built() and settling else FAST
+        if viewer is not None:
+            viewer.draw()
+            pygame.display.flip()
+            clock.tick(30)
+            continue
         if not paused:
             started = time.time()
             for i in range(per_frame):
@@ -281,41 +217,17 @@ def watch(seed: int = 0, record: str | None = None, until: int = 8000) -> None:
                 if not record and time.time() - started > 0.2:
                     break
         screen.fill((0, 0, 0))
-        view = life.brain.view
-        cols = np.floor((view("x") + 1) / 2 * (SIZE - 1) / BAND + 0.5)     # the cells' coordinates, in bands of cells
-        rows = np.floor((view("y") + 1) / 2 * (SIZE - 1) / BAND + 0.5)
-        shade = 0.06 + 0.08 * ((cols + rows) % 2)
-        names = np.round(view("name"))
-        for c, level in (("2", 0.45), ("1", 0.75)):
-            on = view(f"on_{c}") > 0.5
-            shade = np.where(on, np.maximum(shade, level), shade)
-            shade = np.where(on & (np.round(view(f"timer_{c}")) > wiring.REST), 1.0, shade)
-        rgb = np.stack([shade] * 3, axis=-1)
-        rgb = (255 * rgb).astype(np.uint8).transpose(1, 0, 2).repeat(scale, 0).repeat(scale, 1)
-        screen.blit(pygame.surfarray.make_surface(rgb), (0, 0))
         yuck = life.t - life.yuck < 60
-        for k in np.unique(names[names > 0]):
-            cells = np.argwhere(names == k)
-            own = next(n for n, v in NAME.items() if v == k)
-            role = next(o for o, n in life.organ.items() if n == own)        # what the body wired it to
-            for r, c in cells:
-                label_text = f"{own} {role}" + (f" {life.drive(role):.2f}" if role in COLOURS else "")
-                lit = yuck and role == poison
-                label = font.render(label_text, True, (0, 0, 0) if lit else (255, 255, 255),
-                                    (255, 255, 255) if lit else (60, 60, 60))
-                w, h = label.get_size()                                 # beside the cell, inside the sheet
-                px = c * scale + scale + 3 if c == 0 else c * scale - w - 3 if c == SIZE - 1 else c * scale - w // 2
-                py = r * scale + scale + 3 if r == 0 else r * scale - h - 3 if r == SIZE - 1 else r * scale - h // 2
-                if k % 2 == 0 and r in (0, SIZE - 1):              # the pair sit close on one edge: stagger them
-                    py += h if r == 0 else -h
-                screen.blit(label, (min(max(0, px), side - w), min(max(0, py), side - h)))
+        sensors = [next(f"{c} {life.drive(c):.2f}" for c in COLOURS if life.sensor[c] == k) for k in (0, 1)]
+        motors = [next(f for f in THRUSTERS if life.motor[f] == k) for k in (0, 1)]
+        life.brain.draw(screen, side, font, sensors, motors, life.sensor[poison] if yuck else None)
         pygame.draw.rect(screen, (25, 25, 25), (side + 12, 0, wpx, wpx))
         body = life.body
-        f, h, half = body.forward(), body.head(), BODY / 2
+        f, h = body.forward(), body.head()
         r = np.array([f[1], -f[0]])                                 # the creature's right
         beam = pygame.Surface((wpx, wpx), pygame.SRCALPHA)
         across, far, _ = body.look()
-        half_ray = (BODY / 2 + EAT / 2) / RAYS          # what the eyes see: each ray, fading as a block there would
+        half_ray = EAT / RAYS                           # what the eyes see: each ray, fading as a block there would
         for o, length in zip(across, far):              # count less, up to the first block it meets
             for k in range(int(np.ceil(length))):
                 a, b = h + k * f + o * r, h + min(k + 1, length) * f + o * r
@@ -330,24 +242,29 @@ def watch(seed: int = 0, record: str | None = None, until: int = 8000) -> None:
             px = to_px((x, y))
             pygame.draw.rect(screen, (90, 90, 90) if c == "red" else (210, 210, 210), (px[0] - 8, px[1] - 8, 16, 16))
             screen.blit(small.render(c[0].upper(), True, (255, 255, 255) if c == "red" else (0, 0, 0)), (px[0] - 4, px[1] - 6))
-        corners = [body.pos + half * (f + r), body.pos + half * (f - r), body.pos + half * (-f - r), body.pos + half * (-f + r)]
+        corners = body.corners()
         pygame.draw.polygon(screen, (255, 255, 255) if yuck else (160, 160, 160), [to_px(p) for p in corners], 5 if yuck else 2)
         pygame.draw.circle(screen, (255, 255, 255), to_px(body.head()), 4)
         recent = {k for when, k in life.firings[-4:] if life.t - when < 6}
-        for k, sign in (("left", -1), ("right", 1)):              # a ring at the corner of a thruster firing
+        for k, corner in zip(("left", "right"), corners[1:]):   # a ring at the corner of a thruster firing
             if k in recent:
-                pygame.draw.circle(screen, (255, 255, 255), to_px(body.pos - half * f + sign * half * r), 6, 2)
+                pygame.draw.circle(screen, (255, 255, 255), to_px(corner), 6, 2)
         if yuck:
             px = to_px(body.pos)
             screen.blit(font.render("yuck!", True, (0, 0, 0), (255, 255, 255)), (px[0] + 14, px[1] - 28))
-        stage = ("where am I" if len(named) < 4 else "wiring" if life.moving is None else "moving and learning")
+        stage = "moving and learning" if life.moving is not None else life.brain.stage()
         eaten = {c: sum(1 for _, m in life.meals if m == c) for c in COLOURS}
-        base = max(side, wpx)
-        lines = (f"tick {life.t:6d}   stage: {stage}   poison: {poison}   eaten: red {eaten['red']}, blue {eaten['blue']}",
+        lines = (f"tick {life.t:6d}   brain: {brain}   stage: {stage}   poison: {poison}   eaten: red {eaten['red']},"
+                 f" blue {eaten['blue']}",
                  "recent meals: " + " ".join(m[0].upper() for _, m in life.meals[-14:]),
                  f"{per_frame} ticks per frame   r new life   d damage (at the mouse)   space pause   up/down{'' if auto else ' (r: auto)'}   Esc")
         for i, line in enumerate(lines):
             screen.blit(font.render(line, True, (255, 255, 255)), (6, base + 6 + 22 * i))
+        hover = pygame.mouse.get_pos()
+        for _, label, rect in buttons():
+            pygame.draw.rect(screen, (90, 90, 90) if rect.collidepoint(hover) else (50, 50, 50), rect, border_radius=4)
+            pygame.draw.rect(screen, (200, 200, 200), rect, 1, border_radius=4)
+            screen.blit(font.render(label, True, (255, 255, 255)), (rect.x + 10, rect.y + 6))
         pygame.display.flip()
         if record:
             pygame.image.save(screen, os.path.join(record, f"{life.t:06d}.png"))
@@ -358,14 +275,83 @@ def watch(seed: int = 0, record: str | None = None, until: int = 8000) -> None:
         clock.tick(30)
 
 
+class SchematicViewer:
+    """Watching: an image over the whole window. The wheel zooms at the mouse, dragging pans; Esc, or close, shuts it."""
+    BAR = 30
+
+    def __init__(self, pygame, screen, path, font):
+        self.pg, self.screen, self.font = pygame, screen, font
+        self.image = pygame.image.load(str(path)).convert()
+        w, h = screen.get_size()
+        iw, ih = self.image.get_size()
+        self.fit = min(w / iw, (h - self.BAR) / ih)
+        self.zoom, self.ox, self.oy = self.fit, 0.0, 0.0            # screen pixels per image pixel; image at top left
+        self.drag = None
+        self.close = pygame.Rect(w - 110, 2, 104, self.BAR - 4)
+        self._clamp()
+
+    def _clamp(self):
+        w, h = self.screen.get_size()
+        iw, ih = self.image.get_size()
+        vw, vh = w / self.zoom, (h - self.BAR) / self.zoom          # the view, in image pixels
+        self.ox = min(max(self.ox, 0.0), max(iw - vw, 0.0)) if vw < iw else (iw - vw) / 2
+        self.oy = min(max(self.oy, 0.0), max(ih - vh, 0.0)) if vh < ih else (ih - vh) / 2
+
+    def handle(self, event) -> bool:
+        """Takes an event; False once it is closed."""
+        pg = self.pg
+        if event.type == pg.KEYDOWN and event.key in (pg.K_ESCAPE, pg.K_s):
+            return False
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if self.close.collidepoint(event.pos):
+                return False
+            self.drag = (event.pos, self.ox, self.oy)
+        elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
+            self.drag = None
+        elif event.type == pg.MOUSEMOTION and self.drag:
+            (x0, y0), ox, oy = self.drag
+            self.ox, self.oy = ox - (event.pos[0] - x0) / self.zoom, oy - (event.pos[1] - y0) / self.zoom
+            self._clamp()
+        elif event.type == pg.MOUSEWHEEL:                           # zoom, keeping the point under the mouse still
+            mx, my = pg.mouse.get_pos()
+            my -= self.BAR
+            ix, iy = self.ox + mx / self.zoom, self.oy + my / self.zoom
+            self.zoom = min(max(self.zoom * 1.25 ** event.y, self.fit), 1.0)
+            self.ox, self.oy = ix - mx / self.zoom, iy - my / self.zoom
+            self._clamp()
+        return True
+
+    def draw(self) -> None:
+        pg, screen = self.pg, self.screen
+        w, h = screen.get_size()
+        iw, ih = self.image.get_size()
+        screen.fill((235, 235, 235))
+        x0, y0 = max(int(self.ox), 0), max(int(self.oy), 0)        # the part of the image in view, scaled alone
+        x1 = min(int(self.ox + w / self.zoom) + 1, iw)
+        y1 = min(int(self.oy + (h - self.BAR) / self.zoom) + 1, ih)
+        if x1 > x0 and y1 > y0:
+            part = self.image.subsurface((x0, y0, x1 - x0, y1 - y0))
+            size = (max(1, round((x1 - x0) * self.zoom)), max(1, round((y1 - y0) * self.zoom)))
+            screen.blit(pg.transform.smoothscale(part, size),
+                        (round((x0 - self.ox) * self.zoom), self.BAR + round((y0 - self.oy) * self.zoom)))
+        pg.draw.rect(screen, (40, 40, 40), (0, 0, w, self.BAR))
+        screen.blit(self.font.render("the mixed-signal brain's circuit   wheel: zoom   drag: pan", True, (255, 255, 255)),
+                    (8, 7))
+        hover = self.close.collidepoint(pg.mouse.get_pos())
+        pg.draw.rect(screen, (90, 90, 90) if hover else (60, 60, 60), self.close, border_radius=4)
+        pg.draw.rect(screen, (200, 200, 200), self.close, 1, border_radius=4)
+        screen.blit(self.font.render("close (Esc)", True, (255, 255, 255)), (self.close.x + 10, self.close.y + 5))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--brain", choices=tuple(BRAINS), default="grown", help="the brain to watch or record")
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--measure", type=int, metavar="LIVES", help="measure over this many lives (headless)")
-    parser.add_argument("--ticks", type=int, default=8000, help="ticks per life when measuring or recording")
+    parser.add_argument("--measure", type=int, metavar="LIVES", help="measure every brain over this many lives (headless)")
+    parser.add_argument("--ticks", type=int, default=10000, help="ticks per life when measuring or recording")
     parser.add_argument("--record", metavar="DIR", help="save a life's frames to DIR as PNGs, headless")
     args = parser.parse_args()
     if args.measure:
         measure(args.measure, args.ticks)
     else:
-        watch(args.seed, args.record, args.ticks)
+        watch(args.seed, args.brain, args.record, args.ticks)

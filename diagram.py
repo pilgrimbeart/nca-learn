@@ -95,7 +95,7 @@ text(LX, 26, "FROM NEIGHBOURS", "colh")
 text(LX, 44, "mean over neighbours of what", "colhs")
 text(LX, 58, "each shows: clip(v, −1, 1) + N(0, 0.01)", "colhs")
 text(CX0, 26, "ONE CELL", "colh")
-text(CX0, 44, "brain.update(me, mean, count, inp, out): 79 numbers kept, 26 of them shown", "colhs")
+text(CX0, 44, "brain.update(me, mean, count, inp, out): 85 numbers kept, 28 of them shown", "colhs")
 text(RX, 26, "OUT", "colh")
 text(RX, 44, "what the cell shows its", "colhs")
 text(RX, 58, "neighbours, and gives the body", "colhs")
@@ -129,9 +129,9 @@ organs = [
         "xs ← xs + (x − xs) / 50;     xss ← xss + (x − xss) / 150",
         "still = |xs − xss| < 0.03 and |ys − yss| < 0.03",
     ], ("x, y", "neighbours' places (2)"), ("x, y", "my place"), "xs, still, which edge"),
-    ("5  Naming · S1, S2, M1, M2", "reads mark · writes mark", [
+    ("5  Naming · S1, S2, M1, M2, T", "reads mark · writes mark", [
         "mark: on the y = 1 and y = −1 edges where |xs| < 0.125 (a 0.05 margin, so it doesn't flicker)",
-        "place: just past either end of the mark: on y = 1 a sensor, on y = −1 an actuator; 1 if xs < 0, else 2",
+        "place: past either end of the mark: a sensor on y = 1, an actuator on y = −1 (1 if xs < 0, else 2); on it, on y = 1: T",
         "name = place once held 300 updates, still, with no named neighbour; kept while |xs − its x| < 0.15",
     ], ("mark", "marks, named cells (1)"), None, None),
 ]
@@ -151,7 +151,7 @@ for i, (title, io, lines, inp, out, passes) in enumerate(organs):
         arrow(SX1, c - 21, RX, c - 21)
         side(RX, c + 4, 34, "name  →  body", body=True)
         arrow(SX1, c + 21, RX, c + 21, "body")
-        text(RX + 12, c + 52, "finds S1, S2, M1, M2 by name", "colhs")
+        text(RX + 12, c + 52, "finds S1, S2, M1, M2, T by name", "colhs")
     if passes:
         link(y + RH, y + RH + RG, passes)
 
@@ -162,23 +162,32 @@ brain = [
     ("Choose", "body: stimulus", [
         "on a stimulus, or by itself with chance 0.01:  fire both channels with chance p / 20, else one: my side",
         "my side: channel 1 or 2, by a coin toss when I took my name;   p in twentieths, born 10 (1/2)",
-    ], ("stimulus", "my colour is in view")),
-    ("Learn", "body: reward", [
-        "reward ±1:   p ← round( p + 0.5 · reward · (20 − p if reward > 0, else p) )      (half the way to 20 or 0)",
-        "two factors: my own input and the reward; nothing here says what either channel does",
-    ], ("reward ±1", "food or poison, at the mouth")),
+    ], ("stimulus", "my colour is in view"), None),
+    ("Taste · in T cells", "body: taste · writes taste", [
+        "given taste ±1: show its sign on taste for 3 updates;   it never says which sensor it is about",
+    ], ("taste ±1", "food or poison, at the mouth"), ("taste", "±1 while showing a taste")),
+    ("Ping · in sensors and T cells", "reads ping · writes ping", [
+        "a stimulated sensor shows ping for 2 updates, then rests 4;  a T cell seeing one does the same: a one-way wave",
+        "a sensor that sees a ping while not resting forgets its stimulus (since ← 99): only the last one stimulated learns",
+    ], ("ping", "a neighbour's ping (1)"), ("ping", "1 while pinging")),
+    ("Learn · in sensors", "reads taste", [
+        "taste begins beside me, and since ≤ 15 updates:  p ← round( p + 0.5 · (20 − p if good, else −p) )",
+        "three factors: my own recent input, the taste, and no newer stimulus of the other sensor",
+    ], ("taste", "a T cell's taste (1)"), None),
 ]
 BRH = 64
 BH = 36 + len(brain) * (BRH + RG) - RG + 14
-layer(BY, BH, "brain · choose and learn (does anything only in a sensor; shares nothing)", "rules/brain.py")
-for i, (title, io, lines, inp) in enumerate(brain):
+layer(BY, BH, "brain · choose, taste and learn (only in sensors and T cells; shares taste, ping)", "rules/brain.py")
+for i, (title, io, lines, inp, out) in enumerate(brain):
     y = BY + 36 + i * (BRH + RG)
     stage(SX0, y, SX1 - SX0, BRH, title, io, lines)
     c = y + BRH / 2
-    side(LX, c - 22, 44, *inp, body=True)
-    arrow(LX + LW, c, SX0, c, "body")
-    if i == 0:
-        link(y + BRH, y + BRH + RG, "p")
+    body = inp[0] in ("stimulus", "taste ±1")
+    side(LX, c - 22, 44, *inp, body=body)
+    arrow(LX + LW, c, SX0, c, "body" if body else "sig")
+    if out:
+        side(RX, c - 22, 44, *out)
+        arrow(SX1, c, RX, c)
 
 # wiring: channel 1 in full, channel 2 the same
 AY = BY + BH + 20

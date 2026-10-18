@@ -74,7 +74,7 @@ if __name__ == "__main__":
         problems = check_rule(path)
         print(f"rule {path.stem}: {'ok' if not problems else '; '.join(problems)}")
         failed |= bool(problems)
-    for path in sorted(HERE.glob("*.py")):
+    for path in sorted([*HERE.glob("*.py"), *HERE.glob("brains/*.py")]):
         if path.name not in ("sheet.py", "test_rules.py"):
             problems = check_body(path)
             print(f"body {path.stem}: {'ok' if not problems else '; '.join(problems)}")

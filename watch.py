@@ -1,7 +1,7 @@
 """Watch a rule run, live, in greys: python watch.py RULE [--size N] [--seed N] [--show VAR ...]
 
 Each shown number is drawn as a grey level (its smallest value black, its largest white), side by side.
-Named cells (a number called "name", if the rule has one) are labelled S1, S2, M1, M2. Keys: r new seed, space pause,
+Named cells (a number called "name", if the rule has one) are labelled S1, S2, M1, M2, T. Keys: r new seed, space pause,
 up/down speed, Escape quit.
 """
 
@@ -15,7 +15,7 @@ import numpy as np
 
 import sheet
 
-LETTERS = {1: "S1", 2: "S2", 3: "M1", 4: "M2"}
+LETTERS = {1: "S1", 2: "S2", 3: "M1", 4: "M2", 5: "T"}
 
 
 def watch(rule_name: str, n: int, seed: int, show: list) -> None:

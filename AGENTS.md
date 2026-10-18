@@ -9,7 +9,27 @@ required, so a push once failed). After pushing, check the run passed (`gh run l
 
 The user is colour-blind: views in greys, no cue by colour alone.
 
-## The rules (see the README)
+## Brains
+
+The body (`world.py`) and `Life` (`creature.py`) talk to a brain only through sensors 0, 1, motors 0, 1 and one taste
+(`stimulate`, `taste`, `step`). Taste is +1 (food) or -1 (poison) for a tick when a block touches the mouth, else 0,
+and never says which sensor it is about.
+
+**The body must never become part of the solution.** The project's point is a brain that learns in situ. Any change
+that lets the body or world do a job the brain could do (credit assignment, choosing which cells learn, timing,
+filtering) is not a simplification, however much brain code it deletes. Say plainly what job moves out of the
+brain before proposing it, and expect the answer to be no. Ask before adding or changing any body-to-brain signal.
+This went wrong once: "reward at contact" gave the reward to the eaten colour's sensor, presented as a
+simplification. It moved credit assignment into the body, and it stood until the user found it (see `LESSONS.md`).
+A rule of thumb: if the brain stops needing some mechanism after a body change, ask where that mechanism's work went.
+
+Two brains: the grown one (the sheet, below) and the mixed-signal one, a designed circuit kept for comparison
+(`brains/mixed_signal.py`, on `mixed_feedback.py`, drawn by `schematic.py`: redraw it when the circuit changes). The
+mixed-signal brain keeps: no knowledge of what a sensor senses or a motor does, noise on every node, continuous time,
+and learning only through the taste. `--measure` compares the brains on the same lives; a refactor of either must
+leave the other's lives unchanged.
+
+## The rules of the grown brain (see the README)
 
 - A sheet of identical cells running one local rule (`rules/`). A cell sees only its own numbers, its neighbours'
   **mean** of each shared number, and its neighbour count. `sheet.py` enforces this; keep it so, and keep
@@ -21,7 +41,7 @@ The user is colour-blind: views in greys, no cue by colour alone.
   neighbours' smallest d: a cheat, withdrawn. What a cell keeps to itself is not limited, though simplicity is wanted.
 - No magic knowledge: everything a cell knows comes from its neighbours' signals. A path finds its target by a
   signal the target cell itself sends out, never by where the rule says the target should be.
-- Keep the shared numbers few (26 now, nearly all flags; the lizard used 16) and count them in the README when
+- Keep the shared numbers few (28 now, nearly all flags; the lizard used 16) and count them in the README when
   they change.
 - Never change the task's ground rules (what an organ is, what connects to what) without asking the user first and
   saying so plainly.

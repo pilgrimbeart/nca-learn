@@ -7,8 +7,11 @@ are lessons too.
 ## Principles
 
 - **Local behaviour only, no global god.** No global clock, no broadcast, no harness switching the cells' behaviour.
-  The only things from outside are the body's inputs (a sensor's stimulus, and food or poison), delivered to the
-  cells that named themselves.
+  The only things from outside are the body's inputs (a sensor's stimulus, and taste), delivered to the cells that
+  named themselves.
+- **The body is never part of the solution.** The body says what happened (this colour is in view; that was food),
+  never what it means for learning (which sensor earned the taste). A body change that lets the brain drop some
+  mechanism has moved that mechanism's job into the body (below: reward at contact).
 - **No hidden scale.** A cell knows only its own state and its neighbours' averages; never the sheet's size or its
   position in it.
 - **Stochastic updates only.** Every cell updates at random times, never in lockstep: lockstep lets rules lean on a
@@ -226,13 +229,14 @@ chew delay; all are gone (below: symmetric organs, reward at contact). Its lesso
   poison (45-48%). Every poison meal had been seen clearly just before (median strength 0.99): the creature charges
   straight at food, its eyes can't tell left from right, so it can't steer round poison in the strip ahead, and a
   pulse takes about 53 ticks to cross the brain.
-- **Reward at contact (the user's simplification).** The chew delay with eyes shut, the flavour stimulus on eating,
-  the news wave and the trace were all there to credit the reward to the eaten colour's sensor when both sensors got
-  it. Now the body gives the reward only to the eaten colour's sensor, as the block touches the mouth: a sensor's two
-  inputs are what it senses and food or poison. The rule: p moves a quarter of the way to 1 or 0 (now half: see
-  scoring); 26 shared numbers. Don't build features into the body or world to make learning easy. 16 lives of
-  8,000: poison's share 50%, 47%, 43%; firing both at the end, poison 0.09, food 0.91: as good as with
-  the trace and news, with much less. Ceiling with p perfect: 48%, 42%, 47%.
+- **Reward at contact (withdrawn: it made the body assign credit).** The chew delay with eyes shut, the flavour
+  stimulus on eating, the news wave and the trace were all there to credit the reward to the eaten colour's sensor
+  when both sensors got it. I proposed that the body give the reward only to the eaten colour's sensor, as the block
+  touches the mouth, and called it a simplification; the user agreed on that framing. It was the body doing the
+  credit assignment the brain had been doing (see Taste, below). With it, p moved a quarter (later half) of the way
+  to 1 or 0 at each reward, with 26 shared numbers. 16 lives of 8,000: poison's share 50%, 47%, 43%; firing both at
+  the end, poison 0.09, food 0.91. As good as the trace and news, but only because the body did their work. Ceiling
+  with p perfect: 48%, 42%, 47%.
 
 ## Vision (`creature.py`)
 
@@ -266,6 +270,137 @@ chew delay; all are gone (below: symmetric organs, reward at contact). Its lesso
   380); 60: 44%, 51%, 39% (about 100); 80: 43%, 45%, 21% (about 23: it hardly reaches a block). Fewer meals, no
   better share: the poison is eaten while the food's sensor drives straight at food behind or beside it, not
   while the poison's sensor veers.
+
+## A second brain: mixed signal (`brains/mixed_signal.py`)
+
+- **Why.** The user, after Sepulchre's work (Ribar and Sepulchre 2021, "Neuromorphic Control"; Huo, Forni and
+  Sepulchre 2025, rebound winner-take-all): one mixed-feedback element (a leaky node; elements that put a current into
+  a node, a sigmoid of a filtered voltage, with a sign and a timescale) builds both discrete and continuous behaviour.
+  A designed circuit for the whole creature, beside the grown sheet, says what the sheet costs, and is the groundwork
+  for rebuilding a cell as such a circuit.
+- **The split.** The body and world went to `world.py`; `Life` talks to any brain through sensors 0, 1 and motors 0, 1;
+  the sheet became `brains/grown.py`. Four recorded lives matched the old code bit for bit (meals, firings and
+  sensors' p), so the refactor changed nothing. Thrusters must fire in the same order as before: spin is a float sum.
+- **The neuron.** The paper's spiking neuron (fast positive feedback, slow negative; tanh) at the paper's bias was
+  bistable, not excitable: one pulse set off firing that never stopped (bias -1.2 to -1.4, recovery 5-20 ticks). At
+  bias -1.6 it rests: one spike for any pulse above about 1 (a tick long), and noise 0.2 gives about 6.5 spikes per
+  1,000 ticks of its own (the grown sensors fire by themselves about 9 per 1,000).
+- **Noise grades a synapse.** A sensor's spike crosses a synapse of weight 0.05 almost never, 0.15 half the time, 0.35
+  almost always: noise makes the choice, so a plastic weight between them is a chance of firing the other motor too,
+  as the grown sensor's p is.
+- **A/B, the same 16 lives each:** grown learned in 16 of 16 (median 1,024 ticks after moving), food minus poison per
+  1,000 ticks by third -0.20, +1.97, +0.37, poison's share 52%, 38%, 47%; mixed signal 16 of 16 (median 1,090),
+  +0.89, +1.13, +1.32, and 40%, 39%, 35%. Learning after moving is about as fast (set by how often it eats); but the
+  circuit moves from the first tick and reacts at once, where a pulse takes about 53 ticks to cross the sheet, so it
+  steers round more poison than the grown brain could even with perfect p (about 46%), and nets about twice the food
+  in a life.
+
+## Taste: one input, and credit assigned inside the brain (2026-10-16)
+
+- **How the body came to assign credit.** The user had described the sensor cell as having "two inputs (what it
+  senses and food/poison)". I read "a food/poison input on the sensor" as licence to route the reward to the right
+  sensor, and proposed "reward at contact": the body gives food or poison only to the eaten colour's sensor. I
+  presented it as removing four mechanisms (chew delay, flavour stimulus, news wave, trace) and one shared number, and
+  argued "the body is allowed to know what it ate and what colour it was, just as it knows which eye saw it". What I
+  didn't say: those four mechanisms were the brain's credit assignment, which this file had already named the hard
+  part ("the old rule did credit assignment for free"). Deleting them didn't simplify the problem; it moved its
+  hardest part into the body. The user agreed to a "simplification", not to that. The warning signs were all
+  written down and passed over: the README's count of shared numbers said "learning: none (everything a sensor learns
+  from is delivered to it by the body)"; the mixed-signal brain was then built on the same `reward(sensor, value)`,
+  with four reward terminals beside the sensors; and learning got faster and cleaner just as the brain got simpler.
+  The user found it from the schematic, by asking where the reward input was. The lesson: whenever a change lets the
+  brain drop machinery, ask where that machinery's job went, and if the answer is the body, say so plainly or don't
+  propose it (now in `AGENTS.md`).
+
+- **Why.** Learning had been `reward(sensor, value)`: the body handed the reward to the eaten colour's sensor, so the
+  body did the credit assignment. The user's ruling: for every brain, taste is one input, +1 for food and -1 for
+  poison at the tick a block touches the mouth, else 0, saying nothing about which sensor. The body must never be part
+  of the solution. The grown brain gets taste through a fifth organ, T (the marked cells on the y = 1 edge between S1
+  and S2), not a broadcast to every cell: a sheet-wide signal would be magic.
+- **Measuring.** 16 lives are too few to rank variants: with perfect p from birth, net food per 1,000 ticks came out
+  +0.38 in one run of 32 and the oracle's (the old body credit) +0.47. Rank by lives learned, median time and p at
+  the end; use 64 lives; and run the oracle as the reference in the same batch.
+- **What a sensor can know.** At each meal (grown brain), ticks since each sensor's last stimulus: the eaten colour's
+  sensor was stimulated within 10 ticks in 85% of meals, the other in 17%. Giving credit only to the sensor stimulated
+  last cuts the wrong share to 7% (within 20 ticks: right 89%, wrong 7%). So the one taste carries enough, if the
+  sensors also know which of them was stimulated last.
+- **Mixed signal.** An eligibility node per sensor (charged by its spikes, leaking over ELIGIBLE ticks) gates two
+  amplifiers that charge or empty P while taste is good or bad. Each spike also empties the other sensor's E (FORGET,
+  cross-inhibition). 64 lives: E 10 with FORGET learned 63/64, median 1,512, net +0.86 (no FORGET: 64/64, 1,830, +0.72;
+  the oracle about +0.92).
+- **Grown, first try:** a sensor learned when taste began on a T cell beside it and it had been stimulated within
+  ELIGIBLE updates. 24 of 32 lives learned. Counting two stimuli, or a lower RATE, did no better (23 and 21 of 32).
+- **Pings.** A stimulated sensor shows a ping for 2 updates, then rests for 4. A T cell that sees a ping does the same,
+  so a one-way wave runs along the T cells to the other sensor (about 8 updates), which forgets its stimulus. A cell
+  that has just pinged rests, so its echo is ignored. This is the circuit's FORGET, made from local signals: 31 of 32
+  lives learned. It costs one shared number, ping. Waves from both sensors at once annihilate, and then both stay
+  eligible, as before.
+- **A gap in the taste organ.** The lives that still failed (6-8 of 64) each had one sensor whose p never moved. Its
+  T neighbour was missing: the mark's end had drifted a cell after the sensor took its name, and the cell between was
+  neither marked (so not T) nor free to be a sensor (a named neighbour). Fix: a cell on y = 1 between a named sensor
+  and the mark takes T too; a T cell shows mark +1 and keeps its name while marked or beside a sensor. Every sensor in
+  32 sheets then had a T neighbour at 4,000 and 8,000 ticks. After the fix, 64 lives: ELIGIBLE 15 learned 64/64
+  (median 1,210 ticks after moving; net +0.46; p at the end 0.17 and 0.86), ELIGIBLE 10 63/64 (1,305; +0.44); the
+  oracle 64/64 (584; +0.58).
+- **Not fixed: a doubled actuator name.** In one sheet of 32 (Life seed 17) two cells took M1. It happens with or
+  without the gap fix, so it is older.
+
+## Telling food from poison: a pointed body and a faster circuit (2026-10-17)
+
+The user's target: at least 2 food for each poison after 10,000 ticks, ideally nearer 10, worked out on the
+mixed-signal brain (quicker to learn and to tune). Measured as food:poison over 24-32 lives, with p held perfect by
+hand (the ceiling) or learning; "second half" is ticks 5,000-10,000. Before: 1.5 at the ceiling, 1.5 learning, 4.7
+meals per 1,000 ticks.
+
+- **Where poison was eaten.** Every poison meal had been in view for at least 30 ticks. Three causes, each measured:
+  the square's mouth was its whole front edge (5 units), and every turn swept it across poison beside the corridor;
+  each neuron could spike only about once in 17 circuit ticks, so the creature moved in big lunges that coasted 2-3
+  units into whatever lay ahead (the user's "slow brain and momentum"); and the plastic synapse leaked (at p = 1 a
+  sensor's spike reached both motors only 74% of the time, so a quarter of food sightings became veers).
+- **An ideal reflex first.** A controller with no brain (straight at food, veer from poison, the right thruster at
+  once) found what a body allows: on a pointed body with gentler thrust it reached 10-27 (0.5-2.6 meals per 1,000),
+  refractory time and blind wandering cost little, and 10% leak in the reflex halved it. So the body had to change,
+  and then the brain had to be fast and clean.
+- **The body** (ground rules, agreed with the user): an equilateral triangle, point forward, the point the mouth
+  (eaten within EAT of it; the eyes' corridor is 2 EAT wide); PUSH 0.5 → 0.2, TURN 0.08 → 0.16, DRAG 0.2 → 0.5
+  (small kicks that die quickly, a tighter turn); SENSE 0.21 → 0.5. Triangle alone: ceiling 1.5 → 2.5. Slower thrust
+  or more drag alone raised the ceiling but starved the creature (0.1-0.6 meals per 1,000 ticks) while the circuit
+  still lunged.
+- **The circuit runs 4 of its ticks to each tick of the world** (SPEED). Its refractory time is unchanged in circuit
+  ticks, so it spikes four times as often and each kick is a quarter as big relative to the body's motion. Ceiling
+  4.6 at SPEED 4 (1.0 meals per 1,000). A shorter recovery (tau 3 instead of 10) broke the neuron: almost no spikes.
+- **A clean synapse.** WEAK 0.05 → 0 and STRONG 0.35 → 0.7: a sensor at p = 1 now reaches both motors about 99% of
+  the time, at p = 0 never. Ceiling 4.6 → 12.7, meals 1.6.
+- **Each sensor hushes the other** (INHIBIT 1.5 over HUSH 10 ticks, a hush node per sensor): while it sees food the
+  creature stops answering poison, and the other way round, so it no longer swerves between them into a third block.
+  Ceiling 12.7 → 14.2; learning, second half, 4.5 → 8.5. Stronger (3) or longer (25 ticks) did no better.
+- **Learning, 10,000 ticks (24 lives): 4.5 over the whole life, 8.5 in the second half, 1.8 meals per 1,000; p at
+  the end poison 0.13, food 0.99.** Over 20,000 ticks: 6.1 over the life, 8.2 over ticks 10,000-20,000. 64 lives of
+  10,000 ticks: 4.3 over the life, 7.0 in the second half, ceiling 14.8; on `--measure`'s 32 lives the thirds are
+  2.2, 5.9, 4.6. Poison meals are few, so the ratio differs a lot between sets of lives: rank variants on 64. p for
+  poison settles near 0.1, not 0: poison meals are now rare, and each is a learning event, while food meals now and
+  then credit the poison sensor when both were seen.
+- **Dead ends.** Fewer blocks (5 or 9 of each colour, on the square: Scoring, above): fewer meals, little better
+  share. More spontaneous spikes (a neuron's bias -1.6 → -1.4 or -1.3): blind forward kicks hit poison, and with the
+  hush on, its sensor was then silenced (ceiling 0.9-1.9). A lower bias (-2.0): no meals at all. A boredom drive
+  (both motors pushed while neither sensor had fired lately): more meals (2.4) but a worse ratio (7.9 in the second
+  half). LEARN 0.5 or ELIGIBLE 20: worse (6.2, 7.2). SENSE 1.0: 7.2; TURN 0.24: 6.9.
+- **The grown brain on the new body: starved.** Each kick now moves the body about a fifth as far, and the mouth is
+  a point, so at one sheet update per tick it ate about 0.9 meals per 1,000 ticks and learned in only 12 of 32 lives
+  within 10,000 ticks (median 4,613 after moving; it had been 32 of 32 on the square). Its food:poison by thirds was
+  1.2, 2.6, 2.5 (1.2 on the square); with p perfect, 6.7, 5.3, 2.2 at 0.7 meals per 1,000. The same cure as the
+  circuit's: run the sheet several updates (steps) to each tick of the world (SPEED). 32 lives, learning: 2 steps,
+  17 learned, food:poison 1.2, 1.7, 4.0, about 1.0 meals; 4 steps, 24 learned, 1.5, 2.0, 3.0, 1.3-1.8 meals, net
+  food +0.25, +0.53, +0.89 per 1,000 ticks; with p perfect, 3.6, 2.7, 4.8 at 1.6 meals. Kept at 4: a pulse crosses
+  the sheet in about 13 ticks instead of 53, and the creature moves after about 600 ticks instead of 2,500. The cost
+  is compute: 37 ticks a second instead of 150.
+- **What would go further.** The eyes can't tell left from right, so a veer is always to one side, sometimes into
+  poison lying beside the food: one sensor per side would fix it, but that is more sensors, a ground-rule change.
+
+## The second body: a square with two forward thrusters (withdrawn 2026-10-17)
+
+Its mouth was its whole front edge, and its kicks were big (PUSH 0.5, TURN 0.08, DRAG 0.2): the ceiling with p
+perfect was 1.5 food per poison (about 45-49% poison), whatever the brain. Replaced by the triangle (above).
 
 ## The first body (withdrawn)
 

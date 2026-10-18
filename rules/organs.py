@@ -1,6 +1,6 @@
 """Where am I, from averages only: every cell comes to know its place across the sheet (x and y, from -1 to 1), and
-the sheet names its organs: two sensors, S1 and S2, either side of the middle of one edge (y = 1), and two
-actuators, M1 and M2, either side of the middle of the opposite edge (y = -1). The two of a kind are found by the same
+the sheet names its organs: two sensors, S1 and S2, either side of the middle of one edge (y = 1), between them the
+taste organ T (a few cells), and two actuators, M1 and M2, either side of the middle of the opposite edge (y = -1). The two of a kind are found by the same
 rule and differ only in which side of the middle they are (x < 0: 1); which side is which was settled by a coin toss.
 Nothing here says what an organ is for. Neighbours see only means, of numbers from -1 to 1, with noise.
 
@@ -28,9 +28,12 @@ Nothing here says what an organ is for. Neighbours see only means, of numbers fr
      size updates instead of size^2.
   5. Naming. A cell on either labelled edge y = -1 or y = 1 shows mark +1 where -W < x < W (with a margin, so a mark
      doesn't flicker). A cell on such an edge outside the mark but next to it takes a place: on y = 1 a sensor, on
-     y = -1 an actuator; 1 if x < 0, else 2. A cell takes a place only once its x and y have stopped drifting, and a
-     name once it has held the place for HOLD updates. A named cell shows 0 on mark (between a mark and none), so no
-     neighbour takes the same name, and keeps its name while its x stays within TOL of the place's.
+     y = -1 an actuator; 1 if x < 0, else 2. A marked cell on y = 1 takes the place T. A cell takes a place only once
+     its x and y have stopped drifting, and a name once it has held the place for HOLD updates. A named sensor or
+     actuator shows 0 on mark (between a mark and none), so no neighbour takes the same name, and keeps its name while
+     its x stays within TOL of the place's. A T cell shows mark +1, and keeps its name while marked or beside a
+     sensor. The mark's end can drift a cell after a sensor has taken its name; a cell on y = 1 between a named sensor
+     and the mark then takes the place T too. So each sensor has a T cell beside it.
 """
 
 import numpy as np
@@ -49,7 +52,7 @@ SURE = 0.05                 # how far past a place's x a cell must be to change 
 STALE = 6.0                 # organiser's beats without a label pulse before a cell forgets its label (one missed
                             # beat costs a cell three: it then refuses the next two as out of turn)
 HOLD = 300                  # updates a cell must hold a name before it takes it
-S1, S2, M1, M2 = 1.0, 2.0, 3.0, 4.0                 # names: sensors and actuators, each 1 (x < 0) and 2
+S1, S2, M1, M2, T = 1.0, 2.0, 3.0, 4.0, 5.0        # names: sensors and actuators, each 1 (x < 0) and 2; taste
 
 VARS = ("w", "w2", "state", "par", "timer", "period", "standing", "hand", "coin", "xl", "yl", "lstate", "cx", "cy", "start", "px",
         "py", "missx", "missy", "lx", "ly", "x", "y", "xv", "yv", "xs", "ys", "xss", "yss", "mark", "place", "held",
@@ -193,7 +196,11 @@ def update(me, mean, count, inp, out):
     seen = np.round(count * (mean[M_MARK] + 1.0))              # units: 2 per mark, 1 per named cell
     marks, named_by = np.floor(seen / 2.0), seen % 2.0 == 1.0
     name = np.round(me[NAME])
-    if name != 0.0:                                             # named: keep it while still about right
+    if name == T:
+        if not (hi and (mark or named_by)):                     # taste: keep it while marked, or beside a sensor
+            name = 0.0
+        place, held = name, 0.0
+    elif name != 0.0:                                           # named: keep it while still about right
         side = -W if name == S1 or name == M1 else W
         keep = (hi if name <= S2 else lo) and abs(xs - side) < TOL
         if not keep:
@@ -201,12 +208,16 @@ def update(me, mean, count, inp, out):
         place, held = name, 0.0
     else:
         place = 0.0
-        if (lo or hi) and not mark and marks >= 1.0:
+        if hi and not mark and marks >= 1.0 and named_by:
+            place = T                                           # between a sensor and the mark: taste too
+        elif (lo or hi) and not mark and marks >= 1.0:
             place = (S1 if hi else M1) + (0.0 if xs < 0.0 else 1.0)
-        if not still or named_by:
+        elif hi and mark:
+            place = T
+        if not still or (named_by and place != T):
             place = 0.0                                         # still drifting, or a neighbour has the name already
         held = min(np.round(me[HELD]) + 1.0, HOLD) if place == np.round(me[PLACE]) and place != 0.0 else 0.0
         if held >= HOLD:
             name = place
     out[PLACE], out[HELD], out[NAME] = place, held, name
-    out[MARK] = 0.0 if name != 0.0 else (1.0 if mark else -1.0)
+    out[MARK] = 1.0 if name == T else (0.0 if name != 0.0 else (1.0 if mark else -1.0))
