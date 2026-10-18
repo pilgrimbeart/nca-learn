@@ -319,6 +319,7 @@ taste, ping and learn, in sensors and T cells) and the wiring for each of the tw
 | `diagram.py` | draws `media/cell.svg`, the diagram above (by hand from the rules: redraw it when one changes) |
 | `schematic.py` | draws `media/mixed_signal.svg` and `.png`, the mixed-signal brain as a circuit (by hand: redraw it when the brain changes) |
 | `LESSONS.md` | how it got here: what was tried, what failed and why |
+| `MIXED_FEEDBACK.md` | the mixed-feedback approach (Sepulchre and colleagues): what is new in it, the literature, and what it suggests here |
 
 ## Licence
 
