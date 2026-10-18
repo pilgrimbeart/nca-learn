@@ -65,8 +65,23 @@ evolve the *rule* by which cells recruit.
 
 ## The plan
 
-**Step 0: show the trigger exists.** Before building recruitment, show that a local "not OK" signal appears when a
-circuit faces a problem it can't solve, for example a learning variable that keeps reversing instead of settling.
+**Step 0: the baseline, and the trigger.** Keep the one-bit task: it already contains the recruitment problem. A
+brain with no learning machinery approaches every block; to do better it needs units that detect "*this* sensor was
+active and the taste was bad", and gate that sensor's drive: conjunction detectors, which today's designed brain has
+built in and a recruiting brain must build in its life. The control: all-food lives, where nothing should be
+recruited.
+1. The baseline: the minimal brain (`brains/minimal.py`), its sensors driving both motors, taste going nowhere,
+   measured in poison and all-food lives (done: `LESSONS.md`).
+2. The trigger, with nothing placed for the job, and rung 0, all of it circuit (done: `LESSONS.md`): every neuron
+   adjusts its own excitability through a memory node (`brains/adjusting.py`), watched from outside
+   (`python recruit_test.py`). Rung 0 cuts poison by a third; the poison sensor ends frustrated (its decisions settled,
+   what it receives still predicting pain, the pain going on), the food sensor and every all-food life calm.
+   Everything that affects behaviour is explicit circuit; the only exception is growth, sudden and locally triggered.
+3. Then Phase B's recruitment, from generic spare units, sparsely or locally connected, with connections grown toward
+   a signal the disturbed unit sends out.
+
+Honesty test throughout: spare units generic and identical, one rule that knows nothing of roles. Dormant
+pre-designed circuits switched on when needed would be design smuggled in.
 
 **Phase A: the minimal learner (evolution may be the god).** Graph mode, the level-0 vocabulary of
 `mixed_feedback.py`, with the bounds and defences in `LESSONS.md`. Search by increasing size for tiny circuits, and
@@ -76,7 +91,8 @@ currents plus capacitor charging. Seed with today's designed brain, counted hone
 elements).
 
 **Phase B: local recruitment (evolution may supply only the rule).**
-1. Lives that differ in what they demand, and an energy cost for every active unit.
+1. Lives that differ in what they demand (poison lives and all-food lives), and an energy cost for every active
+   unit.
 2. A substrate: a pool of free, generic mixed-feedback units with sparse random connections [15], each with an
    intrinsic mode switch, under mutual inhibition (a rebound winner-take-all, `MIXED_FEEDBACK.md`).
 3. Hand-designed recruitment rules from the literature, each tested: *allocation by excitability* (when the trigger

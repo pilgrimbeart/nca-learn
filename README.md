@@ -84,7 +84,11 @@ food sensor's rises towards 1.
 
 ```bash
 python creature.py --seed 3         # a particular life
-python creature.py --measure 32     # both brains, 32 lives each with learning and 32 without, headless
+python creature.py --measure 32     # every brain, 32 lives each with learning and 32 without, headless
+                                    # (--brains to choose; --all-food: lives where both colours are food)
+python creature.py --brain minimal  # the baseline for recruitment: drives at every block, taste goes nowhere
+python creature.py --brain adjusting  # rung 0 of recruitment: each neuron adjusts its own excitability from taste
+python recruit_test.py 32           # recruitment's local signals, neuron by neuron, watched from outside
 python test_rules.py                # check every rule keeps the rules below
 python test_compiled.py             # check the compiled circuit and eyes against plain numpy versions
 python watch.py organs              # one stage on its own (organs, wiring; --show picks the numbers drawn)
@@ -316,6 +320,9 @@ taste, ping and learn, in sensors and T cells) and the wiring for each of the tw
 | `world.py` | the world and the body: blocks, eyes, thrusters, mouth |
 | `brains/grown.py` | the grown brain: the sheet, by the names its cells took |
 | `brains/mixed_signal.py` | the mixed-signal brain: four excitable neurons |
+| `brains/minimal.py` | the minimal brain: those neurons alone, driving at every block (the baseline for recruitment) |
+| `brains/adjusting.py` | the minimal brain with every neuron adjusting its own excitability, all circuit (rung 0 of recruitment) |
+| `recruit_test.py` | recruitment's local signals, watched from outside a circuit brain |
 | `mixed_feedback.py` | the mixed-feedback element and circuit the mixed-signal brain is built from |
 | `sheet.py` | the engine: the only code that knows the grid |
 | `rules/organs.py` | where am I: the race, handedness, edge labels, coordinates, names |

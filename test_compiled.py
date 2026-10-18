@@ -17,7 +17,7 @@ from brains.mixed_signal import MixedSignalBrain
 
 def plain_tick(c, V, Vx, armed, inject, z):
     """One tick of circuit c by the equations in mixed_feedback's docstring, plainly in numpy; z: its noise draws."""
-    bias, leak, cap, lo, hi = c.node_arr
+    bias, leak, cap, lo, hi, write = c.node_arr
     gain, offset, slope, tau, sig = c.el_arr
     to, frm, gate = c.link
     spikes = np.zeros(len(V), dtype=np.int64)
@@ -29,7 +29,9 @@ def plain_tick(c, V, Vx, armed, inject, z):
         f = np.where(gate >= 0, f * np.clip(V[gate], 0.0, 1.0), f)
         dV = -leak * V + bias + inject
         np.add.at(dV, to, gain * f)
-        V = np.clip(V + mf.DT * dV / cap + c.noise * np.sqrt(mf.DT) * z[k] / cap, lo, hi)
+        d = mf.DT * dV / cap
+        rough = np.where(write > 0, write * np.abs(d) * z[k], c.noise * np.sqrt(mf.DT) * z[k] / cap)
+        V = np.clip(V + d + rough, lo, hi)
         up = armed & (V > mf.SPIKE)
         spikes += up
         armed = (armed & ~up) | (V < mf.RESET)
@@ -42,6 +44,7 @@ def random_circuit(rng):
     nodes = [c.neuron(f"n{i}", bias=rng.uniform(-1.8, -1.2), tau=rng.uniform(2, 20)) for i in range(4)]
     nodes += [c.node(f"m{i}", R=rng.choice([None, rng.uniform(0.5, 10)]), C=rng.uniform(1, 50), lo=0.0, hi=1.0,
                      start=rng.choice([None, 0.5])) for i in range(3)]
+    nodes += [c.node(f"k{i}", R=None, lo=0.0, hi=1.0, start=0.5, memory=True) for i in range(2)]
     for _ in range(12):
         to, frm = rng.choice(nodes, 2)
         c.element(int(to), int(frm), rng.uniform(-3, 3), rng.uniform(-1, 1), tau=rng.choice([0.0, rng.uniform(0.2, 5)]),
@@ -70,6 +73,20 @@ def check_circuit(c, inputs, ticks, rng):
         same &= bool(np.array_equal(got, want))
         V, Vx, armed = c.V.copy(), c.Vx.copy(), c.armed.copy()   # carry on from the compiled state
     return worst, same
+
+
+def check_memory():
+    """A memory node holds its value exactly while nothing writes it, and is written roughly (by about WRITE of each
+    change) when something does."""
+    c = mf.Circuit(seed=5)
+    n = c.neuron("n")
+    idle = c.node("idle", R=None, lo=0.0, hi=1.0, start=0.3, memory=True)
+    used = c.node("used", R=None, lo=-50.0, hi=50.0, start=0.0, memory=True)
+    c.element(used, n, 0.0, 0.0)                                # a gain of 0: no write ...
+    c.element(used, c.node("one", bias=1.0, R=1.0), 0.05, -10.0, sigmoid=True)   # ... and a steady small write
+    c.tick(np.zeros(len(c.names)), 1000)
+    rough = abs(c.V[used] - 0.05 * 1000) / (0.05 * 1000)
+    return c.V[idle] == 0.3, rough
 
 
 def plain_look(body):
@@ -135,6 +152,10 @@ if __name__ == "__main__":
             print(f"circuit, random {i}: spikes {'the same' if same else 'DIFFER'}, voltages within {worst:.1e}:"
                   " FAILED")
     print("circuits, 20 random, 300 ticks each:", "FAILED" if failed else "ok")
+    held, rough = check_memory()
+    ok = held and rough < 3 * mf.WRITE / np.sqrt(1000 / mf.DT) + 0.01
+    print(f"memory nodes: held exactly while idle {held}; written 50.0 with error {rough:.4f}: {'ok' if ok else 'FAILED'}")
+    failed |= not ok
     bad = check_world(rng, 3000)
     print(f"world, 3,000 random scenes: {'ok' if not bad else f'{bad} differ: FAILED'}")
     failed |= bool(bad)

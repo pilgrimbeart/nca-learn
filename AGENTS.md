@@ -6,6 +6,10 @@ legacy structure. Work directly on `main`. Commit and push only when the user sa
 Before pushing, run the CI steps (`.github/workflows/test.yml`) in a fresh venv built from `requirements.txt` alone:
 another environment may have extra packages that hide a missing dependency (numba's `@` needs scipy, which isn't
 required, so a push once failed). After pushing, check the run passed (`gh run list`, `gh run view --log-failed`).
+Never make the user wait for either: on "Push", commit, then do the rest in one background task: run the CI steps
+on a clean checkout of that commit (a temporary `git worktree`, so foreground edits can't leak into the test), push
+only if they pass, then wait for the GitHub run. Say nothing more if all passes; report only a failure, with its
+log.
 
 The user is colour-blind: views in greys, no cue by colour alone.
 
@@ -34,7 +38,19 @@ Two brains: the grown one (the sheet, below) and the mixed-signal one, a designe
 (`brains/mixed_signal.py`, on `mixed_feedback.py`, drawn by `schematic.py`: redraw it when the circuit changes). The
 mixed-signal brain keeps: no knowledge of what a sensor senses or a motor does, noise on every node, continuous time,
 and learning only through the taste. `--measure` compares the brains on the same lives; a refactor of either must
-leave the other's lives unchanged.
+leave the other's lives unchanged. A third, the minimal brain (`brains/minimal.py`: those neurons alone, taste going
+nowhere), is the baseline for recruitment (`RECRUITMENT.md`); all-food lives (`--all-food`) are its control.
+
+## Circuit brains (recruitment: `RECRUITMENT.md`)
+
+- **Everything that affects behaviour is explicit circuit**: nodes and elements (`mixed_feedback.py`), so the whole
+  brain can always be drawn as a circuit diagram. No program beside the circuit: for every number that affects
+  behaviour, ask "which node holds it, and which elements move it?" The only exception (the user's decision) is
+  growth: a recruited unit appears suddenly, by a declared primitive triggered by a node's own voltage and attached
+  locally. Watching and measuring may compute anything, but never feed back.
+- No coin toss between units: a choice among units comes from their local competition. No unit knows it is optimally
+  tuned; "finished adjusting" means its own adjustment has stalled while its own discomfort persists. A knob is a
+  memory node, noisy only when written.
 
 ## The rules of the grown brain (see the README)
 

@@ -10,6 +10,9 @@ kind of element.
   sets). Its sign sets the feedback: an element on its own node with positive gain is positive feedback (it makes the
   node switch), with negative gain negative feedback (it restores it); the timescales at which each acts set the
   behaviour (an excitable neuron: fast positive feedback, slow negative).
+  A memory node (a floating gate or memristor) has no leak, and its noise comes only with writing it: each step's
+  change is rough by WRITE of itself, so it holds its value perfectly while nothing writes it (noise every step would
+  walk it away: a leak by another name).
 
 Time is in ticks, integrated in steps of DT (Euler; the noise scaled by sqrt(DT)), compiled: one call runs many
 ticks. A node spikes when its voltage rises through SPIKE, and can spike again once it has fallen below RESET.
@@ -23,18 +26,20 @@ from numba import njit
 DT = 0.05           # integration step (ticks)
 SPIKE, RESET = 0.0, -1.0
 SETTLE = 200        # ticks a new circuit runs without noise, to settle at rest
+WRITE = 0.1         # a memory node's noise: this share of each change written to it
 NONE = np.zeros(0, dtype=np.bool_)
 
 
 @njit(cache=True)
-def _run(V, Vx, armed, spikes, inject, inject_steps, node, el, link, z, noise, dt, steps, fixed, born):
-    """steps integration steps. node: each node's (bias, leak, cap, lo, hi); el: each element's (gain, offset, slope,
-    tau, sigmoid); link: each element's (to, from, gate). inject: currents into the nodes for the first inject_steps.
+def _run(V, Vx, armed, spikes, vmax, inject, inject_steps, node, el, link, z, noise, dt, steps, fixed, born):
+    """steps integration steps. node: each node's (bias, leak, cap, lo, hi, write: > 0 for a memory); el: each
+    element's (gain, offset, slope, tau, sigmoid); link: each element's (to, from, gate). inject: currents into the nodes for the first inject_steps.
     z: a standard normal draw for each node at each step (drawn beforehand: numpy's generator, the same stream).
-    Settling (fixed given): no noise and no spikes, and the fixed nodes are put back to born after every step."""
+    Settling (fixed given): no noise and no spikes, and the fixed nodes are put back to born after every step.
+    vmax: each node's highest voltage over these steps (raised, never lowered, here)."""
     n, m = V.shape[0], link.shape[1]
     settling = fixed.shape[0] > 0
-    bias, leak, cap, lo, hi = node[0], node[1], node[2], node[3], node[4]
+    bias, leak, cap, lo, hi, write = node[0], node[1], node[2], node[3], node[4], node[5]
     gain, offset, slope, tau, sig = el[0], el[1], el[2], el[3], el[4]
     to, frm, gate = link[0], link[1], link[2]
     dV = np.empty(n)
@@ -60,9 +65,15 @@ def _run(V, Vx, armed, spikes, inject, inject_steps, node, el, link, z, noise, d
                     V[i] = born[i]
             continue
         for i in range(n):
-            v = V[i] + dt * dV[i] / cap[i]
-            v = v + scale * z[k, i] / cap[i]
+            if write[i] > 0.0:                                  # a memory: rough only by what is written
+                d = dt * dV[i] / cap[i]
+                v = V[i] + d
+                v = v + write[i] * abs(d) * z[k, i]
+            else:
+                v = V[i] + dt * dV[i] / cap[i]
+                v = v + scale * z[k, i] / cap[i]
             V[i] = min(max(v, lo[i]), hi[i])
+            vmax[i] = max(vmax[i], V[i])
             up = armed[i] and V[i] > SPIKE
             spikes[i] += up
             armed[i] = (armed[i] and not up) or V[i] < RESET
@@ -75,9 +86,11 @@ class Circuit:
         self.V = None
 
     def node(self, name: str, bias: float = 0.0, R: float | None = 2.0, C: float = 1.0, lo: float = -np.inf,
-             hi: float = np.inf, start: float | None = None) -> int:
-        """A node; R None: no leak. start: its voltage at birth (else where it settles at rest)."""
-        self.nodes.append((bias, 0.0 if R is None else 1.0 / R, C, lo, hi))
+             hi: float = np.inf, start: float | None = None, memory: bool = False) -> int:
+        """A node; R None: no leak. start: its voltage at birth (else where it settles at rest). memory: a memory node
+        (no leak; noisy only when written)."""
+        assert not memory or R is None, "a memory node has no leak"
+        self.nodes.append((bias, 0.0 if R is None else 1.0 / R, C, lo, hi, WRITE if memory else 0.0))
         self.names.append(name)
         self.start.append(start)
         return len(self.names) - 1
@@ -112,16 +125,18 @@ class Circuit:
         self.Vx = self.V[self.link[1]].copy()
         self.armed = np.ones(len(self.names), dtype=np.bool_)
         self.spikes = np.zeros(len(self.names), dtype=np.int64)
-        _run(self.V, self.Vx, self.armed, self.spikes, np.zeros(len(self.names)), 0, self.node_arr, self.el_arr,
-             self.link, np.zeros((0, 0)), 0.0, DT, int(SETTLE / DT), fixed, self.V.copy())
+        self.vmax = np.full(len(self.names), -np.inf)
+        _run(self.V, self.Vx, self.armed, self.spikes, self.vmax, np.zeros(len(self.names)), 0, self.node_arr,
+             self.el_arr, self.link, np.zeros((0, 0)), 0.0, DT, int(SETTLE / DT), fixed, self.V.copy())
 
     def tick(self, inject, ticks: int = 1) -> np.ndarray:
         """Runs this many ticks, with these currents injected into the nodes during the first (a pulse one tick long);
-        how many times each node spiked."""
+        how many times each node spiked. Afterwards vmax holds each node's highest voltage over them."""
         self._ready()
         per = int(round(1 / DT))
         self.spikes[:] = 0
+        self.vmax[:] = -np.inf
         z = self.rng.standard_normal((per * ticks, len(self.names)))
-        _run(self.V, self.Vx, self.armed, self.spikes, np.asarray(inject, dtype=float), per, self.node_arr,
+        _run(self.V, self.Vx, self.armed, self.spikes, self.vmax, np.asarray(inject, dtype=float), per, self.node_arr,
              self.el_arr, self.link, z, self.noise, DT, per * ticks, NONE, np.zeros(0))
         return self.spikes.copy()

@@ -5,7 +5,7 @@ joins them; measure compares brains on the same lives; watch shows a life.
                                         # mouse, b: the other brain, s: its schematic (mixed signal), space: pause,
                                         # up/down: speed, Esc: quit)
     python creature.py --measure 16     # 16 lives with learning and 16 without, for each brain: how soon it learns,
-                                        # what it eats
+                                        # what it eats (--all-food: lives where both colours are food)
     python test_rules.py                # every rule keeps the golden rules
     python creature.py --record frames  # save a life's frames, headless, as PNGs (for a GIF)
 
@@ -17,7 +17,13 @@ and -1 for poison, as soon as a block touches the mouth (otherwise nothing). Tas
 block: the brain must work out what earned it. Nothing else goes in or out.
 
 Brains: "grown" (brains/grown.py), a sheet of identical cells that builds itself, then learns; "mixed-signal"
-(brains/mixed_signal.py), a small designed circuit of excitable neurons.
+(brains/mixed_signal.py), a small designed circuit of excitable neurons; "minimal" (brains/minimal.py), its neurons
+alone, driving at every block, with taste going nowhere: the baseline for recruitment (RECRUITMENT.md); "adjusting"
+(brains/adjusting.py), the minimal brain with every neuron adjusting its own excitability from taste (only the
+sensors feel it), all of it circuit: rung 0 of recruitment.
+
+In an all-food world (poison None) both colours are food, so there is nothing to learn: the control for recruitment,
+which should then not happen.
 """
 
 from __future__ import annotations
@@ -27,11 +33,13 @@ import time
 
 import numpy as np
 
+from brains.adjusting import AdjustingBrain
 from brains.grown import GrownBrain
+from brains.minimal import MinimalBrain
 from brains.mixed_signal import MixedSignalBrain
 from world import COLOURS, SENSE, THRUSTERS, WORLD, Body
 
-BRAINS = {"grown": GrownBrain, "mixed-signal": MixedSignalBrain}
+BRAINS = {"grown": GrownBrain, "mixed-signal": MixedSignalBrain, "minimal": MinimalBrain, "adjusting": AdjustingBrain}
 FAST, SLOW = 10, 1  # watching: ticks per frame, slow while the brain wires itself and first drives the body
 SCHEMATIC = "media/mixed_signal.png"    # watching: the mixed-signal brain's circuit (drawn by schematic.py)
 SETTLE = 200        # watching: ticks after the creature starts moving before speeding up again
@@ -39,9 +47,9 @@ LEARNED = 0.2       # measuring: a sensor has learned once its chance of firing 
 
 
 class Life:
-    """A body and a brain in a world. step() runs one tick."""
+    """A body and a brain in a world. step() runs one tick. poison: the poison colour, or None (all food)."""
 
-    def __init__(self, seed: int = 0, poison: str = "red", learning: bool = True, brain: str = "grown"):
+    def __init__(self, seed: int = 0, poison: str | None = "red", learning: bool = True, brain: str = "grown"):
         self.rng = np.random.default_rng(seed)                  # the world's: the same for every brain
         self.poison, self.learning = poison, learning
         self.brain = BRAINS[brain](seed)
@@ -82,14 +90,14 @@ class Life:
 
 def one_life(job):
     """(brain, seed, poison, learning, ticks) -> per third of life after moving began, (poison eaten, food eaten,
-    ticks); each sensor's chance of firing both at the end; and how many ticks after moving began both sensors had
-    learned (None: not in this life)."""
+    ticks); each sensor's chance of firing both at the end (poison's, food's; in an all-food life, red's, blue's); and
+    how many ticks after moving began both sensors had learned (None: not in this life, or nothing to learn)."""
     brain, seed, poison, learning, ticks = job
     food = "blue" if poison == "red" else "red"
     life, learned = Life(seed, poison, learning, brain), None
     while life.t < ticks:
         life.step()
-        if learned is None and life.moving is not None and life.t % 50 == 0:
+        if poison and learned is None and life.moving is not None and life.t % 50 == 0:
             if life.drive(poison) <= LEARNED and life.drive(food) >= 1 - LEARNED:
                 learned = life.t - life.moving
     start = life.moving or ticks
@@ -98,37 +106,46 @@ def one_life(job):
         a, b = start + i * (ticks - start) / 3, start + (i + 1) * (ticks - start) / 3
         part = [c for m, c in life.meals if a <= m < b]
         out.append((sum(c == poison for c in part), sum(c != poison for c in part), b - a))
-    return out, life.drive(poison), life.drive(food), learned
+    return out, life.drive(poison or "red"), life.drive(food), learned
 
 
-def measure(lives: int, ticks: int = 10000, brains=tuple(BRAINS)) -> None:
+def measure(lives: int, ticks: int = 10000, brains=tuple(BRAINS), all_food: bool = False) -> None:
     """Each brain on the same lives (the same worlds and wirings): half with red as poison, half blue; with learning
     and without. Three scores: how soon the sensors learn, food minus poison eaten per 1,000 ticks, and food eaten
-    for each poison."""
+    for each poison. all_food: lives where both colours are food instead (food eaten per 1,000 ticks)."""
     import multiprocessing
     from concurrent.futures import ProcessPoolExecutor
     for brain in brains:
-        for learning in (True, False):
-            jobs = [(brain, i // 2, COLOURS[i % 2], learning, ticks) for i in range(lives)]
+        for learning in ((True,) if all_food else (True, False)):
+            jobs = [(brain, i // 2, None if all_food else COLOURS[i % 2], learning, ticks) for i in range(lives)]
             with ProcessPoolExecutor(mp_context=multiprocessing.get_context("spawn")) as pool:
                 results = list(pool.map(one_life, jobs))
             thirds = [[sum(r[0][i][k] for r in results) for k in range(3)] for i in range(3)]
+            if all_food:
+                eaten = "  ".join(f"{1000 * f / max(1, t):5.2f}" for _, f, t in thirds)
+                print(f"{brain}, all food: food per 1,000 ticks in each third of life: {eaten};  firing both at the"
+                      f" end: red {np.mean([r[1] for r in results]):.2f}, blue {np.mean([r[2] for r in results]):.2f}")
+                continue
             net = "  ".join(f"{1000 * (f - p) / max(1, t):+5.2f}" for p, f, t in thirds)
             ratio = "  ".join(f"{f / p:4.1f}" if p else f"{f}:0" for p, f, _ in thirds)
             done = sorted(r[3] for r in results if r[3] is not None)
             when = (f"{len(done)} of {len(results)} lives, median {done[len(done) // 2]} ticks after moving"
                     if done else f"0 of {len(results)} lives")
+            meals = 1000 * sum(p + f for p, f, _ in thirds) / max(1, sum(t for _, _, t in thirds))
             print(f"{brain}, learning {'on ' if learning else 'off'}: net food per 1,000 ticks in each third of life:"
-                  f" {net} (food:poison {ratio});  learned in {when};  firing both at the end: poison"
+                  f" {net} (food:poison {ratio});  meals per 1,000 ticks {meals:.2f};  learned in {when};"
+                  f"  firing both at the end: poison"
                   f" {np.mean([r[1] for r in results]):.2f}, food {np.mean([r[2] for r in results]):.2f}")
 
 
-def watch(seed: int = 0, brain: str = "grown", record: str | None = None, until: int = 10000) -> None:
+def watch(seed: int = 0, brain: str = "grown", record: str | None = None, until: int = 10000,
+          all_food: bool = False) -> None:
     """A life, live. Left, the brain's own panel, in greys. Right, the world: blocks lettered R (dark) and B (light),
     the creature a triangle with its point marked, and what its eyes see. It runs FAST ticks a frame, but SLOW while the
     brain wires itself and until a little after the creature starts moving; up and down take over the speed. Buttons
     below: switch brain (a new world, the same seed), and with the mixed-signal brain, its schematic (the life waits
-    while it is open). With record, no window: every frame is saved there as a PNG, until the given tick."""
+    while it is open). With record, no window: every frame is saved there as a PNG, until the given tick. all_food:
+    both colours are food."""
     import os
     import pathlib
     from world import EAT, RAYS, REACH
@@ -143,14 +160,15 @@ def watch(seed: int = 0, brain: str = "grown", record: str | None = None, until:
     pygame.display.set_caption("a brain learns which colour is food")
     font, small = pygame.font.SysFont(None, 22), pygame.font.SysFont(None, 18)
     per_frame, auto, paused, clock = FAST, True, False, pygame.time.Clock()   # auto: speed set by the stage
-    poison = COLOURS[seed % 2]
+    poison = None if all_food else COLOURS[seed % 2]
     life = Life(seed, poison, brain=brain)
     to_px = lambda p: (side + 12 + int(p[0] / WORLD * wpx), int((WORLD - p[1]) / WORLD * wpx))
     viewer = None                                                   # the schematic, while it is open
 
     def buttons():
         """The buttons below, as (key, label, rect)."""
-        other = next(b for b in BRAINS if b != brain) if len(BRAINS) == 2 else "next"
+        names = list(BRAINS)
+        other = names[(names.index(brain) + 1) % len(names)]
         out, x = [], 6
         for key, label in (("b", f"brain: {brain}   switch to {other}  (b)"),) + \
                           ((("s", "schematic  (s)"),) if brain == "mixed-signal" else ()):
@@ -195,7 +213,7 @@ def watch(seed: int = 0, brain: str = "grown", record: str | None = None, until:
                     per_frame, auto = max(1, per_frame // 2), False
                 elif event.key == pygame.K_r:
                     seed += 1
-                    poison = COLOURS[seed % 2]
+                    poison = None if all_food else COLOURS[seed % 2]
                     life = Life(seed, poison, brain=brain)
                     auto = True
                 elif event.key == pygame.K_d and hasattr(life.brain, "damage_at"):    # damage, at the mouse
@@ -255,7 +273,7 @@ def watch(seed: int = 0, brain: str = "grown", record: str | None = None, until:
             screen.blit(font.render("yuck!", True, (0, 0, 0), (255, 255, 255)), (px[0] + 14, px[1] - 28))
         stage = "moving and learning" if life.moving is not None else life.brain.stage()
         eaten = {c: sum(1 for _, m in life.meals if m == c) for c in COLOURS}
-        lines = (f"tick {life.t:6d}   brain: {brain}   stage: {stage}   poison: {poison}   eaten: red {eaten['red']},"
+        lines = (f"tick {life.t:6d}   brain: {brain}   stage: {stage}   poison: {poison or 'none (all food)'}   eaten: red {eaten['red']},"
                  f" blue {eaten['blue']}",
                  "recent meals: " + " ".join(m[0].upper() for _, m in life.meals[-14:]),
                  f"{per_frame} ticks per frame   r new life   d damage (at the mouse)   space pause   up/down{'' if auto else ' (r: auto)'}   Esc")
@@ -351,8 +369,11 @@ if __name__ == "__main__":
     parser.add_argument("--measure", type=int, metavar="LIVES", help="measure every brain over this many lives (headless)")
     parser.add_argument("--ticks", type=int, default=10000, help="ticks per life when measuring or recording")
     parser.add_argument("--record", metavar="DIR", help="save a life's frames to DIR as PNGs, headless")
+    parser.add_argument("--brains", nargs="+", choices=tuple(BRAINS), default=list(BRAINS),
+                        help="the brains to measure")
+    parser.add_argument("--all-food", action="store_true", help="both colours are food (nothing to learn)")
     args = parser.parse_args()
     if args.measure:
-        measure(args.measure, args.ticks)
+        measure(args.measure, args.ticks, args.brains, args.all_food)
     else:
-        watch(args.seed, args.brain, args.record, args.ticks)
+        watch(args.seed, args.brain, args.record, args.ticks, args.all_food)
