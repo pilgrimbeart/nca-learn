@@ -1,0 +1,26 @@
+minimal                            food 1.51, poison 1.51 per 1,000; food:poison 1.00 [0.92, 1.09], last third 1.00 [0.85, 1.18]; bridges 0 in 0 of 64 lives
+                                   all food: food 3.02 per 1,000 ticks; bridges 0 in 0 of 64 lives
+none (knowing)                     food 1.51, poison 1.51 per 1,000; food:poison 1.00 [0.92, 1.09], last third 1.00 [0.85, 1.18]; bridges 0 in 0 of 64 lives
+                                   all food: food 3.02 per 1,000 ticks; bridges 0 in 0 of 64 lives
+O1 bridge, poison sensor           food 1.65, poison 0.57 per 1,000; food:poison 2.87 [2.63, 3.14], last third 3.47 [2.85, 4.28]; bridges 64 in 64 of 64 lives (poison 64)
+                                   all food: food 2.83 per 1,000 ticks; bridges 64 in 64 of 64 lives (red 64)
+O2 bridge, food sensor             food 0.50, poison 1.49 per 1,000; food:poison 0.33 [0.28, 0.39], last third 0.20 [0.15, 0.25]; bridges 64 in 64 of 64 lives (food 64)
+                                   all food: food 2.86 per 1,000 ticks; bridges 64 in 64 of 64 lives (blue 64)
+O3 bridges, poison sensor both     food 1.69, poison 0.91 per 1,000; food:poison 1.85 [1.71, 1.99], last third 2.12 [1.81, 2.52]; bridges 128 in 64 of 64 lives (poison 128)
+                                   all food: food 3.32 per 1,000 ticks; bridges 128 in 64 of 64 lives (red 128)
+O4 bridges, all four               food 1.34, poison 0.79 per 1,000; food:poison 1.69 [1.52, 1.87], last third 2.08 [1.72, 2.51]; bridges 256 in 64 of 64 lives (food 128, poison 128)
+                                   all food: food 3.33 per 1,000 ticks; bridges 256 in 64 of 64 lives (blue 128, red 128)
+O5 hold one motor                  food 0.59, poison 0.36 per 1,000; food:poison 1.63 [1.41, 1.88], last third 1.78 [1.34, 2.40]; bridges 0 in 0 of 64 lives
+                                   all food: food 1.74 per 1,000 ticks; bridges 0 in 0 of 64 lives
+designed (mixed-signal)            food 1.34, poison 0.32 per 1,000; food:poison 4.18 [3.78, 4.64], last third 5.32 [4.37, 6.81]; bridges 0 in 0 of 64 lives
+                                   all food: food 2.50 per 1,000 ticks; bridges 0 in 0 of 64 lives
+
+net food per 1,000 ticks, paired with the knowing brain (same lives, same noise): mean difference [95%]
+  minimal                          poison lives +0.00 [+0.00, +0.00]   all-food lives +0.00 [+0.00, +0.00]
+  none (knowing)                   poison lives +0.00 [+0.00, +0.00]   all-food lives +0.00 [+0.00, +0.00]
+  O1 bridge, poison sensor         poison lives +1.07 [+0.93, +1.22]   all-food lives -0.19 [-0.42, +0.03]
+  O2 bridge, food sensor           poison lives -0.99 [-1.17, -0.82]   all-food lives -0.16 [-0.37, +0.06]
+  O3 bridges, poison sensor both   poison lives +0.78 [+0.61, +0.94]   all-food lives +0.30 [+0.10, +0.50]
+  O4 bridges, all four             poison lives +0.55 [+0.39, +0.71]   all-food lives +0.30 [+0.10, +0.51]
+  O5 hold one motor                poison lives +0.23 [+0.08, +0.39]   all-food lives -1.28 [-1.49, -1.09]
+  designed (mixed-signal)          poison lives +1.02 [+0.86, +1.18]   all-food lives -0.52 [-0.76, -0.28]

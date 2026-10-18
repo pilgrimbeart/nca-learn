@@ -32,14 +32,15 @@ optimiser will find, an agent included: asked to cut the channels between cells,
 different bits of one float. So for every brain: random timing (never lockstep, and no inputs only on tick
 boundaries), noise on everything, nothing carried below the noise, and a result must hold at a finer step and on
 fresh seeds. For an optimised circuit, also mismatch (parameters a few percent off at birth) and limits on time
-constants and gains against the step. Details in `LESSONS.md` (Principles; Simulating the mixed-signal brain).
+constants and gains against the step. Details in `LESSONS.md` (Principles; Simulating the mixed-signal brain, now the designed circuit).
 
-Two brains: the grown one (the sheet, below) and the mixed-signal one, a designed circuit kept for comparison
-(`brains/mixed_signal.py`, on `mixed_feedback.py`, drawn by `schematic.py`: redraw it when the circuit changes). The
-mixed-signal brain keeps: no knowledge of what a sensor senses or a motor does, noise on every node, continuous time,
-and learning only through the taste. `--measure` compares the brains on the same lives; a refactor of either must
-leave the other's lives unchanged. A third, the minimal brain (`brains/minimal.py`: those neurons alone, taste going
-nowhere), is the baseline for recruitment (`RECRUITMENT.md`); all-food lives (`--all-food`) are its control.
+Brains: the **sheet brain** (`brains/sheet.py`, the grid of cells, below) and the **circuit brains**, built from
+mixed-feedback parts (`mixed_feedback.py`, sharing `brains/circuit.py`): the **designed circuit** (`brains/designed.py`,
+drawn by `schematic.py`: redraw it when the circuit changes), kept for comparison; and the recruitment series, the
+**minimal**, **adjusting**, **knowing** and **recruiting circuits** (`RECRUITMENT.md`). The circuit brains keep: no
+knowledge of what a sensor senses or a motor does, noise on every node, continuous time, and learning only through the
+taste. `--measure` compares brains on the same lives; a refactor of one must leave the others' lives unchanged.
+All-food lives (`--all-food`) are recruitment's control.
 
 ## Circuit brains (recruitment: `RECRUITMENT.md`)
 
@@ -52,7 +53,7 @@ nowhere), is the baseline for recruitment (`RECRUITMENT.md`); all-food lives (`-
   tuned; "finished adjusting" means its own adjustment has stalled while its own discomfort persists. A knob is a
   memory node, noisy only when written.
 
-## The rules of the grown brain (see the README)
+## The rules of the sheet brain (see the README)
 
 - A sheet of identical cells running one local rule (`rules/`). A cell sees only its own numbers, its neighbours'
   **mean** of each shared number, and its neighbour count. `sheet.py` enforces this; keep it so, and keep

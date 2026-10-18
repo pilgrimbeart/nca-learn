@@ -1,0 +1,5 @@
+
+R3, 5% mismatch in intrinsic: net food change -0.66 [-0.90, -0.43];                                   food 1.69, poison 1.41 per 1,000; food:poison 1.20 [1.05, 1.35], last third 1.33 [1.09, 1.64]; bridges 85 in 62 of 64 lives (food 23, poison 62)
+R3, 5% mismatch in other    : net food change -0.01 [-0.15, +0.13];                                   food 1.58, poison 0.66 per 1,000; food:poison 2.39 [2.22, 2.58], last third 4.05 [3.38, 4.92]; bridges 69 in 63 of 64 lives (food 6, poison 63)
+R3, 5% mismatch in bias     : net food change -0.37 [-0.53, -0.21];                                   food 1.56, poison 0.99 per 1,000; food:poison 1.57 [1.40, 1.75], last third 2.19 [1.86, 2.61]; bridges 78 in 62 of 64 lives (food 16, poison 62)
+R3, 5% mismatch in all      : net food change -0.64 [-0.90, -0.40];                                   food 1.63, poison 1.34 per 1,000; food:poison 1.22 [1.05, 1.41], last third 1.48 [1.15, 1.90]; bridges 82 in 60 of 64 lives (food 22, poison 60)

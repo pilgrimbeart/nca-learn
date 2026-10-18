@@ -1,0 +1,17 @@
+knowing (no growth)                food 1.66, poison 1.66 per 1,000; food:poison 1.00 [0.92, 1.08], last third 1.00 [0.85, 1.18]; bridges 0 in 0 of 64 lives
+                                   all food: food 3.32 per 1,000 ticks; bridges 0 in 0 of 64 lives
+oracle O1                          food 1.74, poison 0.59 per 1,000; food:poison 2.97 [2.76, 3.20], last third 3.24 [2.79, 3.84]; bridges 64 in 64 of 64 lives (poison 64)
+                                   all food: food 3.02 per 1,000 ticks; bridges 64 in 64 of 64 lives (red 64)
+R3                                 food 1.65, poison 0.74 per 1,000; food:poison 2.21 [2.03, 2.38], last third 3.60 [3.09, 4.28]; bridges 70 in 64 of 64 lives (food 6, poison 64)
+                                   all food: food 3.32 per 1,000 ticks; bridges 0 in 0 of 64 lives
+                                   bridges per poison life {"1 on poison's sensor, 0 on food's": 58, "1 on poison's sensor, 1 on food's": 6}; first at median tick 2334
+R4                                 food 1.70, poison 0.70 per 1,000; food:poison 2.44 [2.24, 2.63], last third 3.70 [3.11, 4.47]; bridges 67 in 64 of 64 lives (food 3, poison 64)
+                                   all food: food 3.32 per 1,000 ticks; bridges 0 in 0 of 64 lives
+                                   bridges per poison life {"1 on poison's sensor, 0 on food's": 61, "1 on poison's sensor, 1 on food's": 3}; first at median tick 1690
+\nnet food per 1,000 ticks, paired (held-out seeds 100-131)
+  oracle O1  vs knowing: poison lives +1.15 [+1.00, +1.31]; all-food -0.30 [-0.48, -0.13]
+  R3         vs knowing: poison lives +0.90 [+0.72, +1.07]; all-food +0.00 [+0.00, +0.00]
+  R4         vs knowing: poison lives +1.00 [+0.85, +1.14]; all-food +0.00 [+0.00, +0.00]
+  R3 vs oracle O1: -0.25 [-0.39, -0.12]
+  R4 vs oracle O1: -0.15 [-0.32, +0.01]
+  R4 vs R3: +0.10 [-0.07, +0.26]

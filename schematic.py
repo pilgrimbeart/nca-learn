@@ -1,5 +1,5 @@
-"""Draws the mixed-signal brain (brains/mixed_signal.py) as a circuit: python schematic.py writes
-media/mixed_signal.svg, and media/mixed_signal.png (greys) for the live view's schematic button. Only for redrawing it,
+"""Draws the designed circuit (brains/designed.py) as a circuit: python schematic.py writes
+media/designed_circuit.svg, and media/designed_circuit.png (greys) for the live view's schematic button. Only for redrawing it,
 so not in requirements.txt: pip install schemdraw cairosvg pillow.
 
 Every input and output is a terminal on the brain's boundary: transconductance amplifiers (op-amp symbols), RC
@@ -461,7 +461,7 @@ for ((rx, ry), part), k in ((m0, 0), (m1, 1)):                     # spike detec
 dashed((LEFT, TOP), (RIGHT, TOP), (RIGHT, BOTTOM), (LEFT, BOTTOM), (LEFT, TOP))
 text((LEFT + 0.3, TOP - 0.5), "the brain: everything inside this line; the body connects only at the terminals ○",
      valign="top")
-text((LEFT, TOP + 4.6), "The mixed-signal brain: four neurons (sensors S0, S1; motors M0, M1), four synapses (two fixed, "
+text((LEFT, TOP + 4.6), "The designed circuit: four neurons (sensors S0, S1; motors M0, M1), four synapses (two fixed, "
      "two that learn), two hush cells by which each sensor quiets the other, two learning cells and the taste. Each "
      "shaded box is one of these parts, titled with what it does.", size=FS + 3)
 text((LEFT, TOP + 3.5), "Each triangle is a transconductance amplifier, output current I_b·tanh(V+ − V−); followers "
@@ -476,10 +476,10 @@ for x in (LEFT - 9.0, RIGHT + 8.0):                                  # room for 
 bad = overlaps()
 assert not bad, bad
 OUT = pathlib.Path(__file__).parent / "media"
-d.save(str(OUT / "mixed_signal.svg"))
+d.save(str(OUT / "designed_circuit.svg"))
 import cairosvg                                                      # noqa: E402
 from PIL import Image                                                # noqa: E402
-cairosvg.svg2png(url=str(OUT / "mixed_signal.svg"), write_to=str(OUT / "mixed_signal.png"), output_width=4800,
+cairosvg.svg2png(url=str(OUT / "designed_circuit.svg"), write_to=str(OUT / "designed_circuit.png"), output_width=4800,
                  background_color="white")
-Image.open(OUT / "mixed_signal.png").convert("L").save(OUT / "mixed_signal.png", optimize=True)
-print("wrote", OUT / "mixed_signal.svg", "and", OUT / "mixed_signal.png")
+Image.open(OUT / "designed_circuit.png").convert("L").save(OUT / "designed_circuit.png", optimize=True)
+print("wrote", OUT / "designed_circuit.svg", "and", OUT / "designed_circuit.png")

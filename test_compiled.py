@@ -1,6 +1,6 @@
 """Checks that the compiled simulation computes what its plain description says (python test_compiled.py): the
 circuit's integration (mixed_feedback.py) and the eyes and mouth (world.py), each against a plain numpy version of
-the same equations, on the mixed-signal brain and on random circuits and scenes. The world must agree exactly; the
+the same equations, on the designed circuit and on random circuits and scenes. The world must agree exactly; the
 circuit to rounding (numpy's exp and tanh may differ from the compiled ones in the last bit), with the same spikes.
 """
 
@@ -12,7 +12,7 @@ import numpy as np
 
 import mixed_feedback as mf
 import world
-from brains.mixed_signal import MixedSignalBrain
+from brains.designed import DesignedBrain
 
 
 def plain_tick(c, V, Vx, armed, inject, z):
@@ -89,6 +89,27 @@ def check_memory():
     return c.V[idle] == 0.3, rough
 
 
+def check_growth():
+    """Growth during a life: splitting a synapse with a relay neuron keeps every existing node's state, and the relay
+    passes spikes on (a stimulated neuron still drives its target, now through the relay)."""
+    c = mf.Circuit(seed=7)
+    a, b = c.neuron("a"), c.neuron("b")
+    e = c.synapse(b, a, 1.0)
+    pulse = np.zeros(2)
+    pulse[a] = 3.0
+    before = sum(c.tick(pulse, 4)[b] for _ in range(200))
+    V = c.V.copy()
+    r = c.neuron("relay")
+    c.redirect(e, r)
+    c.synapse(b, r, 1.0)
+    c.grow()
+    kept = np.array_equal(c.V[:2], V)
+    pulse = np.zeros(3)
+    pulse[a] = 3.0
+    after = sum(c.tick(pulse, 4)[b] for _ in range(200))
+    return kept, before, after
+
+
 def plain_look(body):
     """The eyes, as world.py described them before they were compiled: rays across the corridor, each stopping at
     the first block it meets."""
@@ -137,10 +158,10 @@ def check_world(rng, scenes):
 if __name__ == "__main__":
     rng = np.random.default_rng(0)
     failed = False
-    b = MixedSignalBrain(3)
+    b = DesignedBrain(3)
     worst, same = check_circuit(b.circuit, [*b.sensors, b.taste_node], 2000, rng)
     ok = worst < 1e-9 and same
-    print(f"circuit, mixed-signal brain, 2,000 ticks: spikes {'the same' if same else 'DIFFER'}, voltages within "
+    print(f"circuit, designed circuit, 2,000 ticks: spikes {'the same' if same else 'DIFFER'}, voltages within "
           f"{worst:.1e}: {'ok' if ok else 'FAILED'}")
     failed |= not ok
     for i in range(20):
@@ -152,6 +173,11 @@ if __name__ == "__main__":
             print(f"circuit, random {i}: spikes {'the same' if same else 'DIFFER'}, voltages within {worst:.1e}:"
                   " FAILED")
     print("circuits, 20 random, 300 ticks each:", "FAILED" if failed else "ok")
+    kept, before, after = check_growth()
+    ok = kept and after > 0.8 * before
+    print(f"growth: state kept {kept}; target spikes {before} before a relay split its synapse, {after} after:"
+          f" {'ok' if ok else 'FAILED'}")
+    failed |= not ok
     held, rough = check_memory()
     ok = held and rough < 3 * mf.WRITE / np.sqrt(1000 / mf.DT) + 0.01
     print(f"memory nodes: held exactly while idle {held}; written 50.0 with error {rough:.4f}: {'ok' if ok else 'FAILED'}")

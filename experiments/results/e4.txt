@@ -1,0 +1,31 @@
+knowing (no growth)                food 1.51, poison 1.51 per 1,000; food:poison 1.00 [0.92, 1.09], last third 1.00 [0.85, 1.18]; bridges 0 in 0 of 64 lives
+                                   all food: food 3.02 per 1,000 ticks; bridges 0 in 0 of 64 lives
+oracle O1                          food 1.65, poison 0.57 per 1,000; food:poison 2.87 [2.63, 3.14], last third 3.47 [2.85, 4.28]; bridges 64 in 64 of 64 lives (poison 64)
+                                   all food: food 2.83 per 1,000 ticks; bridges 64 in 64 of 64 lives (red 64)
+R0 as E3                           food 1.44, poison 0.75 per 1,000; food:poison 1.92 [1.73, 2.12], last third 3.29 [2.50, 4.47]; bridges 85 in 63 of 64 lives (food 13, poison 72)
+                                   all food: food 3.02 per 1,000 ticks; bridges 0 in 0 of 64 lives
+                                   bridges per poison life {"2 on poison's sensor, 1 on food's": 3, "1 on poison's sensor, 0 on food's": 44, "1 on poison's sensor, 1 on food's": 10, "2 on poison's sensor, 0 on food's": 6, 'none': 1}; first at median tick 3307
+A1 no routing                      food 0.95, poison 0.72 per 1,000; food:poison 1.32 [1.19, 1.45], last third 2.10 [1.52, 2.88]; bridges 137 in 63 of 64 lives (food 68, poison 69)
+                                   all food: food 3.02 per 1,000 ticks; bridges 0 in 0 of 64 lives
+                                   bridges per poison life {"1 on poison's sensor, 1 on food's": 55, "2 on poison's sensor, 2 on food's": 3, 'none': 1, "1 on poison's sensor, 2 on food's": 2, "2 on poison's sensor, 1 on food's": 3}; first at median tick 3299
+A2 no competition                  food 1.40, poison 0.97 per 1,000; food:poison 1.45 [1.31, 1.58], last third 1.85 [1.51, 2.26]; bridges 198 in 63 of 64 lives (food 72, poison 126)
+                                   all food: food 3.02 per 1,000 ticks; bridges 0 in 0 of 64 lives
+                                   bridges per poison life {"2 on poison's sensor, 2 on food's": 36, "2 on poison's sensor, 0 on food's": 27, 'none': 1}; first at median tick 3300
+R1 sharp routing                   food 1.61, poison 0.74 per 1,000; food:poison 2.18 [1.98, 2.39], last third 3.09 [2.60, 3.79]; bridges 85 in 64 of 64 lives (food 5, poison 80)
+                                   all food: food 3.02 per 1,000 ticks; bridges 0 in 0 of 64 lives
+                                   bridges per poison life {"2 on poison's sensor, 0 on food's": 12, "1 on poison's sensor, 0 on food's": 47, "2 on poison's sensor, 1 on food's": 4, "1 on poison's sensor, 1 on food's": 1}; first at median tick 2460
+R2 one bridge per neuron           food 1.45, poison 0.74 per 1,000; food:poison 1.97 [1.78, 2.17], last third 3.90 [3.02, 5.01]; bridges 74 in 63 of 64 lives (food 11, poison 63)
+                                   all food: food 3.02 per 1,000 ticks; bridges 0 in 0 of 64 lives
+                                   bridges per poison life {"1 on poison's sensor, 1 on food's": 11, "1 on poison's sensor, 0 on food's": 52, 'none': 1}; first at median tick 3307
+R3 sharp + one per neuron          food 1.61, poison 0.68 per 1,000; food:poison 2.37 [2.20, 2.56], last third 3.92 [3.30, 4.79]; bridges 66 in 64 of 64 lives (food 2, poison 64)
+                                   all food: food 3.02 per 1,000 ticks; bridges 0 in 0 of 64 lives
+                                   bridges per poison life {"1 on poison's sensor, 0 on food's": 62, "1 on poison's sensor, 1 on food's": 2}; first at median tick 2460
+\nnet food per 1,000 ticks, paired: against knowing (poison lives; all-food lives), and against oracle O1
+  knowing (no growth)          +0.00 [+0.00, +0.00];  +0.00 [+0.00, +0.00];  vs O1 -1.07 [-1.22, -0.93]
+  oracle O1                    +1.07 [+0.93, +1.22];  -0.19 [-0.42, +0.03];  vs O1 +0.00 [+0.00, +0.00]
+  R0 as E3                     +0.69 [+0.55, +0.84];  +0.00 [+0.00, +0.00];  vs O1 -0.38 [-0.55, -0.22]
+  A1 no routing                +0.23 [+0.11, +0.35];  +0.00 [+0.00, +0.00];  vs O1 -0.84 [-0.97, -0.72]
+  A2 no competition            +0.43 [+0.29, +0.58];  +0.00 [+0.00, +0.00];  vs O1 -0.64 [-0.77, -0.52]
+  R1 sharp routing             +0.87 [+0.72, +1.03];  +0.00 [+0.00, +0.00];  vs O1 -0.20 [-0.35, -0.06]
+  R2 one bridge per neuron     +0.71 [+0.56, +0.87];  +0.00 [+0.00, +0.00];  vs O1 -0.36 [-0.52, -0.20]
+  R3 sharp + one per neuron    +0.93 [+0.79, +1.08];  +0.00 [+0.00, +0.00];  vs O1 -0.14 [-0.28, -0.00]

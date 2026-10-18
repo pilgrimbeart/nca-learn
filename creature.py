@@ -1,7 +1,7 @@
 """A new-born creature that learns which colour is food: a body in a world (world.py), and a brain (brains/). Life
 joins them; measure compares brains on the same lives; watch shows a life.
 
-    python creature.py                  # watch a life with the grown brain (r: new life, d: damage the brain at the
+    python creature.py                  # watch a life with the sheet brain (r: new life, d: damage the brain at the
                                         # mouse, b: the other brain, s: its schematic (mixed signal), space: pause,
                                         # up/down: speed, Esc: quit)
     python creature.py --measure 16     # 16 lives with learning and 16 without, for each brain: how soon it learns,
@@ -16,11 +16,13 @@ colour is seen, and fires a thruster for each time its motor fires. Its one othe
 and -1 for poison, as soon as a block touches the mouth (otherwise nothing). Taste doesn't say which sensor saw the
 block: the brain must work out what earned it. Nothing else goes in or out.
 
-Brains: "grown" (brains/grown.py), a sheet of identical cells that builds itself, then learns; "mixed-signal"
-(brains/mixed_signal.py), a small designed circuit of excitable neurons; "minimal" (brains/minimal.py), its neurons
-alone, driving at every block, with taste going nowhere: the baseline for recruitment (RECRUITMENT.md); "adjusting"
-(brains/adjusting.py), the minimal brain with every neuron adjusting its own excitability from taste (only the
-sensors feel it), all of it circuit: rung 0 of recruitment.
+Brains: the sheet brain ("sheet", brains/sheet.py), a sheet of identical cells that builds itself, then learns; and
+the circuit brains: "designed-circuit" (brains/designed.py), a small circuit of excitable neurons designed by hand;
+"minimal-circuit" (brains/minimal.py), its neurons alone, driving at every block, with taste going nowhere (the
+baseline for recruitment, RECRUITMENT.md); "adjusting-circuit" (brains/adjusting.py), each neuron adjusting its own
+excitability from taste (rung 0); "knowing-circuit" (brains/knowing.py), the minimal circuit plus a taste neuron that
+learns what predicts pain but has no outputs (recruitment's starting animal); "recruiting-circuit"
+(brains/recruiting.py), the knowing circuit growing, in its life, the link that lets that knowledge act (rung 1).
 
 In an all-food world (poison None) both colours are food, so there is nothing to learn: the control for recruitment,
 which should then not happen.
@@ -34,25 +36,30 @@ import time
 import numpy as np
 
 from brains.adjusting import AdjustingBrain
-from brains.grown import GrownBrain
+from brains.sheet import SheetBrain
+from brains.knowing import KnowingBrain
 from brains.minimal import MinimalBrain
-from brains.mixed_signal import MixedSignalBrain
+from brains.recruiting import RecruitingBrain
+from brains.designed import DesignedBrain
 from world import COLOURS, SENSE, THRUSTERS, WORLD, Body
 
-BRAINS = {"grown": GrownBrain, "mixed-signal": MixedSignalBrain, "minimal": MinimalBrain, "adjusting": AdjustingBrain}
+BRAINS = {"sheet": SheetBrain, "designed-circuit": DesignedBrain, "minimal-circuit": MinimalBrain,
+          "adjusting-circuit": AdjustingBrain, "knowing-circuit": KnowingBrain, "recruiting-circuit": RecruitingBrain}
 FAST, SLOW = 10, 1  # watching: ticks per frame, slow while the brain wires itself and first drives the body
-SCHEMATIC = "media/mixed_signal.png"    # watching: the mixed-signal brain's circuit (drawn by schematic.py)
+SCHEMATIC = "media/designed_circuit.png"    # watching: the designed circuit (drawn by schematic.py)
 SETTLE = 200        # watching: ticks after the creature starts moving before speeding up again
+BLOCKS = 300        # watching: the height of the block view below (blocks.py)
 LEARNED = 0.2       # measuring: a sensor has learned once its chance of firing both is this near right
 
 
 class Life:
-    """A body and a brain in a world. step() runs one tick. poison: the poison colour, or None (all food)."""
+    """A body and a brain in a world. step() runs one tick. poison: the poison colour, or None (all food). brain: a
+    name in BRAINS, or (for experiments) a function from the seed to a brain."""
 
-    def __init__(self, seed: int = 0, poison: str | None = "red", learning: bool = True, brain: str = "grown"):
+    def __init__(self, seed: int = 0, poison: str | None = "red", learning: bool = True, brain: str = "sheet"):
         self.rng = np.random.default_rng(seed)                  # the world's: the same for every brain
         self.poison, self.learning = poison, learning
-        self.brain = BRAINS[brain](seed)
+        self.brain = BRAINS[brain](seed) if isinstance(brain, str) else brain(seed)
         self.body = Body(self.rng)
         s, m = (0, 1)[:: self.rng.choice((1, -1))], (0, 1)[:: self.rng.choice((1, -1))]
         self.sensor = dict(zip(COLOURS, s))                     # the body's wiring: colour -> sensor,
@@ -100,7 +107,7 @@ def one_life(job):
         if poison and learned is None and life.moving is not None and life.t % 50 == 0:
             if life.drive(poison) <= LEARNED and life.drive(food) >= 1 - LEARNED:
                 learned = life.t - life.moving
-    start = life.moving or ticks
+    start = life.moving if life.moving is not None else ticks
     out = []
     for i in range(3):
         a, b = start + i * (ticks - start) / 3, start + (i + 1) * (ticks - start) / 3
@@ -138,12 +145,12 @@ def measure(lives: int, ticks: int = 10000, brains=tuple(BRAINS), all_food: bool
                   f" {np.mean([r[1] for r in results]):.2f}, food {np.mean([r[2] for r in results]):.2f}")
 
 
-def watch(seed: int = 0, brain: str = "grown", record: str | None = None, until: int = 10000,
+def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until: int = 10000,
           all_food: bool = False) -> None:
     """A life, live. Left, the brain's own panel, in greys. Right, the world: blocks lettered R (dark) and B (light),
     the creature a triangle with its point marked, and what its eyes see. It runs FAST ticks a frame, but SLOW while the
     brain wires itself and until a little after the creature starts moving; up and down take over the speed. Buttons
-    below: switch brain (a new world, the same seed), and with the mixed-signal brain, its schematic (the life waits
+    below: switch brain (a new world, the same seed), and with the designed circuit, its schematic (the life waits
     while it is open). With record, no window: every frame is saved there as a PNG, until the given tick. all_food:
     both colours are food."""
     import os
@@ -156,7 +163,9 @@ def watch(seed: int = 0, brain: str = "grown", record: str | None = None, until:
     pygame.init()
     side = wpx = 490
     base = max(side, wpx)
-    screen = pygame.display.set_mode((side + 12 + wpx, base + 108))
+    from blocks import BlockView
+    screen = pygame.display.set_mode((side + 12 + wpx, base + 108 + BLOCKS))
+    view = None                                                     # the block view of a circuit brain
     pygame.display.set_caption("a brain learns which colour is food")
     font, small = pygame.font.SysFont(None, 22), pygame.font.SysFont(None, 18)
     per_frame, auto, paused, clock = FAST, True, False, pygame.time.Clock()   # auto: speed set by the stage
@@ -171,7 +180,7 @@ def watch(seed: int = 0, brain: str = "grown", record: str | None = None, until:
         other = names[(names.index(brain) + 1) % len(names)]
         out, x = [], 6
         for key, label in (("b", f"brain: {brain}   switch to {other}  (b)"),) + \
-                          ((("s", "schematic  (s)"),) if brain == "mixed-signal" else ()):
+                          ((("s", "schematic  (s)"),) if brain == "designed-circuit" else ()):
             w = font.size(label)[0] + 20
             out.append((key, label, pygame.Rect(x, base + 74, w, 28)))
             x += w + 10
@@ -183,7 +192,7 @@ def watch(seed: int = 0, brain: str = "grown", record: str | None = None, until:
             names = list(BRAINS)
             brain = names[(names.index(brain) + 1) % len(names)]
             life, auto, viewer = Life(seed, poison, brain=brain), True, None
-        elif key == "s" and brain == "mixed-signal":
+        elif key == "s" and brain == "designed-circuit":
             viewer = SchematicViewer(pygame, screen, pathlib.Path(__file__).parent / SCHEMATIC, font)
 
     while True:
@@ -284,6 +293,15 @@ def watch(seed: int = 0, brain: str = "grown", record: str | None = None, until:
             pygame.draw.rect(screen, (90, 90, 90) if rect.collidepoint(hover) else (50, 50, 50), rect, border_radius=4)
             pygame.draw.rect(screen, (200, 200, 200), rect, 1, border_radius=4)
             screen.blit(font.render(label, True, (255, 255, 255)), (rect.x + 10, rect.y + 6))
+        strip = pygame.Rect(0, base + 108, side + 12 + wpx, BLOCKS)     # below: the brain as blocks
+        if hasattr(life.brain, "circuit"):
+            if view is None or view.brain is not life.brain:
+                view = BlockView(life.brain)
+            view.draw(screen, strip, life, font, small)
+        else:
+            pygame.draw.rect(screen, (18, 18, 18), strip)
+            screen.blit(font.render("block view: for the circuit brains (b to switch)", True, (120, 120, 120)),
+                        (8, base + 112))
         pygame.display.flip()
         if record:
             pygame.image.save(screen, os.path.join(record, f"{life.t:06d}.png"))
@@ -354,7 +372,7 @@ class SchematicViewer:
             screen.blit(pg.transform.smoothscale(part, size),
                         (round((x0 - self.ox) * self.zoom), self.BAR + round((y0 - self.oy) * self.zoom)))
         pg.draw.rect(screen, (40, 40, 40), (0, 0, w, self.BAR))
-        screen.blit(self.font.render("the mixed-signal brain's circuit   wheel: zoom   drag: pan", True, (255, 255, 255)),
+        screen.blit(self.font.render("the designed circuit   wheel: zoom   drag: pan", True, (255, 255, 255)),
                     (8, 7))
         hover = self.close.collidepoint(pg.mouse.get_pos())
         pg.draw.rect(screen, (90, 90, 90) if hover else (60, 60, 60), self.close, border_radius=4)
@@ -364,7 +382,7 @@ class SchematicViewer:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--brain", choices=tuple(BRAINS), default="grown", help="the brain to watch or record")
+    parser.add_argument("--brain", choices=tuple(BRAINS), default="sheet", help="the brain to watch or record")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--measure", type=int, metavar="LIVES", help="measure every brain over this many lives (headless)")
     parser.add_argument("--ticks", type=int, default=10000, help="ticks per life when measuring or recording")

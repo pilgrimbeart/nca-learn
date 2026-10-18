@@ -1,0 +1,9 @@
+A guard, learning        poison lives: F at 1,000 / 3,000 / 10,000 ticks 0.04 / 0.14 / 0.24; F > 0.5 in 3 of 64 lives (median first at 5300); help while F > 0.5: poison's sensor 0.72, food's 0.06; first sprout to reach growth: {'poison': 11} at median tick 6032
+  f"; help while F > 0.5: poison's sensor {np.nanmean(hp):.2f}, food's {np.nanmean(hf):.2f}" +
+                         all-food lives: F at 1,000 / 3,000 / 10,000 ticks 0.01 / 0.01 / 0.02; F > 0.5 in 0 of 64 lives; help while F > 0.5: poison's sensor nan, food's nan; first sprout to reach growth: none
+B no guard, learning     poison lives: F at 1,000 / 3,000 / 10,000 ticks 0.04 / 0.15 / 0.26; F > 0.5 in 11 of 64 lives (median first at 7800); help while F > 0.5: poison's sensor 0.83, food's 0.22; first sprout to reach growth: {'poison': 19} at median tick 7431
+                         all-food lives: F at 1,000 / 3,000 / 10,000 ticks 0.01 / 0.01 / 0.02; F > 0.5 in 0 of 64 lives; help while F > 0.5: poison's sensor nan, food's nan; first sprout to reach growth: none
+C guard, no learning     poison lives: F at 1,000 / 3,000 / 10,000 ticks 0.02 / 0.06 / 0.07; F > 0.5 in 0 of 64 lives; help while F > 0.5: poison's sensor nan, food's nan; first sprout to reach growth: none
+                         all-food lives: F at 1,000 / 3,000 / 10,000 ticks 0.01 / 0.01 / 0.02; F > 0.5 in 0 of 64 lives; help while F > 0.5: poison's sensor nan, food's nan; first sprout to reach growth: none
+D no guard, no learning  poison lives: F at 1,000 / 3,000 / 10,000 ticks 0.02 / 0.06 / 0.08; F > 0.5 in 0 of 64 lives; help while F > 0.5: poison's sensor nan, food's nan; first sprout to reach growth: none
+                         all-food lives: F at 1,000 / 3,000 / 10,000 ticks 0.01 / 0.01 / 0.02; F > 0.5 in 0 of 64 lives; help while F > 0.5: poison's sensor nan, food's nan; first sprout to reach growth: none

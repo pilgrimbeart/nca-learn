@@ -37,7 +37,7 @@ cd nca-learn
 python3 -m venv .venv              # Windows: python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python creature.py                 # watch a life (the grown brain; --brain mixed-signal for the other)
+python creature.py                 # watch a life (the sheet brain; --brain designed-circuit etc. for the others)
 ```
 
 Once the environment is active, `python` is its Python. In a new terminal, activate it again first. On Ubuntu, if
@@ -51,8 +51,8 @@ In the live view:
 |---|---|
 | `r` | a new life (a new seed, a new wiring; poison alternates red and blue) |
 | `d` | damage the brain: replace a disc of cells under the mouse with new-born ones |
-| `b` | switch brain (grown or mixed signal), in a new world with the same seed |
-| `s` | the mixed-signal brain's schematic (wheel: zoom, drag: pan, Esc: close) |
+| `b` | the next brain (sheet, then the circuit brains in turn), in a new world with the same seed |
+| `s` | the designed circuit's schematic (wheel: zoom, drag: pan, Esc: close) |
 | space | pause |
 | up / down | faster / slower (takes over from the automatic speed; `r` hands it back) |
 | Esc | quit |
@@ -74,6 +74,11 @@ In the live view:
   near block casts a shadow). A ring at a corner of the tail shows that thruster firing. "yuck!" is a poison meal.
 - **Below:** the tick, the stage of life, which colour is poison this life, and the recent meals; and buttons for `b`
   and `s` (above). The life waits while the schematic is open.
+- **At the bottom, for the circuit brains, the block view** (`blocks.py`): the brain at level 1, found from its
+  netlist and drawn live. Neurons are circles (brightness: voltage; white: a spike), synapses arrows (solid excites,
+  dashed inhibits, thickness: current), and every other node a meter hung where it belongs (on the synapse it gates,
+  or by the neuron it acts on), with the eyes, thrusters and taste at the edges. A unit grown in the life (the
+  recruiting brain's bridge) appears as a new circle on the synapse it split, outlined for a while.
 
 The view runs at 10 ticks a frame, but slows to 1 while the paths grow and until a little after the creature starts
 moving, so the pulses can be seen running down them. A life goes: "where am I" (to about tick 450), "wiring", then
@@ -86,8 +91,12 @@ food sensor's rises towards 1.
 python creature.py --seed 3         # a particular life
 python creature.py --measure 32     # every brain, 32 lives each with learning and 32 without, headless
                                     # (--brains to choose; --all-food: lives where both colours are food)
-python creature.py --brain minimal  # the baseline for recruitment: drives at every block, taste goes nowhere
-python creature.py --brain adjusting  # rung 0 of recruitment: each neuron adjusts its own excitability from taste
+python creature.py --brain minimal-circuit  # the baseline for recruitment: drives at every block, taste goes nowhere
+python creature.py --brain adjusting-circuit  # rung 0 of recruitment: each neuron adjusts its own excitability
+python creature.py --brain knowing-circuit  # recruitment's starting animal: a taste neuron learns what predicts
+                                    # pain, but acts on nothing
+python creature.py --brain recruiting-circuit  # rung 1: it grows, in its life, the link that lets that knowledge act
+python -m experiments.e1_oracle     # the rung-1 experiments, E1 to E6 (experiments/NOTEBOOK.md)
 python recruit_test.py 32           # recruitment's local signals, neuron by neuron, watched from outside
 python test_rules.py                # check every rule keeps the rules below
 python test_compiled.py             # check the compiled circuit and eyes against plain numpy versions
@@ -95,7 +104,7 @@ python watch.py organs              # one stage on its own (organs, wiring; --sh
 python organs_test.py               # when the coordinates and names come right, life by life
 python wiring_test.py               # pulses sent from S1 and S2: how many arrive, and how soon
 python diagram.py                   # redraw media/cell.svg, what runs inside one cell
-python schematic.py                 # redraw media/mixed_signal.svg and .png, the mixed-signal brain's circuit
+python schematic.py                 # redraw media/designed_circuit.svg and .png, the designed circuit's schematic
                                     # (needs pip install schemdraw cairosvg pillow)
 python creature.py --record frames  # save a life's frames as PNGs, headless (media/life.gif: --seed 0 --ticks 10000,
                                     # 180 frames taken evenly by tick)
@@ -239,10 +248,10 @@ with small kicks that die away quickly. The square before it, whose whole front 
 carried it into what lay ahead, ate nearly as much poison as food even with p perfect (`LESSONS.md`).
 Once learned, the thirds differ much by noise: poison meals are few, and even 32 lives are few for this score.
 
-## A second brain, for comparison: mixed signal
+## A second brain, for comparison: the designed circuit
 
-The same body and world can run a different brain (`python creature.py --brain mixed-signal`): a small circuit,
-designed rather than grown, built from the one element of Ribar and Sepulchre's [Neuromorphic
+The same body and world can run a different brain (`python creature.py --brain designed-circuit`): a small circuit,
+designed rather than self-built, built from the one element of Ribar and Sepulchre's [Neuromorphic
 Control](https://arxiv.org/abs/2011.04441) (`mixed_feedback.py`): a leaky node, and elements that each put a current
 into a node, a sigmoid of a low-pass-filtered voltage, with a sign (positive or negative feedback) and a timescale.
 Four excitable neurons, alike: two sensors and two motors. Each sensor excites the motor on its side (a coin toss at
@@ -254,7 +263,7 @@ three factors, all in the circuit: each sensor's spikes charge its eligibility n
 and empty the other sensor's (cross-inhibition, so only the sensor that fired last is eligible); one taste node,
 driven by the same taste input, charges or empties a capacitor holding p while taste is good or bad, as fast as
 eligibility allows. p sets the plastic synapse's strength. Noise on every node makes the odd spontaneous spike, so a
-creature that sees nothing still moves. It keeps the grown brain's symmetry: nothing in it says what a sensor senses
+creature that sees nothing still moves. It keeps the sheet brain's symmetry: nothing in it says what a sensor senses
 or what a motor does. Its panel in the live view shows each neuron's voltage, a white line at each spike. Its time is
 continuous: its lives don't change with the integration step (DT 0.2 to 0.01), though its learning does depend on the
 shape of the taste pulse (`LESSONS.md`). Compiled with numba, with the world, a life of 10,000 ticks takes about half
@@ -264,18 +273,18 @@ a second.
 
 |  | learned | food minus poison per 1,000 ticks, by third of life after moving | food:poison, by third |
 |---|---|---|---|
-| grown | 24 of 32 lives, median 4,982 ticks | +0.25, +0.53, +0.89 | 1.5, 2.0, 3.0 |
-| mixed signal | 28 of 32 lives, median 3,622 ticks | +0.54, +1.23, +1.15 | 2.2, 5.9, 4.6 |
+| sheet | 24 of 32 lives, median 4,982 ticks | +0.25, +0.53, +0.89 | 1.5, 2.0, 3.0 |
+| designed circuit | 28 of 32 lives, median 3,622 ticks | +0.54, +1.23, +1.15 | 2.2, 5.9, 4.6 |
 
-The mixed-signal brain moves from the first tick (the grown brain spends about 600 building itself), so its thirds
-span the whole life; it reacts at once, where a pulse takes about 13 ticks to cross the grown brain; and its sensors
+The designed circuit moves from the first tick (the sheet brain spends about 600 building itself), so its thirds
+span the whole life; it reacts at once, where a pulse takes about 13 ticks to cross the sheet; and its sensors
 hush each other. Over 64 lives of 10,000 ticks it ate 4.3 food for each poison, 7.0 in the second half, and 14.8 with
-p set perfect by hand; it nets about twice as much food as the grown brain. The comparison says what the sheet costs:
+p set perfect by hand; it nets about twice as much food as the sheet brain. The comparison says what the sheet costs:
 building takes time, and a big brain is slow.
 
 ## Next: mixed feedback, simplicity and recruitment
 
-The mixed-signal brain does the job with a handful of neurons where the sheet uses thousands of cells, so the next
+The designed circuit does the job with a handful of neurons where the sheet uses thousands of cells, so the next
 step explores brains built from mixed-feedback parts: evolved in graph form with a strong preference for simplicity,
 and then, from a local perspective only, recruiting more parts in a life when the task needs them.
 `MIXED_FEEDBACK.md` summarises the mixed-feedback approach (Sepulchre and colleagues), what is new in it and what it
@@ -295,8 +304,8 @@ wrong one. Damage a sensor and a new cell takes the name, but what the old one h
 ## Not yet
 
 - Odd sizes only, and tested at 49 × 49: on an even sheet the middle of an edge falls between two cells.
-- Learning is slow, because meals are few: in 8 of 32 lives the grown brain had not learned by 10,000 ticks.
-- A taste after both colours were seen at once can go to the wrong sensor, so the grown brain's p wanders a little
+- Learning is slow, because meals are few: in 8 of 32 lives the sheet brain had not learned by 10,000 ticks.
+- A taste after both colours were seen at once can go to the wrong sensor, so the sheet brain's p wanders a little
   near its target (0.17 and 0.91 at the end, where crediting by hand gives 0 and 1).
 - In about 1 sheet in 32, two cells take the same actuator name (M1).
 - The coordinates take about 1,500 steps to settle (they are averages, and averages spread slowly).
@@ -318,12 +327,17 @@ taste, ping and learn, in sensors and T cells) and the wiring for each of the tw
 |---|---|
 | `creature.py` | a life (a body, a brain and the body's wiring), the live view, and the measurement |
 | `world.py` | the world and the body: blocks, eyes, thrusters, mouth |
-| `brains/grown.py` | the grown brain: the sheet, by the names its cells took |
-| `brains/mixed_signal.py` | the mixed-signal brain: four excitable neurons |
+| `brains/sheet.py` | the sheet brain: the sheet, by the names its cells took |
+| `brains/circuit.py` | what every circuit brain shares: two sensor and two motor neurons, a taste node, running and drawing |
+| `brains/designed.py` | the designed circuit: four excitable neurons, designed by hand |
 | `brains/minimal.py` | the minimal brain: those neurons alone, driving at every block (the baseline for recruitment) |
 | `brains/adjusting.py` | the minimal brain with every neuron adjusting its own excitability, all circuit (rung 0 of recruitment) |
+| `brains/knowing.py` | the minimal brain plus a taste neuron that learns what predicts pain but has no outputs (recruitment's starting animal) |
+| `brains/recruiting.py` | the knowing brain growing, in its life, the link that lets its knowledge act (rung 1) |
 | `recruit_test.py` | recruitment's local signals, watched from outside a circuit brain |
-| `mixed_feedback.py` | the mixed-feedback element and circuit the mixed-signal brain is built from |
+| `blocks.py` | the block view: a circuit brain at level 1 (neurons, synapses, the states they hold), live |
+| `experiments/` | the rung-1 experiments and their lab notebook (`NOTEBOOK.md`) |
+| `mixed_feedback.py` | the mixed-feedback element and circuit every circuit brain is built from |
 | `sheet.py` | the engine: the only code that knows the grid |
 | `rules/organs.py` | where am I: the race, handedness, edge labels, coordinates, names |
 | `rules/wiring.py` | growing paths and running pulses, built on `rules/organs.py` |
@@ -333,7 +347,7 @@ taste, ping and learn, in sensors and T cells) and the wiring for each of the tw
 | `test_compiled.py` | checks the compiled circuit (`mixed_feedback.py`) and eyes and mouth (`world.py`) against plain numpy versions |
 | `watch.py`, `organs_test.py`, `wiring_test.py` | each stage on its own, live or measured |
 | `diagram.py` | draws `media/cell.svg`, the diagram above (by hand from the rules: redraw it when one changes) |
-| `schematic.py` | draws `media/mixed_signal.svg` and `.png`, the mixed-signal brain as a circuit (by hand: redraw it when the brain changes) |
+| `schematic.py` | draws `media/designed_circuit.svg` and `.png`, the designed circuit's schematic (by hand: redraw it when it changes) |
 | `LESSONS.md` | how it got here: what was tried, what failed and why |
 | `MIXED_FEEDBACK.md` | the mixed-feedback approach (Sepulchre and colleagues): what is new in it, the literature, and what it suggests here |
 | `RECRUITMENT.md` | how a brain might recruit more computational power locally, with no god: the literature, insights and plan |

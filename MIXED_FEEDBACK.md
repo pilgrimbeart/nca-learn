@@ -207,7 +207,7 @@ learns by local rules, and circuits shaped by evolution, which needs no gradient
 - **Bursting and plasticity.** Drion's group finds that switching a network from tonic firing to bursting pulls
   synaptic weights into an attractor set by the plasticity rule, a controllable consolidation stage [28].
 - **What I could not find**: a mixed-feedback circuit that learns a task from reward within its lifetime, or any
-  evolution or automatic design of Ribar-Sepulchre circuits. This project's mixed-signal brain (a three-factor rule
+  evolution or automatic design of Ribar-Sepulchre circuits. This project's designed circuit (a three-factor rule
   built from the same elements, learning from one taste signal) sits in that gap.
 
 ## Related work from evolutionary robotics

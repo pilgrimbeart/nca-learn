@@ -77,8 +77,15 @@ recruited.
    (`python recruit_test.py`). Rung 0 cuts poison by a third; the poison sensor ends frustrated (its decisions settled,
    what it receives still predicting pain, the pain going on), the food sensor and every all-food life calm.
    Everything that affects behaviour is explicit circuit; the only exception is growth, sudden and locally triggered.
-3. Then Phase B's recruitment, from generic spare units, sparsely or locally connected, with connections grown toward
-   a signal the disturbed unit sends out.
+3. The starting animal, changed (the user): one that may *know* but can't *act*. The minimal brain plus a taste
+   neuron that learns what predicts pain (plastic synapses from the sensors) but has no outputs (`brains/knowing.py`;
+   done: `LESSONS.md`). It learns the association and anticipates poison, its behaviour exactly the minimal brain's;
+   frustrated in poison lives, calm in all-food lives.
+4. Rung 1, done (`brains/recruiting.py`; `experiments/NOTEBOOK.md`, E0-E6): frustration at the taste neuron, help
+   routed back along its learned input synapses, competing sprouts, and the growth primitive grow a bridge on the
+   poison sensor's pathway, the oracle's structure in 61 of 64 held-out lives, as good as an oracle placing it at the
+   same moment, and nothing in all-food lives. Next: a neuron robust to mismatch (the neuron, not the recruitment
+   machinery, is fragile); growth from other starting animals; de-recruitment; rung 2 (recruiting a feature).
 
 Honesty test throughout: spare units generic and identical, one rule that knows nothing of roles. Dormant
 pre-designed circuits switched on when needed would be design smuggled in.

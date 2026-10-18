@@ -1,0 +1,11 @@
+R3                                 food 1.61, poison 0.68 per 1,000; food:poison 2.37 [2.20, 2.56], last third 3.92 [3.30, 4.79]; bridges 66 in 64 of 64 lives (food 2, poison 64)
+time-matched oracle                food 1.61, poison 0.69 per 1,000; food:poison 2.33 [2.18, 2.50], last third 3.66 [3.08, 4.42]; bridges 64 in 64 of 64 lives (poison 64)
+oracle from tick 1                 food 1.69, poison 0.58 per 1,000; food:poison 2.92 [2.70, 3.17], last third 4.00 [3.30, 4.86]; bridges 64 in 64 of 64 lives (poison 64)
+  R3 vs time-matched oracle            +0.01 [-0.12, +0.14]
+  time-matched vs from-birth oracle    -0.19 [-0.32, -0.06]
+  R3 vs from-birth oracle              -0.18 [-0.31, -0.04]
+
+minimal                          nodes   5, elements  12, sum of gains     20.0
+knowing                          nodes  10, elements  23, sum of gains     49.3
+R3 at the end of a poison life   nodes  22, elements  42, sum of gains    530.7
+designed (mixed-signal)          nodes  11, elements  24, sum of gains   1005.5

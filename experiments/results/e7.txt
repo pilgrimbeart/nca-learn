@@ -1,0 +1,28 @@
+\nseeds 0-31
+knowing (no growth)                food 1.51, poison 1.51 per 1,000; food:poison 1.00 [0.92, 1.09], last third 1.00 [0.85, 1.18]; bridges 0 in 0 of 64 lives
+oracle, T hold                     food 1.68, poison 0.57 per 1,000; food:poison 2.96 [2.74, 3.22], last third 3.25 [2.80, 3.78]; bridges 64 in 64 of 64 lives (poison 64)
+oracle, local hold                 food 1.73, poison 0.51 per 1,000; food:poison 3.40 [3.17, 3.68], last third 4.03 [3.43, 4.86]; bridges 64 in 64 of 64 lives (poison 64)
+R4, T hold                         food 1.61, poison 0.64 per 1,000; food:poison 2.50 [2.35, 2.68], last third 3.57 [3.04, 4.35]; bridges 66 in 64 of 64 lives (food 2, poison 64)
+                                   bridges per poison life {"1 on poison's sensor, 0 on food's": 62, "1 on poison's sensor, 1 on food's": 2}; first at median tick 1944
+R4, local hold                     food 1.67, poison 0.58 per 1,000; food:poison 2.90 [2.69, 3.14], last third 4.91 [4.03, 6.09]; bridges 65 in 64 of 64 lives (food 1, poison 64)
+                                   bridges per poison life {"1 on poison's sensor, 1 on food's": 1, "1 on poison's sensor, 0 on food's": 63}; first at median tick 1944
+  oracle, T hold       vs knowing: poison lives +1.12 [+0.96, +1.27]; all-food -0.04 [-0.27, +0.19]
+  oracle, local hold   vs knowing: poison lives +1.22 [+1.07, +1.40]; all-food +0.46 [+0.25, +0.67]
+  R4, T hold           vs knowing: poison lives +0.97 [+0.80, +1.14]; all-food +0.00 [+0.00, +0.00]
+  R4, local hold       vs knowing: poison lives +1.10 [+0.95, +1.26]; all-food +0.00 [+0.00, +0.00]
+  oracle, local hold vs oracle, T hold: +0.11 [-0.03, +0.26]
+  R4, local hold vs R4, T hold: +0.13 [+0.01, +0.23]
+\nseeds 100-131
+knowing (no growth)                food 1.66, poison 1.66 per 1,000; food:poison 1.00 [0.92, 1.08], last third 1.00 [0.85, 1.18]; bridges 0 in 0 of 64 lives
+oracle, T hold                     food 1.79, poison 0.62 per 1,000; food:poison 2.87 [2.63, 3.13], last third 3.05 [2.64, 3.55]; bridges 64 in 64 of 64 lives (poison 64)
+oracle, local hold                 food 1.81, poison 0.52 per 1,000; food:poison 3.45 [3.23, 3.70], last third 3.84 [3.30, 4.51]; bridges 64 in 64 of 64 lives (poison 64)
+R4, T hold                         food 1.70, poison 0.70 per 1,000; food:poison 2.44 [2.24, 2.63], last third 3.70 [3.11, 4.47]; bridges 67 in 64 of 64 lives (food 3, poison 64)
+                                   bridges per poison life {"1 on poison's sensor, 0 on food's": 61, "1 on poison's sensor, 1 on food's": 3}; first at median tick 1690
+R4, local hold                     food 1.67, poison 0.58 per 1,000; food:poison 2.90 [2.68, 3.12], last third 5.68 [4.64, 7.07]; bridges 66 in 64 of 64 lives (food 2, poison 64)
+                                   bridges per poison life {"1 on poison's sensor, 0 on food's": 62, "1 on poison's sensor, 1 on food's": 2}; first at median tick 1690
+  oracle, T hold       vs knowing: poison lives +1.17 [+1.00, +1.36]; all-food -0.28 [-0.47, -0.09]
+  oracle, local hold   vs knowing: poison lives +1.28 [+1.15, +1.42]; all-food +0.12 [-0.08, +0.31]
+  R4, T hold           vs knowing: poison lives +1.00 [+0.85, +1.14]; all-food +0.00 [+0.00, +0.00]
+  R4, local hold       vs knowing: poison lives +1.09 [+0.94, +1.25]; all-food +0.00 [+0.00, +0.00]
+  oracle, local hold vs oracle, T hold: +0.12 [-0.01, +0.24]
+  R4, local hold vs R4, T hold: +0.10 [-0.01, +0.21]

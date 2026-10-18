@@ -1,4 +1,4 @@
-"""The grown brain: a sheet of identical cells that builds itself, then learns (sheet.py, rules/). Sensor k is the
+"""The sheet brain: a sheet of identical cells that builds itself, then learns (sheet.py, rules/). Sensor k is the
 cell that named itself S(k+1), motor k the cell that named itself M(k+1), taste the cells that named themselves T;
 the brain touches the sheet only through them, by name. The sheet runs SPEED updates to each tick of the world."""
 
@@ -17,7 +17,7 @@ DAMAGE = 7          # watching: the radius of the disc of cells damage_at replac
 BAND = 4            # watching: the faint checkerboard's squares, in cells
 
 
-class GrownBrain:
+class SheetBrain:
     def __init__(self, seed: int):
         self.sheet = sheet.Sheet(brain, SIZE, seed, update=UPDATE)
 

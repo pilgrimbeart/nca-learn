@@ -11,6 +11,10 @@ poison (half red, half blue) and all-food lives, where nothing should stir. Over
   firing is certain, given its inputs); miss: for events that didn't make it fire, how far its highest voltage stayed
   below its threshold, as a share of the way from rest (0: a near miss).
   excitability: its knob, from 1 (empty) to 0 (full).
+  For a brain with a taste neuron T (brains/knowing.py): each sensor's synapse onto T (0..1); T's spikes per 1,000
+  ticks; anticipation: the share of poison meals T fired before (within WINDOW ticks before the taste, so its innate
+  answer to the taste doesn't count); false alarms: the same for food meals; and its confidence: when it fired before a
+  meal, how often the meal was poison.
 
     python recruit_test.py [LIVES] [TICKS] [BRAIN]
 """
@@ -24,8 +28,9 @@ import numpy as np
 from creature import COLOURS, Life
 
 ELIGIBLE = 10.0     # ticks over which a neuron's activity traces fade
-THRESHOLD = -2.82   # the edge of a mixed-signal neuron's fast positive feedback: where 0.5 - 2 sech^2(V + 1.5) = 0
+THRESHOLD = -2.82   # the edge of a circuit neuron's fast positive feedback: where 0.5 - 2 sech^2(V + 1.5) = 0
 TASTES, EVIDENCE = 5, 0.05  # with fewer tastes, or less involvement, no evidence: no confidence
+WINDOW = 10         # ticks before a meal in which a spike of T counts as anticipating it
 
 
 def watch(lf, units, ticks):
@@ -75,6 +80,27 @@ def watch(lf, units, ticks):
     return out
 
 
+def taste_neuron(lf, poison, ticks):
+    """The taste neuron, watched over the second half of the life: what it learned, and whether it anticipates."""
+    b, half = lf.brain, ticks // 2
+    spiked = [t for t, (_, spikes, _, _) in enumerate(b.log) if t >= half and spikes[b.T] > 0]
+    before = lambda m: any(m - WINDOW < t <= m for t in spiked)
+    meals = [(t, c) for t, c in lf.meals if t >= half]
+    bad = [before(t) for t, c in meals if c == poison]
+    good = [before(t) for t, c in meals if c != poison]
+    synapse = lambda colour: float(b.circuit.V[b.W[b.sensors[lf.sensor[colour]]]])
+    out = {"T": {"spikes per 1,000": 1000 * len(spiked) / (ticks - half),
+                 "anticipates poison": np.mean(bad) if bad else np.nan,
+                 "false alarms": np.mean(good) if good else np.nan,
+                 "confidence": sum(bad) / (sum(bad) + sum(good)) if sum(bad) + sum(good) else np.nan}}
+    if poison:
+        out["T"]["synapse from poison's sensor"] = synapse(poison)
+        out["T"]["from food's sensor"] = synapse("blue" if poison == "red" else "red")
+    else:
+        out["T"]["synapse from a sensor"] = (synapse("red") + synapse("blue")) / 2
+    return out
+
+
 def life(job):
     brain, seed, poison, ticks = job
     lf = Life(seed, poison, brain=brain)
@@ -91,7 +117,9 @@ def life(job):
                      else np.nan for k in stats[us[0]]}
         if hasattr(b, "knob"):
             traces[r]["excitability"] = float(np.mean([1.0 - b.circuit.V[b.knob[u]] for u in us]))
-    start = lf.moving or ticks
+    if hasattr(b, "T"):
+        traces.update(taste_neuron(lf, poison, ticks))
+    start = lf.moving if lf.moving is not None else ticks
     food = sum(1 for t, c in lf.meals if t >= start and c != poison)
     bad = sum(1 for t, c in lf.meals if t >= start and c == poison)
     return traces, food, bad, ticks - start
@@ -100,7 +128,7 @@ def life(job):
 if __name__ == "__main__":
     lives = int(sys.argv[1]) if len(sys.argv) > 1 else 32
     ticks = int(sys.argv[2]) if len(sys.argv) > 2 else 10000
-    brain = sys.argv[3] if len(sys.argv) > 3 else "adjusting"
+    brain = sys.argv[3] if len(sys.argv) > 3 else "adjusting-circuit"
     for world in ("poison", "all food"):
         jobs = [(brain, i // 2, COLOURS[i % 2] if world == "poison" else None, ticks) for i in range(lives)]
         with ProcessPoolExecutor(mp_context=multiprocessing.get_context("spawn")) as pool:

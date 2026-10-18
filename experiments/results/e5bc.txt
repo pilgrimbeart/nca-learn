@@ -1,0 +1,50 @@
+
+frustrate 0.2        exactly O1 in 59 of 64; first bridge median 3491; net vs knowing +0.75 [+0.61, +0.89]; bridges in all-food lives 0
+frustrate 0.3 (R3)   exactly O1 in 62 of 64; first bridge median 2460; net vs knowing +0.93 [+0.79, +1.08]; bridges in all-food lives 0
+frustrate 0.5        exactly O1 in 63 of 64; first bridge median 1956; net vs knowing +0.97 [+0.82, +1.11]; bridges in all-food lives 0
+frustrate 0.8        exactly O1 in 61 of 64; first bridge median 1758; net vs knowing +0.96 [+0.81, +1.12]; bridges in all-food lives 0
+grow at 0.6          exactly O1 in 64 of 64; first bridge median 2447; net vs knowing +0.98 [+0.84, +1.12]; bridges in all-food lives 0
+grow at 0.95         exactly O1 in 61 of 64; first bridge median 2470; net vs knowing +0.86 [+0.71, +1.02]; bridges in all-food lives 0
+
+concurrent.futures.process._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/concurrent/futures/process.py", line 263, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/process.py", line 212, in _process_chunk
+    return [fn(*args) for args in chunk]
+            ^^^^^^^^^
+  File "/home/pilgrim/git/nca-learn/experiments/../experiments/common.py", line 30, in one
+    setup(lf)
+  File "/home/pilgrim/git/nca-learn/experiments/../experiments/e5_analysis.py", line 43, in mismatch
+    c.nodes = [(bias * (1 + size * rng.standard_normal()),) + rest for bias, *rest in c.nodes]
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~
+TypeError: can only concatenate tuple (not "list") to tuple
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/pilgrim/git/nca-learn/experiments/e5_analysis.py", line 94, in <module>
+    off = run(make, lives, setup=functools.partial(mismatch, size))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pilgrim/git/nca-learn/experiments/common.py", line 61, in run
+    return list(pool.map(one, jobs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/process.py", line 642, in _chain_from_iterable_of_lists
+    for element in iterable:
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 619, in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 317, in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+TypeError: can only concatenate tuple (not "list") to tuple

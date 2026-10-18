@@ -1,5 +1,7 @@
 # Lessons
 
+*Names (2026-10-18): the "grown brain" is now the **sheet brain**, and the "mixed-signal brain" the **designed circuit**; the minimal, adjusting, knowing and recruiting brains are the **…-circuit** brains. Earlier entries keep the names they were written with.*
+
 What was tried, what worked, what didn't and why, so settled questions aren't reopened. Each finding was traced to a
 cause before it was fixed. Each entry gives the lesson, then what the code does now; dead ends are kept because they
 are lessons too.
@@ -650,6 +652,72 @@ specification of the local signals a circuit needs.
 - **The motors' conflict, seen from outside.** In the minimal brain the motors are involved before every taste
   (involvement 1.00) with confidence exactly 0.00: equally before good and bad (exactly, as lives are paired). The
   motors can't know this themselves (they feel no taste); the observer can.
+
+## Recruitment: a starting animal that may know but can't act (2026-10-18)
+
+- **A cleaner test (the user's).** In the rung-0 animal each sensor could change its own behaviour (ignore what
+  predicts pain), so the starting animal could already learn a little. Instead: the minimal brain plus a taste
+  neuron T that can *learn* what predicts pain but has *no outputs*. It may know, and must recruit in order to act.
+  What it learns is a prediction, available before contact, which is what avoiding needs; its frustration is crisp
+  ("I predict pain confidently and it still comes"); and one "danger" signal serves any poison colour. The sensors'
+  own knobs (rung 0) go; pain reaches only T, the taste organ. Rung 0 stays on record as the earlier variant.
+- **The knowing brain** (`brains/knowing.py`), all circuit: T fires innately at a bad taste (an amplifier from the
+  taste node), and through a plastic synapse from each sensor whose strength is a memory node, charged by a bad
+  taste and emptied by a good one while that sensor was recently active (the mixed-signal brain's P motif, on the
+  sensor-to-T synapses). 64 lives of 10,000 ticks (`python recruit_test.py 64 10000 knowing`):
+
+  | | poison lives | all-food lives |
+  |---|---|---|
+  | behaviour | food 1.58, poison 1.58 per 1,000 (1.0, as the minimal brain) | food 3.16 per 1,000 (as the minimal brain) |
+  | T's synapses | from poison's sensor 0.87, from food's 0.13 | 0.00 |
+  | T anticipates (a spike within 10 ticks before the taste) | 96% of poison meals; 51% of food meals | (no poison); 19% of meals |
+  | T's confidence (when it fired before a meal, the meal was poison) | 0.66 | 0.00 |
+
+  Knowledge leaks nowhere (behaviour as the minimal brain's). T learns the association, and anticipates nearly every
+  poison meal; its false alarms are about chance at its rate (about 50 spikes per 1,000 ticks, against 18 in all-food
+  lives, which is its own spontaneous firing): red blocks are often in view on the way to a blue one, so T has become
+  a "danger in view" detector, which is arguably the right signal for avoiding. Frustrated by the test (confident,
+  pain going on) in poison lives; calm in all-food lives.
+
+## Recruitment, rung 1: growing the link that lets knowledge act (2026-10-18)
+
+The full record, with methods, tables and working, is `experiments/NOTEBOOK.md` (E0-E6); in brief:
+
+- **It works.** The recruiting brain (`brains/recruiting.py`) starts as the knowing brain: its taste neuron T learns
+  what predicts pain but has no outputs. Circuit only, plus one growth primitive: frustration F at T ("I predicted
+  this pain and it came anyway"); help routed back along T's input synapses, only to a sensor whose synapse predicts
+  pain and only while frustrated; competing sprouts on each sensor's output synapses; and, when a sprout passes its
+  level, a bridge splitting that synapse (a relay held down while T has fired lately, so the creature veers from
+  danger). On held-out lives it grows exactly the oracle's structure in 61 of 64 poison lives, nets +1.00 food per
+  1,000 ticks over the knowing brain (oracle at birth +1.15; the gap is only the time before growth, about 1,700
+  ticks: a time-matched oracle does no better), and grows nothing in all-food lives, where a built-in bridge costs.
+- **Essential**: routing by what each synapse onto T learned (without it, bridges land on the food sensor: veering
+  from food); competition among a neuron's sprouts (without it every sprout grows); help as a logical AND (predicts
+  pain, and frustrated); a sprouted neuron stays changed (one bridge per neuron). Frustration needs both knowledge and
+  unprevented pain, so chance frustration grows nothing.
+- **Methods**: oracle structures as ceilings; paired lives with per-node noise streams (`Circuit(streams=True)`):
+  before them, two variants of different sizes differed by chance as much as by design; quiet slow nodes (a slow
+  integrator's capacitance must grow as the square root of its time, or noise swamps it); held-out lives to confirm
+  choices; and every script pinned to the settings it ran.
+- **Power, corrected**: by the worst case (every amplifier fully biased) the grown brain seemed to need half the
+  designed brain's static power; by the more physical gated average (a gated amplifier's bias set by its gate) it
+  needs about 1.7 times as much, and nearly half of that is the one-bridge-per-neuron inhibitor holding a losing sprout
+  at 0 with an ungated, full-strength current for ever. Fix to test: growth closes that sprout's charging gate instead.
+  Big currents go with big quiet capacitors (current = C x rate), and gating is what makes them affordable.
+- **A bug found and fixed**: `start = moving or ticks` treated a creature that moved at tick 0 as never moving
+  (measurement only; no earlier result was affected).
+- **The bridge's link to the taste neuron was a non-local shortcut** (the user noticed it looked unconnected in the
+  block view): the growth rule attached the bridge's hold to `self.T`, knowledge the circuit didn't have. Replaced
+  (E7) by a local hold, charged by the sensor's own spikes gated by its synapse onto T; better as well as more local
+  (+0.11 [+0.03, +0.19] net food, pooled over 128 lives; last-third food:poison about 5), because the creature now
+  veers only when the poison sensor fires, not at T's false alarms. The growth rule now needs to know only where the
+  winning sprout is. Lesson: when a growth or wiring rule names a part ("connect to T"), ask how the circuit itself
+  would find it.
+- **Found on the way: the neuron is fragile to mismatch.** 5% random error in every gain and bias costs both R3 and
+  the designed brain most of what they learn. All of it comes from the neuron's own fast and slow elements and its
+  bias; mismatch in the whole recruitment machinery costs nothing. The neuron cancels two equal elements at rest and
+  sits 0.38 V below threshold, so 5% moves its rest by up to 70% of the margin: a precise-parts design, to be
+  redesigned for margin.
 
 ## The second body: a square with two forward thrusters (withdrawn 2026-10-17)
 

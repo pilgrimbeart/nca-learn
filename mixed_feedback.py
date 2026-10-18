@@ -33,7 +33,8 @@ NONE = np.zeros(0, dtype=np.bool_)
 @njit(cache=True)
 def _run(V, Vx, armed, spikes, vmax, inject, inject_steps, node, el, link, z, noise, dt, steps, fixed, born):
     """steps integration steps. node: each node's (bias, leak, cap, lo, hi, write: > 0 for a memory); el: each
-    element's (gain, offset, slope, tau, sigmoid); link: each element's (to, from, gate). inject: currents into the nodes for the first inject_steps.
+    element's (gain, offset, slope, tau, sigmoid); link: each element's (to, from, gate). inject: currents into the
+    nodes for the first inject_steps.
     z: a standard normal draw for each node at each step (drawn beforehand: numpy's generator, the same stream).
     Settling (fixed given): no noise and no spikes, and the fixed nodes are put back to born after every step.
     vmax: each node's highest voltage over these steps (raised, never lowered, here)."""
@@ -80,9 +81,15 @@ def _run(V, Vx, armed, spikes, vmax, inject, inject_steps, node, el, link, z, no
 
 
 class Circuit:
-    def __init__(self, seed: int = 0, noise: float = 0.2):
-        self.rng, self.noise = np.random.default_rng(seed), noise
+    """streams: every node draws its noise from its own stream, seeded by the circuit's seed and the node's index, so
+    adding nodes (or growing them in a life) leaves every other node's noise unchanged: the same random numbers for the
+    same node in every variant of a brain (common random numbers), so that variants can be compared life for life.
+    Without it all nodes draw from one stream, and adding a node reshuffles everyone's noise."""
+
+    def __init__(self, seed: int = 0, noise: float = 0.2, streams: bool = False):
+        self.rng, self.noise, self.seed, self.streams = np.random.default_rng(seed), noise, seed, streams
         self.nodes, self.elements, self.names, self.start = [], [], [], []
+        self.node_rng = []
         self.V = None
 
     def node(self, name: str, bias: float = 0.0, R: float | None = 2.0, C: float = 1.0, lo: float = -np.inf,
@@ -93,12 +100,40 @@ class Circuit:
         self.nodes.append((bias, 0.0 if R is None else 1.0 / R, C, lo, hi, WRITE if memory else 0.0))
         self.names.append(name)
         self.start.append(start)
+        if self.streams:
+            self.node_rng.append(np.random.default_rng([self.seed, len(self.names) - 1]))
         return len(self.names) - 1
 
     def element(self, to: int, frm: int, gain: float, offset: float, tau: float = 0.0, slope: float = 1.0,
                 sigmoid: bool = False, gate: int = -1) -> int:
         self.elements.append(((gain, offset, slope, tau, float(sigmoid)), (to, frm, gate)))
         return len(self.elements) - 1
+
+    def redirect(self, e: int, to: int) -> None:
+        """Growth: element e now drives node `to` (as when a new unit splits a synapse). grow() makes it count."""
+        params, (_, frm, gate) = self.elements[e]
+        self.elements[e] = (params, (to, frm, gate))
+
+    def grow(self) -> None:
+        """Growth, during a life: after nodes or elements were added, or an element redirected, rebuild the arrays the
+        integration runs on, keeping every existing node's and element's state. A new node starts at its start voltage,
+        or else where its leak alone would rest it (bias x R; 0 with no leak); a new element's filtered input starts at
+        its source's voltage."""
+        if self.V is None:
+            return
+        n0, m0 = len(self.V), len(self.Vx)
+        self.node_arr = np.array(self.nodes, dtype=float).T.copy()
+        self.el_arr = np.array([e for e, _ in self.elements], dtype=float).T.copy()
+        self.link = np.array([l for _, l in self.elements], dtype=np.int64).T.copy()
+        bias, leak, lo, hi = self.node_arr[0], self.node_arr[1], self.node_arr[3], self.node_arr[4]
+        born = [self.start[i] if self.start[i] is not None else (bias[i] / leak[i] if leak[i] > 0 else 0.0)
+                for i in range(n0, len(self.names))]
+        self.V = np.concatenate([self.V, np.minimum(np.maximum(np.array(born, dtype=float), lo[n0:]), hi[n0:])])
+        self.Vx = np.concatenate([self.Vx, self.V[self.link[1, m0:]]])
+        grown = len(self.names) - n0
+        self.armed = np.concatenate([self.armed, np.ones(grown, dtype=np.bool_)])
+        self.spikes = np.concatenate([self.spikes, np.zeros(grown, dtype=np.int64)])
+        self.vmax = np.concatenate([self.vmax, np.full(grown, -np.inf)])
 
     def neuron(self, name: str, bias: float = -1.6, tau: float = 10.0, strength: float = 2.0) -> int:
         """An excitable neuron: fast positive feedback (it fires), slow negative feedback (it recovers). At rest
@@ -136,7 +171,12 @@ class Circuit:
         per = int(round(1 / DT))
         self.spikes[:] = 0
         self.vmax[:] = -np.inf
-        z = self.rng.standard_normal((per * ticks, len(self.names)))
+        if self.streams:
+            z = np.empty((per * ticks, len(self.names)))
+            for i, g in enumerate(self.node_rng):
+                z[:, i] = g.standard_normal(per * ticks)
+        else:
+            z = self.rng.standard_normal((per * ticks, len(self.names)))
         _run(self.V, self.Vx, self.armed, self.spikes, self.vmax, np.asarray(inject, dtype=float), per, self.node_arr,
              self.el_arr, self.link, z, self.noise, DT, per * ticks, NONE, np.zeros(0))
         return self.spikes.copy()

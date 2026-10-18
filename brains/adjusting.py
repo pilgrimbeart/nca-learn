@@ -13,7 +13,7 @@ Nothing else: no program runs beside the circuit. Nothing is recruited yet.
 
 from __future__ import annotations
 
-from brains.mixed_signal import SIDE, SPEED, CircuitBrain
+from brains.circuit import SIDE, SPEED, CircuitBrain
 from mixed_feedback import Circuit
 
 ELIGIBLE = 10.0     # ticks over which eligibility fades
@@ -22,6 +22,8 @@ STEP = 0.1          # how far a taste moves a knob (0..1) while the neuron is fu
 
 
 class AdjustingBrain(CircuitBrain):
+    STREAMS = True                                      # comparable life for life with its variants
+
     def build(self, c: Circuit) -> None:
         for s in self.sensors:
             for m in self.motors:
