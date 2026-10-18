@@ -13,6 +13,7 @@ from __future__ import annotations
 import math
 
 import numpy as np
+from numba import njit
 
 BODY = 4.0          # the triangle's side, in world units
 WORLD = 60.0        # the world's side (a torus)
@@ -28,17 +29,63 @@ TURN = 0.16         # ... and this much turning speed, away from its side (radia
 DRAG = 0.5          # speed and turning fade at this rate
 COLOURS = ("red", "blue")
 THRUSTERS = ("left", "right")                           # at the tail's two corners, both pushing forward
+ACROSS = -EAT + (np.arange(RAYS) + 0.5) * 2 * EAT / RAYS   # each ray's offset across the corridor
+SHARE = (2 * EAT / RAYS) / (2 * BLOCK)                  # one ray's share of a block's width
+
+
+@njit(cache=True)
+def _wrap(d):
+    return (d + WORLD / 2) % WORLD - WORLD / 2
+
+
+@njit(cache=True)
+def _look(xy, kind, h, f):
+    """How far each ray goes (to the first block it meets, or RANGE), and that block's kind (or -1)."""
+    far, hit_kind = np.full(RAYS, RANGE), np.full(RAYS, -1)
+    for b in range(xy.shape[0]):
+        dx, dy = _wrap(xy[b, 0] - h[0]), _wrap(xy[b, 1] - h[1])
+        ahead, off = dx * f[0] + dy * f[1], dx * f[1] + dy * -f[0]
+        if ahead <= -BLOCK or ahead - BLOCK >= RANGE or abs(off) >= EAT + BLOCK:
+            continue
+        for k in range(RAYS):
+            gap = BLOCK ** 2 - (ACROSS[k] - off) * (ACROSS[k] - off)
+            if gap > 0:
+                hit = max(0.0, ahead - np.sqrt(gap))
+                if hit < far[k]:
+                    far[k], hit_kind[k] = hit, kind[b]
+    return far, hit_kind
+
+
+@njit(cache=True)
+def _sees(far, hit_kind, kinds):
+    seen = np.zeros(kinds)
+    for k in range(RAYS):
+        if hit_kind[k] >= 0:
+            seen[hit_kind[k]] += SHARE / (1 + (far[k] / REACH) * (far[k] / REACH))
+    return np.minimum(seen, 1.0)
+
+
+@njit(cache=True)
+def _touching(xy, h):
+    """The blocks within EAT of the point, in order."""
+    out = []
+    for b in range(xy.shape[0]):
+        dx, dy = _wrap(xy[b, 0] - h[0]), _wrap(xy[b, 1] - h[1])
+        if np.sqrt(dx * dx + dy * dy) < EAT:
+            out.append(b)
+    return out
 
 
 class Body:
-    """Where the creature is and how it moves; the world's blocks."""
+    """Where the creature is and how it moves; the world's blocks (xy, and kind: an index into COLOURS)."""
 
     def __init__(self, rng):
         self.rng = rng
         self.pos = np.array([WORLD / 2, WORLD / 2])
         self.heading = rng.uniform(0, 2 * math.pi)
         self.speed, self.spin = np.zeros(2), 0.0
-        self.blocks = [[*self.somewhere(), c] for c in COLOURS for _ in range(BLOCKS)]
+        self.kind = np.repeat(np.arange(len(COLOURS)), BLOCKS)
+        self.xy = np.array([self.somewhere() for _ in self.kind])
 
     def somewhere(self):
         while True:
@@ -66,33 +113,15 @@ class Body:
 
     def look(self) -> tuple:
         """The eyes' rays, parallel, across the corridor its mouth will sweep: for each, its offset across, how far it
-        goes (to the first block it meets, or RANGE), and that block's colour (or None)."""
-        f, h = self.forward(), self.head()
-        side, w = np.array([f[1], -f[0]]), EAT
-        across = -w + (np.arange(RAYS) + 0.5) * 2 * w / RAYS
-        far, colour = np.full(RAYS, RANGE), [None] * RAYS
-        for x, y, c in self.blocks:
-            d = self.wrap(np.array([x, y]) - h)
-            ahead, off = d @ f, d @ side
-            if ahead <= -BLOCK or ahead - BLOCK >= RANGE or abs(off) >= w + BLOCK:
-                continue
-            gap = BLOCK ** 2 - (across - off) ** 2
-            for k in np.nonzero(gap > 0)[0]:
-                hit = max(0.0, ahead - np.sqrt(gap[k]))
-                if hit < far[k]:
-                    far[k], colour[k] = hit, c
-        return across, far, colour
+        goes (to the first block it meets, or RANGE), and that block's kind (or -1)."""
+        far, kind = _look(self.xy, self.kind, self.head(), self.forward())
+        return ACROSS, far, kind
 
     def sees(self) -> dict:
         """How strongly each colour is seen, at most 1: a block wholly in view counts 1 / (1 + (distance / REACH)^2),
         less if part of it is hidden or out of the corridor."""
-        _, far, colour = self.look()
-        share = (2 * EAT / RAYS) / (2 * BLOCK)              # one ray's share of a block's width
-        seen = {c: 0.0 for c in COLOURS}
-        for d, c in zip(far, colour):
-            if c is not None:
-                seen[c] += share / (1 + (d / REACH) ** 2)
-        return {c: min(1.0, v) for c, v in seen.items()}
+        _, far, kind = self.look()
+        return dict(zip(COLOURS, _sees(far, kind, len(COLOURS))))
 
     def fire(self, thruster: str) -> None:
         self.speed += PUSH * self.forward()
@@ -104,12 +133,9 @@ class Body:
         self.heading += self.spin
         self.speed *= math.exp(-DRAG)
         self.spin *= math.exp(-DRAG)
-        eaten, h = [], self.head()
         if self.speed @ self.forward() <= 0:                # it only eats what it moves forward into
-            return eaten
-        for b in self.blocks:
-            if np.linalg.norm(self.wrap(np.array(b[:2]) - h)) < EAT:
-                eaten.append(b[2])
-                b[0], b[1] = self.somewhere()
-        return eaten
-
+            return []
+        eaten = _touching(self.xy, self.head())
+        for b in eaten:
+            self.xy[b] = self.somewhere()
+        return [COLOURS[self.kind[b]] for b in eaten]

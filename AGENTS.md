@@ -23,6 +23,13 @@ This went wrong once: "reward at contact" gave the reward to the eaten colour's 
 simplification. It moved credit assignment into the body, and it stood until the user found it (see `LESSONS.md`).
 A rule of thumb: if the brain stops needing some mechanism after a body change, ask where that mechanism's work went.
 
+**Nor may the simulator become part of the solution.** Anything a design can exploit in the simulation, an
+optimiser will find, an agent included: asked to cut the channels between cells, an agent once packed several into
+different bits of one float. So for every brain: random timing (never lockstep, and no inputs only on tick
+boundaries), noise on everything, nothing carried below the noise, and a result must hold at a finer step and on
+fresh seeds. For an optimised circuit, also mismatch (parameters a few percent off at birth) and limits on time
+constants and gains against the step. Details in `LESSONS.md` (Principles; Simulating the mixed-signal brain).
+
 Two brains: the grown one (the sheet, below) and the mixed-signal one, a designed circuit kept for comparison
 (`brains/mixed_signal.py`, on `mixed_feedback.py`, drawn by `schematic.py`: redraw it when the circuit changes). The
 mixed-signal brain keeps: no knowledge of what a sensor senses or a motor does, noise on every node, continuous time,

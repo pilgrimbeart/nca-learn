@@ -12,6 +12,12 @@ are lessons too.
 - **The body is never part of the solution.** The body says what happened (this colour is in view; that was food),
   never what it means for learning (which sensor earned the taste). A body change that lets the brain drop some
   mechanism has moved that mechanism's job into the body (below: reward at contact).
+- **Nor is the simulator.** Whatever the simulation lets a design exploit, whoever optimises it (an agent, the user,
+  evolution) will find: lockstep, unlimited precision, a fixed seed, integration error, the exact shape of an input.
+  Before this project, the user asked an agent to cut the number of channels between cells, and it packed several
+  into different bits of one floating-point number. The exp(-beta d) cheat (The engine, below) was the same kind. So
+  every brain runs with random timing, noise on everything and limited precision, and a result must survive a finer
+  simulation and fresh seeds (defences for the circuit brains: Simulating the mixed-signal brain, below).
 - **No hidden scale.** A cell knows only its own state and its neighbours' averages; never the sheet's size or its
   position in it.
 - **Stochastic updates only.** Every cell updates at random times, never in lockstep: lockstep lets rules lean on a
@@ -396,6 +402,43 @@ meals per 1,000 ticks.
   is compute: 37 ticks a second instead of 150.
 - **What would go further.** The eyes can't tell left from right, so a veer is always to one side, sometimes into
   poison lying beside the food: one sensor per side would fix it, but that is more sensors, a ground-rule change.
+
+## Simulating the mixed-signal brain (2026-10-18)
+
+Reviewed with evolving circuit brains in mind (many lives of 10,000 ticks), so it must be fast and must not be
+exploitable.
+
+- **Where the time goes.** A life took about 1.5 s per 1,000 ticks, 85% of it in `Circuit._advance`: 80 integration
+  steps per world tick, each a dozen numpy calls on 11 nodes and 24 elements, so call overhead swamps the arithmetic.
+  The same integration as one numba loop, drawing from the same random generator, matched the original (voltages
+  within 2e-12; motor spikes the same over 3,000 ticks, and the meals of 4 lives) and ran the circuit about 45x faster
+  (0.28 s per 10,000 ticks). Then the world (`look`, `move`) and the per-tick Python in `Life` dominated (about 3.5 s
+  a life), so the eyes and mouth are compiled too (blocks held as arrays). Passing numpy's random generator into
+  compiled code costs about 25 us a call, so each tick's noise is drawn beforehand in one call (the same stream). A
+  life now takes about 0.5 s (from about 15). `test_compiled.py` checks both against plain numpy versions of the same
+  equations (random circuits and scenes; it catches a 0.1% error in the circuit and 1e-15 in the eyes). The whole
+  life in one compiled function would save most of the rest, for when evolution needs it.
+- **The integration step doesn't matter.** An input is a current lasting one circuit tick (a quarter of a world
+  tick), fixed in model time, not in steps; noise is scaled by sqrt(DT); spikes are found with hysteresis at each
+  step. From DT 0.2 to 0.01 (now 0.05) these agreed within sampling noise: spontaneous spikes (10-11 per 1,000
+  ticks), spikes per stimulus (0.87-0.91), how often the plastic synapse relays, and one taste's move of p (0.287-0.289,
+  noise off). 64 lives at DT 0.05, 0.1 and 0.2: food:poison 4.2, 4.8, 4.2 (poison meals 205, 172, 199, give or take
+  14). So DT 0.1 would halve the cost, if checked.
+- **Pulse shape: stimulus safe, taste not.** A stimulus works by charge: the same charge over 0.25 to 8 circuit
+  ticks gave 0.85-0.86 spikes per pulse. Learning works by how long the taste node stays above 0.5 (a steep sigmoid,
+  with LEARN's gain set by hand for "above half about 1.3 ticks"): the same charge over 0.25, 1, 2 and 4 circuit ticks
+  moved p by 0.22, 0.29, 0.36 and 0.05. Harmless while the pulse is fixed, but an evolved circuit would tune itself
+  to that exact rectangle. An input delivered as a charge at an instant, with the input node's own leak setting how
+  long it lasts, leaves no tick in the interface (it changes both input nodes, and LEARN would need recalibrating).
+- **The plastic synapse is graded only for p below about 0.4.** Its weight is STRONG x p = 0.35 at p = 1/2, which
+  relays about 85% of spikes, not "about half" as the docstring said.
+- **Defences, for any circuit brain that is optimised:** each input at a random time within its tick (inputs on the
+  tick boundaries make intervals whole ticks, a rhythm a resonator could lock to: the circuit's lockstep); limits on
+  time constants (at least about 5 DT) and on gain x slope / capacitance, and each generation's best re-run at DT/2;
+  fresh seeds for every evaluation, and the result judged on lives never trained on; every parameter a few percent
+  off at birth (mismatch, as Sepulchre stresses: no knife-edge tuning or exact cancellation between identical parts);
+  noise on every node, as now. Each motor spike is a full kick, so a fast oscillator gets the most thrust: how the
+  body bounds thrust is a body question for the user.
 
 ## The second body: a square with two forward thrusters (withdrawn 2026-10-17)
 

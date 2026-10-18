@@ -10,5 +10,6 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: python test_rules.py
+      - run: python test_compiled.py
       - run: python organs_test.py 2
       - run: python creature.py --measure 1 --ticks 3000

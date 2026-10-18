@@ -7,44 +7,85 @@ kind of element.
   node's voltage Vx (its own: an ion channel; another's: a synapse), low-pass filtered with time constant tau (0: at
   once). f is tanh (an ion channel) or the logistic sigmoid (a synapse). An element may be gated by a third node: its
   current is then also multiplied by that node's voltage, clipped to 0..1 (an amplifier whose bias current a voltage
-  sets). Its sign sets the feedback: an element on its own
-  node with positive gain is positive feedback (it makes the node switch), with negative gain negative feedback (it
-  restores it); the timescales at which each acts set the behaviour (an excitable neuron: fast positive feedback,
-  slow negative).
+  sets). Its sign sets the feedback: an element on its own node with positive gain is positive feedback (it makes the
+  node switch), with negative gain negative feedback (it restores it); the timescales at which each acts set the
+  behaviour (an excitable neuron: fast positive feedback, slow negative).
 
-Time is in ticks, integrated in steps of DT. A node spikes when its voltage rises through SPIKE, and can spike again
-once it has fallen below RESET.
+Time is in ticks, integrated in steps of DT (Euler; the noise scaled by sqrt(DT)), compiled: one call runs many
+ticks. A node spikes when its voltage rises through SPIKE, and can spike again once it has fallen below RESET.
 """
 
 from __future__ import annotations
 
 import numpy as np
+from numba import njit
 
 DT = 0.05           # integration step (ticks)
 SPIKE, RESET = 0.0, -1.0
+SETTLE = 200        # ticks a new circuit runs without noise, to settle at rest
+NONE = np.zeros(0, dtype=np.bool_)
+
+
+@njit(cache=True)
+def _run(V, Vx, armed, spikes, inject, inject_steps, node, el, link, z, noise, dt, steps, fixed, born):
+    """steps integration steps. node: each node's (bias, leak, cap, lo, hi); el: each element's (gain, offset, slope,
+    tau, sigmoid); link: each element's (to, from, gate). inject: currents into the nodes for the first inject_steps.
+    z: a standard normal draw for each node at each step (drawn beforehand: numpy's generator, the same stream).
+    Settling (fixed given): no noise and no spikes, and the fixed nodes are put back to born after every step."""
+    n, m = V.shape[0], link.shape[1]
+    settling = fixed.shape[0] > 0
+    bias, leak, cap, lo, hi = node[0], node[1], node[2], node[3], node[4]
+    gain, offset, slope, tau, sig = el[0], el[1], el[2], el[3], el[4]
+    to, frm, gate = link[0], link[1], link[2]
+    dV = np.empty(n)
+    scale = noise * np.sqrt(dt)
+    for k in range(steps):
+        for e in range(m):                                  # each element's input, filtered
+            if tau[e] > 0.0:
+                Vx[e] = Vx[e] + dt * (V[frm[e]] - Vx[e]) / tau[e]
+            else:
+                Vx[e] = V[frm[e]]
+        for i in range(n):
+            dV[i] = -leak[i] * V[i] + bias[i] + (inject[i] if k < inject_steps else 0.0)
+        for e in range(m):                                  # each element's current, in order
+            x = slope[e] * (Vx[e] - offset[e])
+            f = 1.0 / (1.0 + np.exp(-x)) if sig[e] > 0.5 else np.tanh(x)
+            if gate[e] >= 0:
+                f = f * min(max(V[gate[e]], 0.0), 1.0)
+            dV[to[e]] += gain[e] * f
+        if settling:
+            for i in range(n):
+                V[i] = min(max(V[i] + dt * dV[i] / cap[i], lo[i]), hi[i])
+                if fixed[i]:
+                    V[i] = born[i]
+            continue
+        for i in range(n):
+            v = V[i] + dt * dV[i] / cap[i]
+            v = v + scale * z[k, i] / cap[i]
+            V[i] = min(max(v, lo[i]), hi[i])
+            up = armed[i] and V[i] > SPIKE
+            spikes[i] += up
+            armed[i] = (armed[i] and not up) or V[i] < RESET
 
 
 class Circuit:
     def __init__(self, seed: int = 0, noise: float = 0.2):
         self.rng, self.noise = np.random.default_rng(seed), noise
-        self.bias, self.leak, self.cap, self.lo, self.hi, self.start, self.names = [], [], [], [], [], [], []
-        self.to, self.frm, self.gain, self.offset, self.slope, self.tau, self.sigmoid, self.gate = ([] for _ in range(8))
-        self.V = self.Vx = None
+        self.nodes, self.elements, self.names, self.start = [], [], [], []
+        self.V = None
 
     def node(self, name: str, bias: float = 0.0, R: float | None = 2.0, C: float = 1.0, lo: float = -np.inf,
              hi: float = np.inf, start: float | None = None) -> int:
         """A node; R None: no leak. start: its voltage at birth (else where it settles at rest)."""
-        for lst, v in ((self.names, name), (self.bias, bias), (self.leak, 0.0 if R is None else 1.0 / R),
-                       (self.cap, C), (self.lo, lo), (self.hi, hi), (self.start, start)):
-            lst.append(v)
+        self.nodes.append((bias, 0.0 if R is None else 1.0 / R, C, lo, hi))
+        self.names.append(name)
+        self.start.append(start)
         return len(self.names) - 1
 
     def element(self, to: int, frm: int, gain: float, offset: float, tau: float = 0.0, slope: float = 1.0,
                 sigmoid: bool = False, gate: int = -1) -> int:
-        for lst, v in ((self.to, to), (self.frm, frm), (self.gain, gain), (self.offset, offset), (self.slope, slope),
-                       (self.tau, tau), (self.sigmoid, sigmoid), (self.gate, gate)):
-            lst.append(v)
-        return len(self.to) - 1
+        self.elements.append(((gain, offset, slope, tau, float(sigmoid)), (to, frm, gate)))
+        return len(self.elements) - 1
 
     def neuron(self, name: str, bias: float = -1.6, tau: float = 10.0, strength: float = 2.0) -> int:
         """An excitable neuron: fast positive feedback (it fires), slow negative feedback (it recovers). At rest
@@ -59,43 +100,28 @@ class Circuit:
         return self.element(to, frm, weight, SPIKE, tau=tau, slope=slope, sigmoid=True)
 
     def _ready(self):
-        if self.V is None:
-            self.arr = {k: np.array(getattr(self, k), dtype=float) for k in
-                        ("bias", "leak", "cap", "lo", "hi", "gain", "offset", "slope", "tau")}
-            self.ito, self.ifrm, self.igate = np.array(self.to), np.array(self.frm), np.array(self.gate)
-            self.sig = np.array(self.sigmoid, dtype=bool)
-            self.fixed = np.array([v is not None for v in self.start])
-            self.V = np.array([-3.0 if v is None else v for v in self.start])
-            self.V = np.clip(self.V, self.arr["lo"], self.arr["hi"])
-            self.Vx = self.V[self.ifrm].copy()
-            self.armed = np.ones(len(self.names), dtype=bool)
-            born = self.V[self.fixed].copy()
-            for _ in range(int(200 / DT)):                      # settle at rest (a node given a start keeps it)
-                self._advance(np.zeros(len(self.names)), noise=False)
-                self.V[self.fixed] = born
+        """Once built: the arrays the integration runs on, and every node settled at rest."""
+        if self.V is not None:
+            return
+        self.node_arr = np.array(self.nodes, dtype=float).T.copy()
+        self.el_arr = np.array([e for e, _ in self.elements], dtype=float).T.copy()
+        self.link = np.array([l for _, l in self.elements], dtype=np.int64).T.copy()
+        fixed = np.array([v is not None for v in self.start])
+        self.V = np.array([-3.0 if v is None else v for v in self.start])
+        self.V = np.minimum(np.maximum(self.V, self.node_arr[3]), self.node_arr[4])
+        self.Vx = self.V[self.link[1]].copy()
+        self.armed = np.ones(len(self.names), dtype=np.bool_)
+        self.spikes = np.zeros(len(self.names), dtype=np.int64)
+        _run(self.V, self.Vx, self.armed, self.spikes, np.zeros(len(self.names)), 0, self.node_arr, self.el_arr,
+             self.link, np.zeros((0, 0)), 0.0, DT, int(SETTLE / DT), fixed, self.V.copy())
 
-    def _advance(self, inject, noise=True):
-        a = self.arr
-        slow = a["tau"] > 0
-        target = self.V[self.ifrm]
-        self.Vx = np.where(slow, self.Vx + DT * (target - self.Vx) / np.where(slow, a["tau"], 1.0), target)
-        x = a["slope"] * (self.Vx - a["offset"])
-        f = np.where(self.sig, 1.0 / (1.0 + np.exp(-x)), np.tanh(x))
-        f = np.where(self.igate >= 0, f * np.clip(self.V[self.igate], 0.0, 1.0), f)
-        dV = -a["leak"] * self.V + a["bias"] + inject
-        np.add.at(dV, self.ito, a["gain"] * f)
-        self.V = self.V + DT * dV / a["cap"]
-        if noise:
-            self.V += self.noise * np.sqrt(DT) * self.rng.standard_normal(len(self.V)) / a["cap"]
-        self.V = np.clip(self.V, a["lo"], a["hi"])
-
-    def tick(self, inject) -> np.ndarray:
-        """Runs one tick with these currents injected into the nodes; how many times each node spiked."""
+    def tick(self, inject, ticks: int = 1) -> np.ndarray:
+        """Runs this many ticks, with these currents injected into the nodes during the first (a pulse one tick long);
+        how many times each node spiked."""
         self._ready()
-        spikes = np.zeros(len(self.names), dtype=int)
-        for _ in range(int(round(1 / DT))):
-            self._advance(inject)
-            up = self.armed & (self.V > SPIKE)
-            spikes += up
-            self.armed = (self.armed & ~up) | (self.V < RESET)
-        return spikes
+        per = int(round(1 / DT))
+        self.spikes[:] = 0
+        z = self.rng.standard_normal((per * ticks, len(self.names)))
+        _run(self.V, self.Vx, self.armed, self.spikes, np.asarray(inject, dtype=float), per, self.node_arr,
+             self.el_arr, self.link, z, self.noise, DT, per * ticks, NONE, np.zeros(0))
+        return self.spikes.copy()

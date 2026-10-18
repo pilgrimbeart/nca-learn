@@ -238,7 +238,8 @@ def watch(seed: int = 0, brain: str = "grown", record: str | None = None, until:
                         pts = [to_px(p + q + s * half_ray * r) for p, s in ((a, 1), (b, 1), (b, -1), (a, -1))]
                         pygame.draw.polygon(beam, (255, 255, 255, alpha), [(x - side - 12, y) for x, y in pts])
         screen.blit(beam, (side + 12, 0))
-        for x, y, c in body.blocks:
+        for (x, y), k in zip(body.xy, body.kind):
+            c = COLOURS[k]
             px = to_px((x, y))
             pygame.draw.rect(screen, (90, 90, 90) if c == "red" else (210, 210, 210), (px[0] - 8, px[1] - 8, 16, 16))
             screen.blit(small.render(c[0].upper(), True, (255, 255, 255) if c == "red" else (0, 0, 0)), (px[0] - 4, px[1] - 6))

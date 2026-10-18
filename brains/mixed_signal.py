@@ -8,8 +8,8 @@ thruster is small.
   pulse into its sensor; a motor's spike fires its thruster.
   Each sensor excites one motor, its side (by a coin toss at birth), through a strong synapse that relays every
   spike, and the other through a plastic synapse whose weight is STRONG times p: at p = 1 it relays nearly every
-  spike, at p = 0 none, at p = 1/2 noise decides, about half the time. So a sensor fires both motors or one, more
-  often both the higher its p, as in the grown brain.
+  spike, at p = 0 none, in between noise decides (graded for p up to about 0.4; at 1/2 it relays about 85%). So a
+  sensor fires both motors or one, more often both the higher its p, as in the grown brain.
   The sensors inhibit each other: a sensor's spikes charge its hush node H, which leaks away over HUSH ticks and
   while charged holds the other sensor down. So while it sees one colour the creature heeds that colour only.
   Learning: three factors, all in the circuit. Taste is a current pulse into one node, the same for both sensors
@@ -22,6 +22,8 @@ thruster is small.
 """
 
 from __future__ import annotations
+
+from collections import deque
 
 import numpy as np
 
@@ -66,7 +68,7 @@ class MixedSignalBrain:
             c.element(P, self.taste_node, -g, -0.5, slope=-20.0, sigmoid=True, gate=E)   # bad: discharge
             self.P.append(P)
         self.inject = np.zeros(len(c.names))
-        self.history = []                                       # watching: (voltages, spikes) each tick
+        self.history = deque(maxlen=TRACE)                      # watching: (voltages, spikes) each tick
 
     def stimulate(self, sensor: int) -> None:
         self.inject[self.sensors[sensor]] = STIMULUS
@@ -75,11 +77,9 @@ class MixedSignalBrain:
         self.inject[self.taste_node] = TASTE * value
 
     def step(self) -> list:
-        spikes = self.circuit.tick(self.inject)                 # inputs last one circuit tick
-        self.inject = np.zeros(len(self.inject))
-        for _ in range(SPEED - 1):
-            spikes = spikes + self.circuit.tick(self.inject)
-        self.history = (self.history + [(self.circuit.V.copy(), spikes)])[-TRACE:]
+        spikes = self.circuit.tick(self.inject, SPEED)          # inputs last the first circuit tick
+        self.inject[:] = 0.0
+        self.history.append((self.circuit.V.copy(), spikes))
         return [m for m, n in enumerate(self.motors) for _ in range(spikes[n])]
 
     def drive(self, sensor: int) -> float:

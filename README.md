@@ -86,6 +86,7 @@ food sensor's rises towards 1.
 python creature.py --seed 3         # a particular life
 python creature.py --measure 32     # both brains, 32 lives each with learning and 32 without, headless
 python test_rules.py                # check every rule keeps the rules below
+python test_compiled.py             # check the compiled circuit and eyes against plain numpy versions
 python watch.py organs              # one stage on its own (organs, wiring; --show picks the numbers drawn)
 python organs_test.py               # when the coordinates and names come right, life by life
 python wiring_test.py               # pulses sent from S1 and S2: how many arrive, and how soon
@@ -97,6 +98,10 @@ python creature.py --record frames  # save a life's frames as PNGs, headless (me
 ```
 
 ## The rules can't be broken by accident
+
+Whatever the simulation lets a design exploit, whoever optimises it will find: once, asked to cut the channels
+between cells, an agent packed several into different bits of one floating-point number. So the simulator gives no
+lockstep, no precision below the noise, and nothing else to lean on, and the rules are built into the code:
 
 - **`sheet.py` is the only code that knows there is a grid.** A rule (`rules/*.py`) declares its numbers, which of
   them its neighbours can see, and what every cell is born with, and one compiled function
@@ -246,7 +251,10 @@ and empty the other sensor's (cross-inhibition, so only the sensor that fired la
 driven by the same taste input, charges or empties a capacitor holding p while taste is good or bad, as fast as
 eligibility allows. p sets the plastic synapse's strength. Noise on every node makes the odd spontaneous spike, so a
 creature that sees nothing still moves. It keeps the grown brain's symmetry: nothing in it says what a sensor senses
-or what a motor does. Its panel in the live view shows each neuron's voltage, a white line at each spike.
+or what a motor does. Its panel in the live view shows each neuron's voltage, a white line at each spike. Its time is
+continuous: its lives don't change with the integration step (DT 0.2 to 0.01), though its learning does depend on the
+shape of the taste pulse (`LESSONS.md`). Compiled with numba, with the world, a life of 10,000 ticks takes about half
+a second.
 
 `--measure` runs both brains on the same lives (the same worlds and wirings):
 
@@ -306,6 +314,7 @@ taste, ping and learn, in sensors and T cells) and the wiring for each of the tw
 | `rules/brain.py` | choosing and learning, built on `rules/wiring.py` |
 | `rules/see.py` | what cells read from averages, and the distance field and path signs the rules share |
 | `test_rules.py` | checks every rule and every body file keep the rules |
+| `test_compiled.py` | checks the compiled circuit (`mixed_feedback.py`) and eyes and mouth (`world.py`) against plain numpy versions |
 | `watch.py`, `organs_test.py`, `wiring_test.py` | each stage on its own, live or measured |
 | `diagram.py` | draws `media/cell.svg`, the diagram above (by hand from the rules: redraw it when one changes) |
 | `schematic.py` | draws `media/mixed_signal.svg` and `.png`, the mixed-signal brain as a circuit (by hand: redraw it when the brain changes) |
