@@ -421,6 +421,12 @@ exploitable.
   life now takes about 0.5 s (from about 15). `test_compiled.py` checks both against plain numpy versions of the same
   equations (random circuits and scenes; it catches a 0.1% error in the circuit and 1e-15 in the eyes). The whole
   life in one compiled function would save most of the rest, for when evolution needs it.
+- **An exact check needs the same arithmetic on every machine.** The eyes' check once failed on GitHub (1,006 of
+  3,000 scenes differing) though nothing had changed: the plain version used numpy's `d @ f` and `norm`, which go
+  to OpenBLAS, and OpenBLAS picks its kernel by CPU; on an AVX-512 machine those round differently in the last bit
+  from the compiled `dx * f[0] + dy * f[1]`. The plain version now writes the sums out in the same order (it passes
+  under `OPENBLAS_CORETYPE=SkylakeX`). The lives use BLAS only where blocks are placed (a `norm` against a
+  threshold), so a last bit there could change a life only for a block exactly at the threshold.
 - **The integration step doesn't matter.** An input is a current lasting one circuit tick (a quarter of a world
   tick), fixed in model time, not in steps; noise is scaled by sqrt(DT); spikes are found with hysteresis at each
   step. From DT 0.2 to 0.01 (now 0.05) these agreed within sampling noise: spontaneous spikes (10-11 per 1,000

@@ -119,7 +119,7 @@ def plain_look(body):
     far, kind = np.full(world.RAYS, world.RANGE), np.full(world.RAYS, -1)
     for (x, y), k in zip(body.xy, body.kind):
         d = body.wrap(np.array([x, y]) - h)
-        ahead, off = d @ f, d @ side
+        ahead, off = d[0] * f[0] + d[1] * f[1], d[0] * side[0] + d[1] * side[1]    # not @: BLAS rounds by CPU
         if ahead <= -world.BLOCK or ahead - world.BLOCK >= world.RANGE or abs(off) >= w + world.BLOCK:
             continue
         gap = world.BLOCK ** 2 - (across - off) ** 2
@@ -131,7 +131,7 @@ def plain_look(body):
     for d, k in zip(far, kind):
         if k >= 0:
             seen[k] += world.SHARE / (1 + (d / world.REACH) ** 2)
-    touching = [b for b, p in enumerate(body.xy) if np.linalg.norm(body.wrap(p - h)) < world.EAT]
+    touching = [b for b, (x, y) in enumerate(body.wrap(body.xy - h)) if np.sqrt(x * x + y * y) < world.EAT]
     return far, kind, [min(1.0, v) for v in seen], touching
 
 

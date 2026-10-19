@@ -3,13 +3,13 @@
 When changing the code, prefer a rip-up-and-rewrite to a cleaner, smaller design over incremental edits that keep
 legacy structure. Work directly on `main`. Commit and push only when the user says "Push".
 
-Before pushing, run the CI steps (`.github/workflows/test.yml`) in a fresh venv built from `requirements.txt` alone:
-another environment may have extra packages that hide a missing dependency (numba's `@` needs scipy, which isn't
-required, so a push once failed). After pushing, check the run passed (`gh run list`, `gh run view --log-failed`).
-Never make the user wait for either: on "Push", commit, then do the rest in one background task: run the CI steps
-on a clean checkout of that commit (a temporary `git worktree`, so foreground edits can't leak into the test), push
-only if they pass, then wait for the GitHub run. Say nothing more if all passes; report only a failure, with its
-log.
+Before pushing, run the two checks, `python test_rules.py` (the sheet brain's golden rules) and `python
+test_compiled.py` (the compiled simulation against its plain equations), in a fresh venv built from
+`requirements.txt` alone: another environment may have extra packages that hide a missing dependency (numba's `@`
+needs scipy, which isn't required, so a push once failed). There is no GitHub CI (it only repeated these, slowly).
+Never make the user wait: on "Push", commit, then in one background task run the checks on a clean checkout of that
+commit (a temporary `git worktree`, so foreground edits can't leak into the test) and push only if they pass. Say
+nothing more if all passes; report only a failure, with its log.
 
 The user is colour-blind: views in greys, no cue by colour alone.
 
