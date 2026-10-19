@@ -1,0 +1,9 @@
+share: wsls, listening full, inhibit/gate only (held out, seeds from 100) food 1.51, poison 0.35 per 1,000; food:poison 4.28 [3.93, 4.67], last third 6.97 [6.40, 7.62]; bridges 0 in 0 of 64 lives
+                                   wave-1 recruits: median last switch at tick 8085, median switches 3
+                                   net vs knowing +1.16 [+1.09, +1.23]; deepest wave {1: 64}; choices {'gate poison eye -> motor': 64}; all-food recruits 0
+share: wsls, listening full (held out, seeds from 100) food 1.48, poison 0.42 per 1,000; food:poison 3.51 [3.17, 3.89], last third 6.93 [6.30, 7.62]; bridges 0 in 0 of 64 lives
+                                   wave-1 recruits: median last switch at tick 11556, median switches 5
+                                   net vs knowing +1.06 [+0.99, +1.14]; deepest wave {1: 64}; choices {'gate poison eye -> motor': 64}; all-food recruits 0
+share: wsls, inhibit/gate only, inherit (held out, seeds from 100) food 1.62, poison 0.54 per 1,000; food:poison 2.99 [2.86, 3.14], last third 3.52 [3.31, 3.72]; bridges 0 in 0 of 64 lives
+                                   wave-1 recruits: median last switch at tick 8769, median switches 3
+                                   net vs knowing +1.08 [+1.01, +1.15]; deepest wave {1: 64}; choices {'gate poison eye -> motor': 62, 'inhibit poison eye': 1, 'gate food eye -> motor': 1}; all-food recruits 0

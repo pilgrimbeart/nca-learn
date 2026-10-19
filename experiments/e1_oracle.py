@@ -12,7 +12,7 @@ from brains.circuit import INHIBIT, SPEED
 from brains.recruiting import HOLD, RecruitingBrain
 from experiments.common import paired, run, summary
 
-KNOWING = functools.partial(RecruitingBrain, grow=False, hold="T")       # the recruiting brain with growth switched off
+KNOWING = functools.partial(RecruitingBrain, grow=False, hold="T")       # the recruiting circuit, growth switched off
 
 
 def poison_sensor(life):            # in all-food lives, red stands in (T learns nothing there, so it never acts)
@@ -59,7 +59,7 @@ def o5(life):                       # T's hold inhibits one motor directly: dang
 CONDITIONS = [("minimal", "minimal-circuit", None), ("none (knowing)", KNOWING, None),
               ("O1 bridge, poison sensor", KNOWING, o1), ("O2 bridge, food sensor", KNOWING, o2),
               ("O3 bridges, poison sensor both", KNOWING, o3), ("O4 bridges, all four", KNOWING, o4),
-              ("O5 hold one motor", KNOWING, o5), ("designed (mixed-signal)", "designed-circuit", None)]
+              ("O5 hold one motor", KNOWING, o5), ("designed circuit", "designed-circuit", None)]
 
 if __name__ == "__main__":
     lives = int(sys.argv[1]) if len(sys.argv) > 1 else 64
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         print(summary(name, poison), flush=True)
         print(summary("", food, all_food=True), flush=True)
     base = results["none (knowing)"]
-    print("\nnet food per 1,000 ticks, paired with the knowing brain (same lives, same noise): mean difference [95%]")
+    print("\nnet food per 1,000 ticks, paired with the knowing circuit (same lives, same noise): mean difference [95%]")
     for name, (poison, food) in results.items():
         d, lo, hi = paired(base[0], poison)
         e, elo, ehi = paired(base[1], food)

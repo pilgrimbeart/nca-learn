@@ -1,5 +1,5 @@
-"""The recruiting brain: the knowing brain (brains/knowing.py), which may know what predicts pain but can't act on it,
-plus the machinery to grow, in its life, the link that lets that knowledge change what the creature does (rung 1,
+"""The recruiting circuit: the knowing circuit (brains/knowing.py), which may know what predicts pain but can't act on
+it, plus the machinery to grow, in its life, the link that lets that knowledge change what the creature does (rung 1,
 RECRUITMENT.md). All circuit, except growth itself, the one declared primitive: a new unit appears when a sprout
 node's voltage passes GROW, attached where that sprout is.
 
@@ -42,8 +42,8 @@ GUARD = 0.0         # a slow element by which T's spikes could reach E_T (circui
                     # to a taste out of F: unneeded (E2: that answer comes too late to count anyway), and a cost
 FRUSTRATION = 3000.0    # ticks over which frustration fades
 FRUSTRATE = 0.5     # how far one anticipated pain raises F (0..1), with T fully eligible: F settles near rate x this x
-                    # FRUSTRATION x eligibility, above 1/2 at the knowing brain's rate of poison meals and below it once
-                    # a bridge cuts that rate (E2; 0.5 rather than 0.3 brings growth earlier: E5b, confirmed in E6)
+                    # FRUSTRATION x eligibility, above 1/2 at the knowing circuit's rate of poison meals and below it
+                    # once a bridge cuts that rate (E2; 0.5 rather than 0.3 brings growth earlier: E5b, confirmed in E6)
 HELP = 100.0        # ticks over which a sensor's help fades
 HELP_RATE = 0.005   # how fast a sensor's help rises while F is high (at W = 1), per circuit tick
 SPROUT = 200.0      # ticks over which a sprout fades

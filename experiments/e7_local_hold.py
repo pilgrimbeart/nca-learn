@@ -2,7 +2,7 @@
 had to know which neuron's frustration summoned it, a piece of knowledge the circuit doesn't have. The alternative:
 charge the hold by the sensor's own spikes gated by its synapse onto T (W: "my activity predicts pain"), using only
 the sensor's own synapses. Compared hand-placed (each structure's ceiling) and grown, on the original seeds (0-31)
-and on held-out seeds (100-131), paired with the knowing brain.
+and on held-out seeds (100-131), paired with the knowing circuit.
 
     python -m experiments.e7_local_hold [LIVES]
 """

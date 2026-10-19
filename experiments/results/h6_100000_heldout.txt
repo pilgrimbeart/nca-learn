@@ -1,0 +1,8 @@
+guided bridge (recruiting circuit) (held out, seeds from 100) food 1.60, poison 0.44 per 1,000; food:poison 3.63 [3.51, 3.75], last third 3.66 [3.49, 3.84]; bridges 79 in 64 of 64 lives (food 15, poison 64)
+                                   net vs knowing +1.16 [+1.07, +1.24]; deepest wave {0: 64}; choices {}; all-food recruits 0
+wsls, listening full, inhibit/gate only (held out, seeds from 100) food 1.49, poison 0.39 per 1,000; food:poison 3.81 [3.51, 4.14], last third 4.45 [3.80, 5.23]; bridges 0 in 0 of 64 lives
+                                   wave-1 recruits: median last switch at tick 73506, median switches 15
+                                   net vs knowing +1.10 [+1.04, +1.16]; deepest wave {1: 64}; choices {'gate poison eye -> motor': 55, 'inhibit poison eye': 4, 'gate food eye -> motor': 3, 'inhibit food eye': 2}; all-food recruits 0
+wsls, inhibit/gate only, inherit (held out, seeds from 100) food 1.56, poison 0.62 per 1,000; food:poison 2.52 [2.41, 2.64], last third 2.67 [2.48, 2.88]; bridges 0 in 0 of 64 lives
+                                   wave-1 recruits: median last switch at tick 88777, median switches 24
+                                   net vs knowing +0.94 [+0.88, +1.00]; deepest wave {1: 64}; choices {'gate poison eye -> motor': 57, 'inhibit food eye': 3, 'inhibit T': 2, 'gate food eye -> motor': 1, 'inhibit poison eye': 1}; all-food recruits 0

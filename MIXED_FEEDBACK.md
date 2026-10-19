@@ -239,7 +239,7 @@ Closest in spirit to evolving such circuits:
   balance, so the search space has meaningful axes.
 - **Cheap analysis before simulation.** The I-V curves at each timescale are static and quick to compute: a circuit
   whose motor nodes have no N-shaped fast curve can't spike, and need not be simulated.
-- **Learning as modulation.** Today's brain learns a synaptic gain (P gates a synapse). The literature suggests
+- **Learning as modulation.** The designed circuit learns a synaptic gain (P gates a synapse). The literature suggests
   learning could equally shift a node's intrinsic balance, for example a slow negative conductance switching a neuron
   between relaying and ignoring its input: a lever an evolved circuit might find.
 - **Robustness as a test.** Their central claim is robustness to mismatch through balance. An evolved circuit should

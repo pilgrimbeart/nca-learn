@@ -147,7 +147,8 @@ class BlockView:
         # meters, on arrows and by neurons: where each goes
         by_neuron, by_arrow = {}, {}
         for n, (kind, where) in place.items():
-            (by_arrow if kind == "arrow" else by_neuron).setdefault(where, []).append(n)
+            if kind != "hide":                          # (a brain may hide machinery too fine to show)
+                (by_arrow if kind == "arrow" else by_neuron).setdefault(where, []).append(n)
         e_of = {e: (f, t) for e, f, t, _ in arrows}
         at = {}                                         # meter -> (its top-left corner, its index in its row)
         for e, nodes in by_arrow.items():

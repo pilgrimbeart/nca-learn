@@ -1,7 +1,7 @@
 """E5 (experiments/NOTEBOOK.md): (a) is R3's remaining shortfall against the oracle only the time before growth? A
 time-matched oracle places O1 by hand at the very tick R3 grew its bridge in the same life. (b) How sensitive is R3 to
 its two main settings? (c) Does it survive mismatch (every gain and bias a few percent off at birth), as robustness
-through balance predicts, and how does the designed brain fare? (d) What does the recruiting circuit cost?
+through balance predicts, and how does the designed circuit fare? (d) What does the recruiting circuit cost?
 
     python -m experiments.e5_analysis [LIVES] [a] [b] [c] [d]
 """

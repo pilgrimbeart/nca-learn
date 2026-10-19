@@ -1,0 +1,16 @@
+guided bridge (recruiting circuit) food 1.61, poison 0.45 per 1,000; food:poison 3.59 [3.49, 3.69], last third 3.60 [3.42, 3.79]; bridges 76 in 64 of 64 lives (food 12, poison 64)
+                                   net vs knowing +1.16 [+1.09, +1.24]; deepest wave {0: 64}; choices {}; all-food recruits 0
+wsls                               food 1.51, poison 0.85 per 1,000; food:poison 1.78 [1.72, 1.85], last third 1.82 [1.70, 1.96]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +0.66 [+0.61, +0.72]; deepest wave {1: 64}; choices {'gate poison eye -> motor': 42, 'excite poison eye': 6, 'excite food eye': 4, 'inhibit poison eye': 3, 'excite T': 3, 'inhibit food eye': 3, 'gate food eye -> motor': 1, 'inhibit T': 1, 'nothing': 1}; all-food recruits 0
+wsls, listening full               food 1.55, poison 0.47 per 1,000; food:poison 3.29 [3.02, 3.61], last third 3.37 [2.89, 4.05]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +1.08 [+1.01, +1.15]; deepest wave {1: 64}; choices {'gate poison eye -> motor': 58, 'excite T': 2, 'inhibit T': 1, 'inhibit poison eye': 1, 'excite poison eye': 1, 'excite food eye': 1}; all-food recruits 0
+wsls, inhibit/gate only            food 1.52, poison 0.76 per 1,000; food:poison 2.01 [1.94, 2.08], last third 2.17 [2.02, 2.31]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +0.76 [+0.71, +0.82]; deepest wave {1: 64}; choices {'gate poison eye -> motor': 54, 'gate food eye -> motor': 5, 'inhibit food eye': 2, 'inhibit poison eye': 2, 'inhibit T': 1}; all-food recruits 0
+wsls, listening full, inhibit/gate only food 1.52, poison 0.40 per 1,000; food:poison 3.80 [3.50, 4.14], last third 4.68 [3.95, 5.61]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +1.12 [+1.06, +1.18]; deepest wave {1: 64}; choices {'gate poison eye -> motor': 59, 'inhibit poison eye': 2, 'gate food eye -> motor': 2, 'inhibit food eye': 1}; all-food recruits 0
+reinforce                          food 1.19, poison 1.04 per 1,000; food:poison 1.15 [1.11, 1.19], last third 1.19 [1.13, 1.26]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +0.16 [+0.10, +0.22]; deepest wave {1: 64}; choices {'gate poison eye -> motor': 16, 'gate food eye -> motor': 14, 'excite food eye': 8, 'inhibit T': 7, 'inhibit food eye': 7, 'excite poison eye': 5, 'inhibit poison eye': 4, 'excite T': 3}; all-food recruits 0
+reinforce, listening full          food 0.53, poison 0.52 per 1,000; food:poison 1.00 [0.95, 1.06], last third 1.01 [0.91, 1.13]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +0.00 [-0.04, +0.04]; deepest wave {1: 64}; choices {'gate food eye -> motor': 17, 'gate poison eye -> motor': 13, 'inhibit T': 11, 'excite T': 7, 'inhibit poison eye': 5, 'inhibit food eye': 5, 'excite poison eye': 4, 'excite food eye': 2}; all-food recruits 0
+reinforce, listening full, inhibit/gate only food 0.48, poison 0.48 per 1,000; food:poison 1.01 [0.94, 1.08], last third 1.02 [0.89, 1.16]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +0.01 [-0.04, +0.05]; deepest wave {1: 64}; choices {'gate poison eye -> motor': 23, 'gate food eye -> motor': 18, 'inhibit T': 14, 'inhibit poison eye': 6, 'inhibit food eye': 3}; all-food recruits 0

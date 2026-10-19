@@ -67,25 +67,44 @@ evolve the *rule* by which cells recruit.
 
 **Step 0: the baseline, and the trigger.** Keep the one-bit task: it already contains the recruitment problem. A
 brain with no learning machinery approaches every block; to do better it needs units that detect "*this* sensor was
-active and the taste was bad", and gate that sensor's drive: conjunction detectors, which today's designed brain has
-built in and a recruiting brain must build in its life. The control: all-food lives, where nothing should be
+active and the taste was bad", and gate that sensor's drive: conjunction detectors, which the designed circuit has
+built in and a recruiting circuit must build in its life. The control: all-food lives, where nothing should be
 recruited.
-1. The baseline: the minimal brain (`brains/minimal.py`), its sensors driving both motors, taste going nowhere,
+1. The baseline: the minimal circuit (`brains/minimal.py`), its sensors driving both motors, taste going nowhere,
    measured in poison and all-food lives (done: `LESSONS.md`).
 2. The trigger, with nothing placed for the job, and rung 0, all of it circuit (done: `LESSONS.md`): every neuron
    adjusts its own excitability through a memory node (`brains/adjusting.py`), watched from outside
    (`python recruit_test.py`). Rung 0 cuts poison by a third; the poison sensor ends frustrated (its decisions settled,
    what it receives still predicting pain, the pain going on), the food sensor and every all-food life calm.
    Everything that affects behaviour is explicit circuit; the only exception is growth, sudden and locally triggered.
-3. The starting animal, changed (the user): one that may *know* but can't *act*. The minimal brain plus a taste
+3. The starting animal, changed (the user): one that may *know* but can't *act*. The minimal circuit plus a taste
    neuron that learns what predicts pain (plastic synapses from the sensors) but has no outputs (`brains/knowing.py`;
-   done: `LESSONS.md`). It learns the association and anticipates poison, its behaviour exactly the minimal brain's;
+   done: `LESSONS.md`). It learns the association and anticipates poison, its behaviour exactly the minimal circuit's;
    frustrated in poison lives, calm in all-food lives.
-4. Rung 1, done (`brains/recruiting.py`; `experiments/NOTEBOOK.md`, E0-E6): frustration at the taste neuron, help
+4. Rung 1, done (`brains/recruiting.py`; `experiments/NOTEBOOK.md`, E0-E7): frustration at the taste neuron, help
    routed back along its learned input synapses, competing sprouts, and the growth primitive grow a bridge on the
    poison sensor's pathway, the oracle's structure in 61 of 64 held-out lives, as good as an oracle placing it at the
    same moment, and nothing in all-food lives. Next: a neuron robust to mismatch (the neuron, not the recruitment
    machinery, is fragile); growth from other starting animals; de-recruitment; rung 2 (recruiting a feature).
+5. Rung 1 again, by a generic recruit that knows nothing (`brains/healing.py`; `experiments/NOTEBOOK.md`, H1-H10;
+   `experiments/LEADERBOARD.md`; done: `LESSONS.md`). The user's healing response: a frustrated unit grows a recruit
+   attached to it and its one-edge neighbours, with a menu (inhibit, excite, turn down a synapse) and a local rule for
+   choosing; a recruit that fails is frustrated itself, and the next reaches one edge further. Win-stay lose-shift,
+   judged by the share of bad tastes after an option, finds the bridge's function in every life and matches the
+   guided bridge (better in the last third); the cascade finds the cure one edge further in about 60% of lives. Next:
+   cures that cost meals (freezing; neuron-level veers) and credit leaking between waves; the recruit's power.
+6. Future (the user's idea, 2026-10-19; not built): a recruit that *walks*. In a circuit where the cure is several
+   neurons from the pain, one recruit moves its attachments outward along the network until it cures the pain or
+   its wiring costs too much, then emits frustration so another continues. Wire length as hop count, kept locally as
+   a budget node drained per step (a growth cone's limited resources), perhaps scaled by the frustration that
+   launched it. Walking would release the old action as it moves (no credit leaking between waves, de-recruitment for
+   free) and carry one set of choosing machinery instead of a new recruit per wave. Open questions: direction (an
+   undirected walk faces a frontier exponential in depth; the local gradient to try is the neighbours most active
+   just before pains, what learned listening measures and what routed rung 1's bridge); time (judging a menu takes
+   about 10,000 ticks per stop, so listen before trying); where the next recruit starts (where the walker stopped,
+   depth-first, or back at the pain, breadth-first). Needs a deeper test bed: relay neurons between eyes and motors so
+   the cure is k hops from T, distractor branches; vary k and branching; compare walking (gradient or random), waves
+   and attaching widely by success, time to cure, energy and wire length.
 
 Honesty test throughout: spare units generic and identical, one rule that knows nothing of roles. Dormant
 pre-designed circuits switched on when needed would be design smuggled in.
@@ -94,7 +113,7 @@ pre-designed circuits switched on when needed would be design smuggled in.
 `mixed_feedback.py`, with the bounds and defences in `LESSONS.md`. Search by increasing size for tiny circuits, and
 keep a MAP-Elites archive [27] with size and energy as axes, so the whole trade-off curve is visible; lexicographic
 parsimony [28] breaks ties in favour of the smaller. Energy is the brain's draw from supply to ground: elements' bias
-currents plus capacitor charging. Seed with today's designed brain, counted honestly at level 0 (11 nodes, 24
+currents plus capacitor charging. Seed with the designed circuit, counted honestly at level 0 (11 nodes, 24
 elements).
 
 **Phase B: local recruitment (evolution may supply only the rule).**

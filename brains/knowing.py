@@ -1,5 +1,5 @@
-"""The knowing brain: the minimal brain (brains/minimal.py) plus a taste neuron that can learn what predicts pain but
-can't act on it. The starting animal for recruitment (RECRUITMENT.md): it may know, and must recruit in order to act.
+"""The knowing circuit: the minimal circuit (brains/minimal.py) plus a taste neuron that can learn what predicts pain
+but can't act on it. The starting animal for recruitment (RECRUITMENT.md): it may know, and must recruit in order to act.
 All circuit.
 
   The taste neuron T fires at a bad taste (innately: an amplifier from the taste node, on while the taste is bad),
@@ -7,7 +7,7 @@ All circuit.
   a memory node W (no leak, noisy only when written), charged by a bad taste and emptied by a good one while its
   sensor was recently active (that sensor's eligibility node, fading over ELIGIBLE ticks), as the mixed-signal
   brain's P. So T comes to fire on seeing the poison colour, before any meal: an anticipated pain.
-  T has no outputs: what it knows reaches nothing, and the creature behaves as the minimal brain does. Pain reaches
+  T has no outputs: what it knows reaches nothing, and the creature behaves as the minimal circuit does. Pain reaches
   only T, the taste organ; the sensors and motors never feel it.
 """
 

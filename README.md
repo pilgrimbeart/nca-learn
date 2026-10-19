@@ -1,31 +1,48 @@
-# nca-learn: a brain that builds itself then learns
+# nca-learn: brains that grow themselves and learn
 
-Is it possible to design a self-constructing neural network that is useful?
+Can a brain grow itself, emergently, and be useful? Grown, here, means built by local rules alone: nothing places
+its parts, no unit sees the whole, and no god decides. Useful means capable of learning one bit of information during
+its lifetime: here, which of two colours is food and which is poison.
 
-Here we define "useful" as "capable of learning 1 bit of information during its lifetime". 
+So far we have explored two approaches:
 
-A sheet of identical cells, each born the same bar random noise, each running one local rule, and each seeing
-nothing of its neighbours but the **average** of each number they share. Like the "lizard" of
-[Growing Neural Cellular Automata](https://distill.pub/2020/growing-ca/) (Mordvintsev et al., Distill 2020), it
-builds something from nothing and repairs itself when damaged. But instead of growing a picture, it grows a nervous
-system: cells work out where they are, differentiate, wire sensors to thrusters, and then drive a creature 
-that learns, within its own lifetime, which of two colours is food.
+- **The sheet brain** builds itself before it acts. A sheet of identical cells, each running one local rule and
+  seeing nothing of its neighbours but the average of each number they share, works out where each cell is, grows
+  organs and wires them, like the "lizard" of [Growing Neural Cellular
+  Automata](https://distill.pub/2020/growing-ca/) (Mordvintsev et al., Distill 2020), but growing a nervous system
+  instead of a picture. Then the creature it drives learns.
+- **The circuit brains** are small circuits of excitable neurons built from one mixed-feedback element (Ribar and
+  Sepulchre). The recruitment series among them grows while it acts: it starts with too little and recruits more in
+  the life, where and when a local signal calls for it. A neuron that knows something but can't act on it is
+  *frustrated*, and its frustration grows the link that lets the knowledge act. A circuit designed by hand is kept
+  for comparison.
 
-![A life: the brain (left) builds a coordinate frame, names its organs and grows its wiring, then the creature
-(right) learns which colour is food](media/life.gif)
+![A life with the sheet brain: the brain (left) builds a coordinate frame, names its organs and grows its wiring,
+then the creature (right) learns which colour is food](media/life.gif)
 
-Nothing in the cells is told which colour is poison, where it is in the sheet, or how big the sheet is. No clock, no
-global signal, no lockstep: cells update at random, with noise in every number. And the body never does the brain's
-work: when a block touches the mouth, it gives one taste, +1 for food or -1 for poison, without saying which sensor
-saw that block. The brain works out for itself what earned the taste.
+## The ground rules, for every brain
 
-Nor does any cell know what the organs are for. The brain grows two sensors and two actuators, the two of each kind
-alike in everything but name, and wires each sensor to both actuators. Only the body (a triangle, its point the mouth)
-knows that one sensor sees red and the other blue, and that the actuators drive thrusters at the left and right
-corners of its tail, and it draws that wiring at random each life. The rule a cell runs is unchanged if the two
-sensors, or the two actuators, are swapped. What a sensor learns is only whether to fire both thrusters at what it
-senses (the creature drives straight at it) or one (it veers): approaching and avoiding are behaviour, not concepts in
-the cells.
+- **Local only.** Everything a unit knows comes from its own state and its neighbours' signals. No coin toss
+  between units (a choice among them comes from their local competition), and no unit knows it is optimally tuned.
+- **The body is never part of the solution.** When a block touches the mouth the body gives one taste, +1 for food or
+  -1 for poison, without saying which sensor saw that block: the brain works out for itself what earned the taste.
+  Nor does the brain know what its organs are for: it has two sensors and two motors, alike in everything but name,
+  and only the body knows that one sensor sees red and the other blue, and which motor drives which thruster, a
+  wiring it draws at random each life. Approaching and avoiding are behaviour, not concepts in the brain.
+- **Nor is the simulator.** Whatever a simulation lets a design exploit, whoever optimises it will find: once, asked
+  to cut the channels between cells, an agent packed several into different bits of one floating-point number. So:
+  no clock, no global signal, no lockstep (units update at random times), noise in every number, nothing carried
+  below the noise, and a result must hold at a finer step and on fresh lives.
+- **Everything in a circuit brain is explicit circuit**, so it can always be drawn as a circuit diagram. The one
+  exception is growth: a recruited unit appears suddenly, triggered by a node's own voltage, attached locally.
+
+## The creature and its world
+
+A triangle whose point is the mouth, with eyes looking ahead (one sensor for each colour) and a forward thruster at each
+corner of its tail: both thrusters together drive it straight ahead, one alone makes it veer. Red and blue blocks lie
+about the world; one colour is poison, alternating from life to life. A brain fires its two motors and is told only what
+its sensors see and the taste. In *all-food lives* both colours are food, so there is nothing to learn: the control for
+recruitment, which should then grow nothing.
 
 ## Quick start
 
@@ -50,8 +67,8 @@ In the live view:
 | key | |
 |---|---|
 | `r` | a new life (a new seed, a new wiring; poison alternates red and blue) |
-| `d` | damage the brain: replace a disc of cells under the mouse with new-born ones |
-| `b` | the next brain (sheet, then the circuit brains in turn), in a new world with the same seed |
+| `d` | damage the sheet brain: replace a disc of cells under the mouse with new-born ones |
+| `b` | the next brain (the sheet brain, then the circuit brains in turn), in a new world with the same seed |
 | `s` | the designed circuit's schematic (wheel: zoom, drag: pan, Esc: close) |
 | space | pause |
 | up / down | faster / slower (takes over from the automatic speed; `r` hands it back) |
@@ -59,15 +76,17 @@ In the live view:
 
 ### What you're seeing
 
-- **Left, the brain** (49 × 49 cells), in greys:
+- **Left, the brain.** For the sheet brain (49 × 49 cells), in greys:
   - a faint **checkerboard**: the coordinates each cell has worked out for itself (x and y, each running from -1 to
     1 across the sheet), in squares of about 4 cells;
   - its organs, labelled with the names they gave themselves, **S1** and **S2** (the sensors, on one edge), between
-    them **T** (taste: white while it shows a taste), and **M1** and **M2** (the actuators, on the opposite edge),
-    and then with what the body wired them to this life: **red** or **blue** (the sensor that sees that colour,
-    with its chance of firing both thrusters, which it has learned) and **left** or **right** (the thruster it
-    drives);
+    them **T** (taste: white while it shows a taste), and **M1** and **M2** (the actuators, its motors, on the
+    opposite edge), and then with what the body wired them to this life: **red** or **blue** (the sensor that sees
+    that colour, with its chance of firing both thrusters, which it has learned) and **left** or **right** (the
+    thruster it drives);
   - **paths**: light grey from the sensors to M1, mid grey to M2; **pulses** running down them, white.
+
+  For a circuit brain: each neuron's voltage, a white line at each spike.
 - **Right, the world:** red blocks (dark, lettered R) and blue blocks (light, lettered B), and the creature, a
   triangle pointing the way it faces, its point (the mouth) marked, and what its eyes see: a pale beam ahead, the
   corridor its mouth will sweep, fading with distance, each of its rays stopping at the first block it meets (so a
@@ -78,43 +97,26 @@ In the live view:
   netlist and drawn live. Neurons are circles (brightness: voltage; white: a spike), synapses arrows (solid excites,
   dashed inhibits, thickness: current), and every other node a meter hung where it belongs (on the synapse it gates,
   or by the neuron it acts on), with the eyes, thrusters and taste at the edges. A unit grown in the life (the
-  recruiting brain's bridge) appears as a new circle on the synapse it split, outlined for a while.
+  recruiting circuit's bridge, the healing circuit's recruits) appears as a new circle, outlined for a while.
 
-The view runs at 10 ticks a frame, but slows to 1 while the paths grow and until a little after the creature starts
-moving, so the pulses can be seen running down them. A life goes: "where am I" (to about tick 450), "wiring", then
-"moving and learning". Within a few thousand ticks the poison sensor's chance of firing both falls towards 0, and the
-food sensor's rises towards 1.
+For the sheet brain, the view runs at 10 ticks a frame, but slows to 1 while the paths grow and until a little after
+the creature starts moving, so the pulses can be seen running down them. A life goes: "where am I" (to about tick
+450), "wiring", then "moving and learning". Within a few thousand ticks the poison sensor's chance of firing both
+falls towards 0, and the food sensor's rises towards 1.
 
-## Other commands
+## The sheet brain
 
-```bash
-python creature.py --seed 3         # a particular life
-python creature.py --measure 32     # every brain, 32 lives each with learning and 32 without, headless
-                                    # (--brains to choose; --all-food: lives where both colours are food)
-python creature.py --brain minimal-circuit  # the baseline for recruitment: drives at every block, taste goes nowhere
-python creature.py --brain adjusting-circuit  # rung 0 of recruitment: each neuron adjusts its own excitability
-python creature.py --brain knowing-circuit  # recruitment's starting animal: a taste neuron learns what predicts
-                                    # pain, but acts on nothing
-python creature.py --brain recruiting-circuit  # rung 1: it grows, in its life, the link that lets that knowledge act
-python -m experiments.e1_oracle     # the rung-1 experiments, E1 to E6 (experiments/NOTEBOOK.md)
-python recruit_test.py 32           # recruitment's local signals, neuron by neuron, watched from outside
-python test_rules.py                # check every rule keeps the rules below
-python test_compiled.py             # check the compiled circuit and eyes against plain numpy versions
-python watch.py organs              # one stage on its own (organs, wiring; --show picks the numbers drawn)
-python organs_test.py               # when the coordinates and names come right, life by life
-python wiring_test.py               # pulses sent from S1 and S2: how many arrive, and how soon
-python diagram.py                   # redraw media/cell.svg, what runs inside one cell
-python schematic.py                 # redraw media/designed_circuit.svg and .png, the designed circuit's schematic
-                                    # (needs pip install schemdraw cairosvg pillow)
-python creature.py --record frames  # save a life's frames as PNGs, headless (media/life.gif: --seed 0 --ticks 10000,
-                                    # 180 frames taken evenly by tick)
-```
+A sheet of identical cells, each born the same bar random noise, each running one local rule. Like the lizard, it
+builds something from nothing and repairs itself when damaged: cells work out where they are, differentiate, wire
+sensors to thrusters, and then drive a creature that learns, within its own lifetime, which colour is food. Nothing in
+the cells is told which colour is poison, where it is in the sheet, or how big the sheet is. The brain grows two
+sensors and two actuators and wires each sensor to both actuators; the rule a cell runs is unchanged if the two
+sensors, or the two actuators, are swapped. What a sensor learns is only whether to fire both thrusters at what it
+senses (the creature drives straight at it) or one (it veers).
 
-## The rules can't be broken by accident
+### Its rules can't be broken by accident
 
-Whatever the simulation lets a design exploit, whoever optimises it will find: once, asked to cut the channels
-between cells, an agent packed several into different bits of one floating-point number. So the simulator gives no
-lockstep, no precision below the noise, and nothing else to lean on, and the rules are built into the code:
+The ground rules (above) are built into the code:
 
 - **`sheet.py` is the only code that knows there is a grid.** A rule (`rules/*.py`) declares its numbers, which of
   them its neighbours can see, and what every cell is born with, and one compiled function
@@ -137,7 +139,7 @@ lockstep, no precision below the noise, and nothing else to lean on, and the rul
 - Numba-compiled: about 330,000 cell-updates a second on one core for the whole brain (about 150 steps, so 37 ticks
   of the world, a second at 49 × 49).
 
-## What a cell can read from averages
+### What a cell can read from averages
 
 Each shared number is between -1 and 1, with noise of 1%, and a cell sees only its neighbours' mean of it. A
 neighbour moves that mean by at most 2 / (the cell's number of neighbours), so what a cell reads is the sum over its
@@ -157,7 +159,7 @@ neighbours, with noise of about 0.03.
 - **Whole numbers.** What a cell keeps to itself is not limited: it keeps counts and timers as whole numbers,
   re-rounded at each update so its own small noise can't move them.
 
-## What happens in a life
+### What happens in a life
 
 The rules are layered: `rules/brain.py` runs `rules/wiring.py`, which runs `rules/organs.py`; `rules/see.py` holds
 what they share.
@@ -214,7 +216,7 @@ what they share.
 
 No stage waits a fixed time: each starts when the one before has produced what it needs.
 
-## The numbers a cell shares
+### The numbers a cell shares
 
 28, each between -1 and 1 and seen only as averages over the neighbours, most of them in effect flags. The lizard
 used 16, but not like for like: its cells saw each one through Sobel filters, which weight neighbours by where they
@@ -225,7 +227,7 @@ direction at all, only means, so they build it from signals: the coordinates and
 - wiring: 9 for each of the two channels (five for the distance, three for the path, one for offers);
 - learning: 2 (taste, shown by the T cells; ping, the wave that tells a sensor the other was stimulated since).
 
-## Result
+### Result
 
 Three scores: how soon the sensors learn (set by the rules), and how much more food than poison the creature then
 eats per 1,000 ticks and how many food blocks for each poison (set by the brain's behaviour and the body). 32 lives of
@@ -248,28 +250,63 @@ with small kicks that die away quickly. The square before it, whose whole front 
 carried it into what lay ahead, ate nearly as much poison as food even with p perfect (`LESSONS.md`).
 Once learned, the thirds differ much by noise: poison meals are few, and even 32 lives are few for this score.
 
-## A second brain, for comparison: the designed circuit
+### Damage
 
-The same body and world can run a different brain (`python creature.py --brain designed-circuit`): a small circuit,
-designed rather than self-built, built from the one element of Ribar and Sepulchre's [Neuromorphic
-Control](https://arxiv.org/abs/2011.04441) (`mixed_feedback.py`): a leaky node, and elements that each put a current
-into a node, a sigmoid of a low-pass-filtered voltage, with a sign (positive or negative feedback) and a timescale.
-Four excitable neurons, alike: two sensors and two motors. Each sensor excites the motor on its side (a coin toss at
-birth) through a synapse that relays every spike, and the other through a plastic synapse whose strength p sets: at p
-= 1 it relays nearly every spike, at 0 none, in between noise decides. The sensors hush each other: a sensor's spikes
-charge a node that for about 10 ticks holds the other sensor down, so the creature heeds one colour at a time. The
-circuit runs 4 of its ticks to each tick of the world, so its spikes come often and each kick is small. Learning is
-three factors, all in the circuit: each sensor's spikes charge its eligibility node, which leaks away over 10 ticks,
-and empty the other sensor's (cross-inhibition, so only the sensor that fired last is eligible); one taste node,
-driven by the same taste input, charges or empties a capacitor holding p while taste is good or bad, as fast as
-eligibility allows. p sets the plastic synapse's strength. Noise on every node makes the odd spontaneous spike, so a
-creature that sees nothing still moves. It keeps the sheet brain's symmetry: nothing in it says what a sensor senses
-or what a motor does. Its panel in the live view shows each neuron's voltage, a white line at each spike. Its time is
-continuous: its lives don't change with the integration step (DT 0.2 to 0.01), though its learning does depend on the
-shape of the taste pulse (`LESSONS.md`). Compiled with numba, with the world, a life of 10,000 ticks takes about half
-a second.
+Press `d` in the live view to replace a disc of cells under the mouse with new-born ones, as with the lizard. A band 7
+rows deep across the middle (6 lives of 6): the new cells relearn x and y within 90-180 steps, names are kept (or
+retaken, where the band took one), and paths cut off from their source fade and regrow, so every route carries pulses
+again (measured with an earlier version of the organs). Damage the organiser's corner (a disc of radius 4, 6 lives
+of 6): it takes up beating again, at the same corner; but if its two coin-tossed neighbours went too, the toss can come
+out the other way, and the sensors swap names, so each now gets the other colour and what each learned is about the
+wrong one. Damage a sensor and a new cell takes the name, but what the old one had learned is gone.
 
-`--measure` runs both brains on the same lives (the same worlds and wirings):
+### Not yet
+
+- Odd sizes only, and tested at 49 × 49: on an even sheet the middle of an edge falls between two cells.
+- Learning is slow, because meals are few: in 8 of 32 lives the sheet brain had not learned by 10,000 ticks.
+- A taste after both colours were seen at once can go to the wrong sensor, so the sheet brain's p wanders a little
+  near its target (0.17 and 0.91 at the end, where crediting by hand gives 0 and 1).
+- In about 1 sheet in 32, two cells take the same actuator name (M1).
+- The coordinates take about 1,500 steps to settle (they are averages, and averages spread slowly).
+- 28 shared numbers: fewer would be better, though the lizard's 16 also carried direction, which ours must build.
+- Every life starts from scratch: the brain builds itself again (about 2,500 steps, 600 ticks, before the creature
+  moves), and the sensors learn again.
+
+### Inside one cell
+
+Everything a cell does, as a block diagram: the rule's three layers and their stages, with what each reads from its
+neighbours' means and the body on the left, and what it shows its neighbours and gives the body on the right.
+
+![What runs inside one cell: organs (the race, handedness, edge labels, coordinates, naming), the brain (choose,
+taste, ping and learn, in sensors and T cells) and the wiring for each of the two channels](media/cell.svg)
+
+## The circuit brains
+
+Built from the one element of Ribar and Sepulchre's [Neuromorphic Control](https://arxiv.org/abs/2011.04441)
+(`mixed_feedback.py`): leaky nodes, and elements that each put a current into a node, a sigmoid of a filtered
+voltage, with a sign (positive or negative feedback) and a timescale, perhaps gated by another node. Level 0 is
+nodes and elements; level 1, the motifs built from them (neurons, synapses, the states they hold), as the block view
+draws them. A memory node (a knob) holds its value, noisy only when written. Every circuit brain shares two sensor
+neurons, two motor neurons and a taste node (`brains/circuit.py`), runs 4 of its ticks to each tick of the world,
+and has noise on every node; nothing in it says what a sensor senses or what a motor does. Compiled with numba, with
+the world, a life of 10,000 ticks takes about half a second.
+
+### The designed circuit, for comparison
+
+Designed by hand rather than grown (`python creature.py --brain designed-circuit`; its schematic: `s` in the live view,
+or `media/designed_circuit.png`), it says what growing costs. Four excitable neurons, alike: two sensors and two motors.
+Each sensor excites the motor on its side (a coin toss at birth) through a synapse that relays every spike, and the
+other through a plastic synapse whose strength p sets: at p = 1 it relays nearly every spike, at 0 none, in between
+noise decides. The sensors hush each other: a sensor's spikes charge a node that for about 10 ticks holds the other
+sensor down, so the creature heeds one colour at a time. Its spikes come often and each kick is small. Learning is three
+factors, all in the circuit: each sensor's spikes charge its eligibility node, which leaks away over 10 ticks, and empty
+the other sensor's (cross-inhibition, so only the sensor that fired last is eligible); one taste node, driven by the
+same taste input, charges or empties a capacitor holding p while taste is good or bad, as fast as eligibility allows. p
+sets the plastic synapse's strength. Noise on every node makes the odd spontaneous spike, so a creature that sees
+nothing still moves. Its time is continuous: its lives don't change with the integration step (DT 0.2 to 0.01), though
+its learning does depend on the shape of the taste pulse (`LESSONS.md`).
+
+`--measure` runs the sheet brain and the designed circuit on the same lives (the same worlds and wirings):
 
 |  | learned | food minus poison per 1,000 ticks, by third of life after moving | food:poison, by third |
 |---|---|---|---|
@@ -282,44 +319,91 @@ hush each other. Over 64 lives of 10,000 ticks it ate 4.3 food for each poison, 
 p set perfect by hand; it nets about twice as much food as the sheet brain. The comparison says what the sheet costs:
 building takes time, and a big brain is slow.
 
-## Next: mixed feedback, simplicity and recruitment
+### Recruitment: growing in the life
 
-The designed circuit does the job with a handful of neurons where the sheet uses thousands of cells, so the next
-step explores brains built from mixed-feedback parts: evolved in graph form with a strong preference for simplicity,
-and then, from a local perspective only, recruiting more parts in a life when the task needs them.
-`MIXED_FEEDBACK.md` summarises the mixed-feedback approach (Sepulchre and colleagues), what is new in it and what it
-suggests here; `RECRUITMENT.md` gathers how brains might recruit more computational power with no god, and the
-phased plan.
+The recruitment series (`RECRUITMENT.md`; the experiments in `experiments/NOTEBOOK.md`) climbs a ladder from a brain
+that can't learn at all, each step measured against the one below:
 
-## Damage
+| brain | what it is |
+|---|---|
+| minimal circuit (`brains/minimal.py`) | the designed circuit's four neurons alone, each sensor driving both motors, taste going nowhere: drives at every block (the baseline) |
+| adjusting circuit (`brains/adjusting.py`) | rung 0: each neuron adjusts its own excitability from taste (a knob); cuts poison by a third, by ignoring rather than avoiding |
+| knowing circuit (`brains/knowing.py`) | the starting animal: the minimal circuit plus a taste neuron, T, that learns what predicts pain but has no outputs; it knows, but behaves exactly as the minimal circuit |
+| recruiting circuit (`brains/recruiting.py`) | rung 1, guided: T's frustration grows a *bridge* on the poison sensor's pathway that lets the knowledge act |
+| healing circuit (`brains/healing.py`) | rung 1 by a generic recruit that knows nothing of the circuit, choosing among actions on what it is attached to |
+| healing cascade (the same file) | the first recruit can't reach the cure; frustrated itself, it grows a second, one step further out, which can |
 
-Press `d` in the live view to replace a disc of cells under the mouse with new-born ones, as with the lizard. A band 7
-rows deep across the middle (6 lives of 6): the new cells relearn x and y within 90-180 steps, names are kept (or
-retaken, where the band took one), and paths cut off from their source fade and regrow, so every route carries pulses
-again (measured with an earlier version of the organs). Damage the organiser's corner (a disc of radius 4, 6 lives
-of 6): it takes up beating again, at the same corner; but if its two coin-tossed neighbours went too, the toss can come
-out the other way, and the sensors swap names, so each now gets the other colour and what each learned is about the
-wrong one. Damage a sensor and a new cell takes the name, but what the old one had learned is gone.
+In lives of 100,000 ticks (64 lives each, paired with the knowing circuit on the same lives: experiments H3-H11,
+`experiments/LEADERBOARD.md`):
 
-## Not yet
+| brain | net food per 1,000 ticks over the knowing circuit | food:poison in the last third | grown in all-food lives |
+|---|---|---|---|
+| recruiting circuit | +1.16 [+1.09, +1.24] (held out: +1.16) | 3.6 (held out: 3.7) | nothing |
+| healing circuit | +1.17 [+1.10, +1.24] (held out: +1.16) | 7.6 (held out: 7.0) | nothing |
+| healing cascade | +0.66 [+0.53, +0.79] | 4.9 | nothing |
 
-- Odd sizes only, and tested at 49 × 49: on an even sheet the middle of an edge falls between two cells.
-- Learning is slow, because meals are few: in 8 of 32 lives the sheet brain had not learned by 10,000 ticks.
-- A taste after both colours were seen at once can go to the wrong sensor, so the sheet brain's p wanders a little
-  near its target (0.17 and 0.91 at the end, where crediting by hand gives 0 and 1).
-- In about 1 sheet in 32, two cells take the same actuator name (M1).
-- The coordinates take about 1,500 steps to settle (they are averages, and averages spread slowly).
-- 28 shared numbers: fewer would be better, though the lizard's 16 also carried direction, which ours must build.
-- Every life starts from scratch: the brain builds itself again (about 2,500 steps, 600 ticks, before the creature moves), and
-  the sensors learn again.
+A recruit that knows nothing of what the circuit does matches the guided bridge, and settles better: it finds the
+bridge's function ("gate the poison eye's synapse to a motor") out of its menu in every life. The cascade finds the
+cure one step further out in about 60% of lives; its failures (cures that cost meals, credit leaking between
+recruits) and the lessons are in `LESSONS.md`.
 
-## Inside one cell
+### Terms
 
-Everything a cell does, as a block diagram: the rule's three layers and their stages, with what each reads from its
-neighbours' means and the body on the left, and what it shows its neighbours and gives the body on the right.
+- **Recruit**: a unit grown in the life, attached locally. A **bridge** is the recruiting circuit's: a neuron that
+  splits a synapse. The healing circuit's recruit is generic: it attaches to the frustrated unit and its one-edge
+  neighbours, and has a **menu** (inhibit or excite one of them, or turn down one of their synapses).
+- **Frustration**: a unit's slow node that fills when pain it anticipated comes anyway; past a threshold it triggers
+  growth.
+- **Eye**: in the experiments, a sensor neuron by the colour it sees this life (the *poison eye*): the measurement's
+  name, never the brain's.
+- **Rung**: a step on recruitment's ladder: rung 0, a unit adjusts itself; rung 1, it recruits a link
+  (`RECRUITMENT.md`).
+- **Win-stay lose-shift**: how a healing recruit chooses: an option latches on and stays until the tastes that follow
+  it tire it out, then another wins. Judged by the **share** of bad tastes after it, not their rate.
+- **Healing**: recruitment pictured as an inflammation and healing response: the damage is the frustration, the
+  recruit the repair.
+- **Wave**: how many hand-offs a recruit is from the first frustrated unit. Wave 1 is grown by T's frustration; a
+  wave-1 recruit still frustrated long after it came is frustrated itself and grows wave 2, attached one step
+  further out. A **cascade** is that hand-off.
+- **Level 0, level 1**: nodes and elements; the motifs built from them.
+- Names: in prose "the sheet brain", "the designed circuit", "the knowing circuit"; on the command line `sheet`,
+  `designed-circuit`, `knowing-circuit` and so on.
 
-![What runs inside one cell: organs (the race, handedness, edge labels, coordinates, naming), the brain (choose,
-taste, ping and learn, in sensors and T cells) and the wiring for each of the two channels](media/cell.svg)
+## Next
+
+The designed circuit does the job with a handful of neurons where the sheet uses thousands of cells, so the work now
+explores circuit brains: evolved in graph form with a strong preference for simplicity, and, from a local perspective
+only, recruiting more parts in a life when the task needs them. `MIXED_FEEDBACK.md` summarises the mixed-feedback
+approach (Sepulchre and colleagues), what is new in it and what it suggests here; `RECRUITMENT.md` gathers how brains
+might recruit more computational power with no god, the plan, and open questions (among them a recruit that walks
+outward along the network until it cures the pain or its wiring costs too much).
+
+## Other commands
+
+```bash
+python creature.py --seed 3         # a particular life
+python creature.py --measure 32     # every brain, 32 lives each with learning and 32 without, headless
+                                    # (--brains to choose; --all-food: lives where both colours are food)
+python creature.py --brain minimal-circuit    # the baseline for recruitment: drives at every block
+python creature.py --brain adjusting-circuit  # rung 0: each neuron adjusts its own excitability
+python creature.py --brain knowing-circuit    # the starting animal: knows what predicts pain, acts on nothing
+python creature.py --brain recruiting-circuit # rung 1, guided: grows the bridge that lets that knowledge act
+python creature.py --brain healing-circuit    # rung 1 by a generic recruit that knows nothing of the circuit
+python creature.py --brain healing-cascade    # the first recruit can't help; a second, further out, can
+python -m experiments.e1_oracle     # the rung-1 experiments, E1 to E7 (experiments/NOTEBOOK.md)
+python -m experiments.h_run 64 100000 "share*"  # the healing experiments (H series): named rules, on the leaderboard
+python recruit_test.py 32           # recruitment's local signals, neuron by neuron, watched from outside
+python test_rules.py                # check every sheet rule keeps the sheet brain's rules
+python test_compiled.py             # check the compiled circuit and eyes against plain numpy versions
+python watch.py organs              # one stage of the sheet brain on its own (organs, wiring; --show picks the numbers)
+python organs_test.py               # when the coordinates and names come right, life by life
+python wiring_test.py               # pulses sent from S1 and S2: how many arrive, and how soon
+python diagram.py                   # redraw media/cell.svg, what runs inside one cell
+python schematic.py                 # redraw media/designed_circuit.svg and .png, the designed circuit's schematic
+                                    # (needs pip install schemdraw cairosvg pillow)
+python creature.py --record frames  # save a life's frames as PNGs, headless (media/life.gif: --seed 0 --ticks 10000,
+                                    # 180 frames taken evenly by tick)
+```
 
 ## Files
 
@@ -330,20 +414,21 @@ taste, ping and learn, in sensors and T cells) and the wiring for each of the tw
 | `brains/sheet.py` | the sheet brain: the sheet, by the names its cells took |
 | `brains/circuit.py` | what every circuit brain shares: two sensor and two motor neurons, a taste node, running and drawing |
 | `brains/designed.py` | the designed circuit: four excitable neurons, designed by hand |
-| `brains/minimal.py` | the minimal brain: those neurons alone, driving at every block (the baseline for recruitment) |
-| `brains/adjusting.py` | the minimal brain with every neuron adjusting its own excitability, all circuit (rung 0 of recruitment) |
-| `brains/knowing.py` | the minimal brain plus a taste neuron that learns what predicts pain but has no outputs (recruitment's starting animal) |
-| `brains/recruiting.py` | the knowing brain growing, in its life, the link that lets its knowledge act (rung 1) |
+| `brains/minimal.py` | the minimal circuit: those neurons alone, driving at every block (the baseline for recruitment) |
+| `brains/adjusting.py` | the adjusting circuit: every neuron adjusting its own excitability (rung 0 of recruitment) |
+| `brains/knowing.py` | the knowing circuit: the minimal circuit plus a taste neuron that learns what predicts pain but has no outputs (recruitment's starting animal) |
+| `brains/recruiting.py` | the recruiting circuit: the knowing circuit growing, in its life, the bridge that lets its knowledge act (rung 1) |
+| `brains/healing.py` | the healing circuit and cascade: rung 1 by a generic recruit that knows nothing of the circuit |
 | `recruit_test.py` | recruitment's local signals, watched from outside a circuit brain |
 | `blocks.py` | the block view: a circuit brain at level 1 (neurons, synapses, the states they hold), live |
-| `experiments/` | the rung-1 experiments and their lab notebook (`NOTEBOOK.md`) |
+| `experiments/` | the recruitment experiments (E series: the recruiting circuit; H series: the healing circuit), their lab notebook (`NOTEBOOK.md`) and leaderboard (`LEADERBOARD.md`) |
 | `mixed_feedback.py` | the mixed-feedback element and circuit every circuit brain is built from |
 | `sheet.py` | the engine: the only code that knows the grid |
 | `rules/organs.py` | where am I: the race, handedness, edge labels, coordinates, names |
 | `rules/wiring.py` | growing paths and running pulses, built on `rules/organs.py` |
 | `rules/brain.py` | choosing and learning, built on `rules/wiring.py` |
 | `rules/see.py` | what cells read from averages, and the distance field and path signs the rules share |
-| `test_rules.py` | checks every rule and every body file keep the rules |
+| `test_rules.py` | checks every sheet rule and every body file keep the rules |
 | `test_compiled.py` | checks the compiled circuit (`mixed_feedback.py`) and eyes and mouth (`world.py`) against plain numpy versions |
 | `watch.py`, `organs_test.py`, `wiring_test.py` | each stage on its own, live or measured |
 | `diagram.py` | draws `media/cell.svg`, the diagram above (by hand from the rules: redraw it when one changes) |

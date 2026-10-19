@@ -114,6 +114,11 @@ class Circuit:
         params, (_, frm, gate) = self.elements[e]
         self.elements[e] = (params, (to, frm, gate))
 
+    def regate(self, e: int, gate: int) -> None:
+        """Growth: element e is now gated by node `gate` (so something can turn it down). grow() makes it count."""
+        params, (to, frm, _) = self.elements[e]
+        self.elements[e] = (params, (to, frm, gate))
+
     def grow(self) -> None:
         """Growth, during a life: after nodes or elements were added, or an element redirected, rebuild the arrays the
         integration runs on, keeping every existing node's and element's state. A new node starts at its start voltage,

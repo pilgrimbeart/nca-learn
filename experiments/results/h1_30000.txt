@@ -1,0 +1,22 @@
+guided bridge (recruiting circuit) food 1.66, poison 0.48 per 1,000; food:poison 3.44 [3.32, 3.57], last third 3.67 [3.36, 4.00]; bridges 67 in 64 of 64 lives (food 3, poison 64)
+                                   net vs knowing +1.18 [+1.07, +1.28]; choices {}; all-food recruits 0
+wsls, menu with synapses           food 1.54, poison 0.83 per 1,000; food:poison 1.85 [1.71, 2.00], last third 2.59 [2.13, 3.17]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +0.71 [+0.59, +0.83]; choices {'gate poison eye -> motor': 55, 'excite poison eye': 2, 'inhibit T': 2, 'gate food eye -> motor': 2, 'inhibit poison eye': 1, 'excite food eye': 1, 'nothing': 1}; all-food recruits 0
+wsls, menu of neurons only         food 1.49, poison 1.49 per 1,000; food:poison 1.00 [0.95, 1.05], last third 0.99 [0.90, 1.08]; bridges 0 in 0 of 64 lives
+                                   net vs knowing -0.00 [-0.11, +0.10]; choices {'nothing': 16, 'inhibit poison eye': 14, 'excite poison eye': 10, 'excite T': 8, 'inhibit T': 7, 'excite food eye': 5, 'inhibit food eye': 4}; all-food recruits 0
+all options on, with synapses      food 0.82, poison 0.73 per 1,000; food:poison 1.13 [1.04, 1.23], last third 1.09 [0.94, 1.25]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +0.10 [+0.00, +0.19]; choices {'gate poison eye -> motor': 15, 'gate food eye -> motor': 10, 'inhibit poison eye': 9, 'excite poison eye': 7, 'inhibit food eye': 7, 'excite food eye': 6, 'excite T': 6, 'inhibit T': 4}; all-food recruits 0
+one random option, with synapses   food 1.24, poison 1.29 per 1,000; food:poison 0.97 [0.82, 1.14], last third 0.93 [0.74, 1.14]; bridges 0 in 0 of 64 lives
+                                   net vs knowing -0.04 [-0.26, +0.18]; choices {'gate food eye -> motor': 16, 'gate poison eye -> motor': 16, 'excite T': 10, 'inhibit T': 6, 'inhibit poison eye': 5, 'inhibit food eye': 5, 'excite food eye': 3, 'excite poison eye': 3}; all-food recruits 0
+wsls, no listening                 food 1.54, poison 1.34 per 1,000; food:poison 1.15 [1.08, 1.21], last third 1.29 [1.16, 1.43]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +0.19 [+0.08, +0.31]; choices {'gate poison eye -> motor': 32, 'inhibit poison eye': 8, 'gate food eye -> motor': 6, 'excite poison eye': 6, 'excite T': 5, 'inhibit T': 3, 'excite food eye': 2, 'inhibit food eye': 2}; all-food recruits 0
+wsls, listening fixed full         food 1.53, poison 0.60 per 1,000; food:poison 2.54 [2.27, 2.85], last third 5.78 [4.63, 7.17]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +0.93 [+0.81, +1.05]; choices {'gate poison eye -> motor': 57, 'inhibit poison eye': 4, 'excite T': 1, 'inhibit food eye': 1, 'inhibit T': 1}; all-food recruits 0
+wsls, inhibit/gate only            food 1.54, poison 0.74 per 1,000; food:poison 2.07 [1.93, 2.23], last third 2.57 [2.24, 2.99]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +0.80 [+0.68, +0.92]; choices {'gate poison eye -> motor': 51, 'inhibit poison eye': 4, 'inhibit T': 3, 'inhibit food eye': 3, 'gate food eye -> motor': 2, 'nothing': 1}; all-food recruits 0
+wsls, excite/gate only             food 1.54, poison 0.84 per 1,000; food:poison 1.83 [1.75, 1.93], last third 2.18 [1.98, 2.41]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +0.70 [+0.60, +0.81]; choices {'gate poison eye -> motor': 53, 'gate food eye -> motor': 6, 'excite T': 2, 'excite food eye': 2, 'excite poison eye': 1}; all-food recruits 0
+wsls, learning from anticipated pain (wireheading?) food 1.47, poison 1.06 per 1,000; food:poison 1.38 [1.29, 1.49], last third 1.55 [1.35, 1.80]; bridges 0 in 0 of 64 lives
+                                   net vs knowing +0.41 [+0.29, +0.52]; choices {'gate poison eye -> motor': 39, 'inhibit T': 10, 'excite T': 5, 'excite poison eye': 3, 'inhibit food eye': 3, 'inhibit poison eye': 3, 'excite food eye': 1}; all-food recruits 0
+
+[exited with code 0]

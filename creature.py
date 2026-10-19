@@ -2,7 +2,7 @@
 joins them; measure compares brains on the same lives; watch shows a life.
 
     python creature.py                  # watch a life with the sheet brain (r: new life, d: damage the brain at the
-                                        # mouse, b: the other brain, s: its schematic (mixed signal), space: pause,
+                                        # mouse, b: the next brain, s: the designed circuit's schematic, space: pause,
                                         # up/down: speed, Esc: quit)
     python creature.py --measure 16     # 16 lives with learning and 16 without, for each brain: how soon it learns,
                                         # what it eats (--all-food: lives where both colours are food)
@@ -22,7 +22,10 @@ the circuit brains: "designed-circuit" (brains/designed.py), a small circuit of 
 baseline for recruitment, RECRUITMENT.md); "adjusting-circuit" (brains/adjusting.py), each neuron adjusting its own
 excitability from taste (rung 0); "knowing-circuit" (brains/knowing.py), the minimal circuit plus a taste neuron that
 learns what predicts pain but has no outputs (recruitment's starting animal); "recruiting-circuit"
-(brains/recruiting.py), the knowing circuit growing, in its life, the link that lets that knowledge act (rung 1).
+(brains/recruiting.py), the knowing circuit growing, in its life, the link that lets that knowledge act (rung 1);
+"healing-circuit" (brains/healing.py), the same done by a generic recruit that knows nothing of the circuit, choosing
+among actions on what it is attached to; "healing-cascade", where the first recruit can't help and the cure is
+found by a second wave, one edge further.
 
 In an all-food world (poison None) both colours are food, so there is nothing to learn: the control for recruitment,
 which should then not happen.
@@ -31,6 +34,7 @@ which should then not happen.
 from __future__ import annotations
 
 import argparse
+import functools
 import time
 
 import numpy as np
@@ -39,12 +43,16 @@ from brains.adjusting import AdjustingBrain
 from brains.sheet import SheetBrain
 from brains.knowing import KnowingBrain
 from brains.minimal import MinimalBrain
+from brains.healing import HealingBrain
 from brains.recruiting import RecruitingBrain
 from brains.designed import DesignedBrain
 from world import COLOURS, SENSE, THRUSTERS, WORLD, Body
 
 BRAINS = {"sheet": SheetBrain, "designed-circuit": DesignedBrain, "minimal-circuit": MinimalBrain,
-          "adjusting-circuit": AdjustingBrain, "knowing-circuit": KnowingBrain, "recruiting-circuit": RecruitingBrain}
+          "adjusting-circuit": AdjustingBrain, "knowing-circuit": KnowingBrain, "recruiting-circuit": RecruitingBrain,
+          "healing-circuit": functools.partial(HealingBrain, listen="all", sign="inh", judge="share", tire=0.05),
+          "healing-cascade": functools.partial(HealingBrain, menu="inputs", listen="all", sign="inh", cascade=True,
+                                               trigger="root", judge="share", tire=0.05, starve=20000.0)}
 FAST, SLOW = 10, 1  # watching: ticks per frame, slow while the brain wires itself and first drives the body
 SCHEMATIC = "media/designed_circuit.png"    # watching: the designed circuit (drawn by schematic.py)
 SETTLE = 200        # watching: ticks after the creature starts moving before speeding up again

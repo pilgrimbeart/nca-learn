@@ -32,12 +32,15 @@ optimiser will find, an agent included: asked to cut the channels between cells,
 different bits of one float. So for every brain: random timing (never lockstep, and no inputs only on tick
 boundaries), noise on everything, nothing carried below the noise, and a result must hold at a finer step and on
 fresh seeds. For an optimised circuit, also mismatch (parameters a few percent off at birth) and limits on time
-constants and gains against the step. Details in `LESSONS.md` (Principles; Simulating the mixed-signal brain, now the designed circuit).
+constants and gains against the step. Details in `LESSONS.md` (Principles; Simulating the designed circuit).
 
 Brains: the **sheet brain** (`brains/sheet.py`, the grid of cells, below) and the **circuit brains**, built from
 mixed-feedback parts (`mixed_feedback.py`, sharing `brains/circuit.py`): the **designed circuit** (`brains/designed.py`,
 drawn by `schematic.py`: redraw it when the circuit changes), kept for comparison; and the recruitment series, the
-**minimal**, **adjusting**, **knowing** and **recruiting circuits** (`RECRUITMENT.md`). The circuit brains keep: no
+**minimal**, **adjusting**, **knowing**, **recruiting** and **healing circuits** and the **healing cascade**
+(`RECRUITMENT.md`; experiments in `experiments/NOTEBOOK.md`, ranked in `experiments/LEADERBOARD.md`). Terms coined
+along the way are defined in the README (Terms); define any new one there when it first appears in a user-facing
+document. The circuit brains keep: no
 knowledge of what a sensor senses or a motor does, noise on every node, continuous time, and learning only through the
 taste. `--measure` compares brains on the same lives; a refactor of one must leave the others' lives unchanged.
 All-food lives (`--all-food`) are recruitment's control.

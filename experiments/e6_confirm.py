@@ -1,6 +1,6 @@
 """E6, confirmation on held-out lives (experiments/NOTEBOOK.md): settings chosen on seeds 0-31 (E4, E5b) are compared on
 fresh seeds (100-131), so the choice isn't fitted to the lives it was chosen on. R3 (sharp routing, one bridge per
-neuron) against R4 (R3 with faster frustration, 0.5, and a lower growth level, 0.6), with the knowing brain and the
+neuron) against R4 (R3 with faster frustration, 0.5, and a lower growth level, 0.6), with the knowing circuit and the
 oracle O1 as references.
 
     python -m experiments.e6_confirm [LIVES]
