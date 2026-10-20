@@ -1,0 +1,12 @@
+C1b: parts {'C': 7, 'R': 6, 'D': 0, 'T': 8, 'total': 21, 'nodes': 6, 'elements': 5}
+  noise x1: net +0.32 [+0.19, +0.45] (food - poison +0.77), food 1.21, poison 0.45, last third 2.57
+  noise x0.5: net +0.51 [+0.32, +0.70] (food - poison +0.98), food 1.45, poison 0.47, last third 3.67  (job)
+  noise x2: net +0.26 [+0.08, +0.43] (food - poison +0.82), food 1.37, poison 0.55, last third 2.54
+  does not do the job at all three
+  (780 s)
+C2b: parts {'C': 7, 'R': 6, 'D': 0, 'T': 10, 'total': 23, 'nodes': 6, 'elements': 6}
+  noise x1: net +0.66 [+0.56, +0.74] (food - poison +1.11), food 1.56, poison 0.45, last third 4.73  (job)
+  noise x0.5: net +0.67 [+0.56, +0.78] (food - poison +1.10), food 1.54, poison 0.43, last third 5.06  (job)
+  noise x2: net -0.04 [-0.16, +0.08] (food - poison +0.90), food 1.83, poison 0.94, last third 2.43
+  does not do the job at all three
+  (771 s)

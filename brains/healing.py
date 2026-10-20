@@ -306,7 +306,6 @@ class HealingBrain(KnowingBrain):
             self.frust[R] = {"F": F_R, "O": fr["O"], "Y": fr["Y"], "flag": fr.get("flag", -1), "att": att,
                              "wave": fr["wave"] + 1}
         c.grow()
-        self.inject = np.concatenate([self.inject, np.zeros(len(c.names) - len(self.inject))])
         self.recruits.append({"tick": self.t, "parent": u, "R": R, "att": att, "listen": listen,
                               "options": options, "enable": strength or enable, "wave": fr["wave"] + 1,
                               "now": -1, "switches": 0, "since": self.t})

@@ -134,7 +134,6 @@ class RecruitingBrain(KnowingBrain):
                 if s2 == s and m2 != m:
                     c.element(x, done, -1.0 * c.nodes[x][2], 0.5, slope=20.0, sigmoid=True)
         c.grow()
-        self.inject = np.concatenate([self.inject, np.zeros(len(c.names) - len(self.inject))])
         self.grown.add((s, m))
         self.bridges.append((self.t, s, m))
 

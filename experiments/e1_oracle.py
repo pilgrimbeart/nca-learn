@@ -53,7 +53,6 @@ def o5(life):                       # T's hold inhibits one motor directly: dang
     c.element(hold, b.T, 10.0, 0.0, slope=5.0, sigmoid=True)
     c.element(m, hold, -INHIBIT, 0.5, slope=10.0, sigmoid=True)
     c.grow()
-    b.inject = __import__("numpy").concatenate([b.inject, __import__("numpy").zeros(len(c.names) - len(b.inject))])
 
 
 CONDITIONS = [("minimal", "minimal-circuit", None), ("none (knowing)", KNOWING, None),

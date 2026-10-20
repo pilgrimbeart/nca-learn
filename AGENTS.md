@@ -3,15 +3,17 @@
 When changing the code, prefer a rip-up-and-rewrite to a cleaner, smaller design over incremental edits that keep
 legacy structure. Work directly on `main`. Commit and push only when the user says "Push".
 
-Before pushing, run the two checks, `python test_rules.py` (the sheet brain's golden rules) and `python
-test_compiled.py` (the compiled simulation against its plain equations), in a fresh venv built from
+Before pushing, run the three checks, `python test_rules.py` (the sheet brain's golden rules), `python
+test_compiled.py` (the compiled simulation against its plain equations) and `python -m minimal.test_minimal` (the
+minimal circuit search's rules), in a fresh venv built from
 `requirements.txt` alone: another environment may have extra packages that hide a missing dependency (numba's `@`
-needs scipy, which isn't required, so a push once failed). There is no GitHub CI (it only repeated these, slowly).
+needs scipy, which isn't required, so a push once failed). There is no GitHub CI (it only repeated the first two, slowly).
 Never make the user wait: on "Push", commit, then in one background task run the checks on a clean checkout of that
 commit (a temporary `git worktree`, so foreground edits can't leak into the test) and push only if they pass. Say
 nothing more if all passes; report only a failure, with its log.
 
-The user is colour-blind: views in greys, no cue by colour alone.
+The user is colour-blind: use colour, but never as the only cue (pair it with shape, line style or a label), and
+avoid hues that are hard to tell apart, such as red and green (a colour-blind-safe palette, e.g. Okabe-Ito).
 
 ## Brains
 
@@ -31,8 +33,17 @@ A rule of thumb: if the brain stops needing some mechanism after a body change, 
 optimiser will find, an agent included: asked to cut the channels between cells, an agent once packed several into
 different bits of one float. So for every brain: random timing (never lockstep, and no inputs only on tick
 boundaries), noise on everything, nothing carried below the noise, and a result must hold at a finer step and on
-fresh seeds. For an optimised circuit, also mismatch (parameters a few percent off at birth) and limits on time
-constants and gains against the step. Details in `LESSONS.md` (Principles; Simulating the designed circuit).
+fresh seeds. For an optimised circuit, also limits on time constants and gains against the step. Details in
+`LESSONS.md` (Principles; Simulating the designed circuit; Noise as biology makes it).
+
+**Circuit noise is biology's, and the simulator's alone** (`mixed_feedback.py`, the user's decision, 2026-10-20):
+shot noise on every device current (gross, not net), membrane noise in proportion to each capacitance (none on a
+memory node, whose noise is its writers' shot noise), 10% mismatch in every part (also parts grown in a life), and
+the body's pulses at random moments within a tick (each eye a Poisson process). All of it lives in the one
+integration step every simulation calls (`_step`) and in how the arrays are built, with no switch to turn it off: the
+noise can only be scaled within half to double. Never add a way round it (a brain-level noise setting, a second
+integrator, parameters edited after the arrays are built), and keep `python test_compiled.py` checking that it is
+the same at any step and can't be dodged.
 
 Brains: the **sheet brain** (`brains/sheet.py`, the grid of cells, below) and the **circuit brains**, built from
 mixed-feedback parts (`mixed_feedback.py`, sharing `brains/circuit.py`): the **designed circuit** (`brains/designed.py`,
@@ -54,7 +65,31 @@ All-food lives (`--all-food`) are recruitment's control.
   locally. Watching and measuring may compute anything, but never feed back.
 - No coin toss between units: a choice among units comes from their local competition. No unit knows it is optimally
   tuned; "finished adjusting" means its own adjustment has stalled while its own discomfort persists. A knob is a
-  memory node, noisy only when written.
+  memory node, noisy only when written (rough by the square root of what is written).
+
+## The minimal circuit search (`minimal/`, its notebook `minimal/NOTEBOOK.md`)
+
+How simple can a circuit be that learns the bit, with no architectural constraints (no neurons, locality or growth)?
+The task, body and interface stay as for every brain. The rules, each enforced in software (`minimal/spec.py`:
+`check` refuses an illegal circuit, so none can be built or lived; `python -m minimal.test_minimal` tests it):
+
+- **Within the supply**: every node is held within the rails (+-3 V); a clamp inside them is a part.
+- **Not faster than the step**: nothing may move a node more than 10 V per circuit tick (0.5 V per integration
+  step), whether an element (gain / C), a leak (1 / RC) or the body's pulse into an input (3 / C); and an unfiltered
+  element on its own node acts no faster than gain x slope / C = 2 per circuit tick (a time constant of at least 10
+  steps: a device fed back to itself must not be infinitely fast).
+- **Judged honestly**: held-out seeds, at the nominal noise with the simulator's mismatch (both above: no circuit
+  can change them), and a finer step in the real `creature.Life`; paired lives (red, then blue, as poison, on one
+  seed), so a circuit that ignores taste scores below 0. (Until 2026-10-20 also at half and double the old fixed
+  noise; with noise modelled on biology, the user settled on the nominal level alone.)
+- **Counted plainly**: parts are capacitors, resistors, diodes and transistors (a gated element two, a filtered input
+  a resistor and capacitor more); power is what each device dissipates, its current times the voltage across it.
+  Simplicity and power are ranked 50:50 in `minimal/LEAGUE.md` among the circuits that do the job.
+
+Every polish (`minimal/search.py`) ends with pruning (`minimal/prune.py`): the polish tunes values and can't remove
+a part, so parts that stopped mattering stay (one winner carried 7) unless something tries taking each away.
+
+Add a rule to `check` and a case to the test whenever one is added here.
 
 ## The rules of the sheet brain (see the README)
 

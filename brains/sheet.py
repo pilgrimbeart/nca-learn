@@ -24,10 +24,10 @@ class SheetBrain:
     def _cells(self, name: str) -> np.ndarray:
         return self.sheet.cells("name", NAME[name])
 
-    def stimulate(self, sensor: int) -> None:
+    def stimulate(self, sensor: int, at: float) -> None:        # (at: the sheet's own updates are random in time)
         self.sheet.give(self._cells(f"S{sensor + 1}"), "stimulus")
 
-    def taste(self, value: float) -> None:
+    def taste(self, value: float, at: float) -> None:
         self.sheet.give(self._cells("T"), "taste", value)
 
     def step(self) -> list:

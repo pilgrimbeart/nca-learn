@@ -1,0 +1,7 @@
+start: 23 parts, score +0.341 (keeping within 0.1 of it)
+  no leak on M1: 22 parts, score +0.373 (best of 15)
+  nothing more can go
+N_E1_23p_pruned: parts {'C': 7, 'R': 5, 'D': 0, 'T': 10, 'total': 22, 'nodes': 6, 'elements': 6}; fastest slew 7.7 per circuit tick (limit 10)
+  net +0.42 [+0.27, +0.56] (food - poison +0.93), food 1.37, poison 0.44, last third 3.84, power 6.79
+  DOES THE JOB
+  (155 s)

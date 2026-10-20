@@ -442,12 +442,92 @@ exploitable.
 - **The plastic synapse is graded only for p below about 0.4.** Its weight is STRONG x p = 0.35 at p = 1/2, which
   relays about 85% of spikes, not "about half" as the docstring said.
 - **Defences, for any circuit brain that is optimised:** each input at a random time within its tick (inputs on the
-  tick boundaries make intervals whole ticks, a rhythm a resonator could lock to: the circuit's lockstep); limits on
+  tick boundaries make intervals whole ticks, a rhythm a resonator could lock to: the circuit's lockstep; not built
+  until 2026-10-20, below: Noise as biology makes it); limits on
   time constants (at least about 5 DT) and on gain x slope / capacitance, and each generation's best re-run at DT/2;
   fresh seeds for every evaluation, and the result judged on lives never trained on; every parameter a few percent
   off at birth (mismatch, as Sepulchre stresses: no knife-edge tuning or exact cancellation between identical parts);
   noise on every node, as now. Each motor spike is a full kick, so a fast oscillator gets the most thrust: how the
   body bounds thrust is a body question for the user.
+
+## Noise as biology makes it (2026-10-20)
+
+The user asked how noise was decided, where it goes in, and whether it could be cheated. The answers were: 0.2 per
+node, picked when the first circuit neuron was built; a fixed current on every node; and yes, in three ways. So the
+noise was remodelled on biology's (Faisal, Selen and Wolpert, "Noise in the nervous system", Nat Rev Neurosci 2008),
+which subthreshold silicon shares (Sarpeshkar, Delbrueck and Mead 1993), and the user accepted it all.
+
+- **Three holes in the old noise.** (1) *Inputs on tick boundaries*: listed above as a defence (Simulating the
+  designed circuit) but never built: every stimulus and taste was a rectangle starting exactly as a world tick began,
+  so intervals were whole ticks and the taste's shape fixed, a rhythm and a template an optimiser could lock to.
+  (2) *Memory write noise vanished at a finer step*: rough by 10% of each step's change, its variance over a fixed
+  time fell in proportion to the step, so the half-step check saw a quieter memory and could flatter a design.
+  (3) *Size bought silence for free*: noise was a fixed current per node, so scaling a node's capacitance and every
+  current into it by k (the same behaviour; the slew limit, being current over capacitance, can't see it) cut its
+  noise k times, for power alone (0.01 per unit in the minimal search's score) and no extra parts. The minimal search
+  was heading there: tuned sensors at C 4-6, where they were designed at 1.
+- **What biology does.** Noise comes from discrete events: channels opening (relative noise 1/sqrt of their number),
+  vesicles released (binomial), photons and receptor events (Poisson, in continuous time). Thermal noise is
+  microvolts, negligible. Quiet is bought with more channels, so area and energy (Laughlin, de Ruyter van Steveninck
+  and Anderson 1998): reliability costs power. Awake cortex fluctuates by about 2-4 mV against 15-20 mV from rest to
+  threshold; the old 0.2 gave the standard neuron about 0.14 V against about 1 V, inside that, so the size was right
+  and the scaling wrong. And parts differ: identified neurons of one type by 2-5 times in channel density (Marder and
+  Goaillard 2006), held in shape by homeostasis; analogue transistors by 10% or more (Pelgrom 1989).
+- **The model** (`mixed_feedback.py`; the details in its docstring). Shot noise of variance SHOT x |I| per tick on
+  every device current, summed gross over a node (two big opposing currents still flicker), the body's pulses
+  included; membrane noise of variance MEMBRANE x C per tick on every node but a memory; a memory node only its
+  writers' shot noise (still while unwritten, rough by the square root of what is written); 10% mismatch in every
+  part, drawn per part from the seed when the arrays are built (so parts grown or changed in a life get it too);
+  each eye a Poisson process and every pulse at a random moment within its tick, spread over the steps it overlaps.
+  Scaling a node by k now buys sqrt(k) quiet for k times the power. It lives in one integration step (`_step`) that
+  the circuit and `minimal/fastlife.py` both call, so neither can leave it out, with no switch: the noise can only be
+  scaled within half to double. `test_compiled.py` checks it: memory and leaky-node spreads the same at step 0.05
+  and 0.025 (the old model fails: its memory spread fell by 1.4), a node 4 times as big quieter by 2, not 4, every
+  part mismatched by about 10%, a pulse's charge exact wherever it falls.
+- **Calibration.** SHOT (0.005) and MEMBRANE (0.02) share the old variance equally for the standard neuron at rest
+  (its two elements carry 1.87 each, cancelling: gross 3.7, net 0). Without mismatch it fires 4.4 times per 1,000
+  ticks on its own, as before (4.6; the 6.5 above was with older parameters), one spike per pulse.
+- **The paper's neuron doesn't survive 10% mismatch.** With it, about a third of standard neurons (35% of 200) fire
+  on their own at 20-60 per 1,000 ticks (median 2), and a pulse gives 1.46 spikes on average, not 1 (3%: 11.5 per
+  1,000, 1.15). Its excitability balances fast positive against slow negative feedback of equal gain and bias -1.6,
+  near the bistable range (bias -1.2 to -1.4, above): a 10% shift in bias or in either gain tips it into firing by
+  itself. Biology keeps such neurons in shape by homeostasis; these circuits have none, except the adjusting
+  circuit's rung 0, which adjusts each neuron's excitability.
+- **Every circuit brain collapses** (32 lives of 10,000 ticks, the same lives under the old and the new simulator;
+  food:poison in the last third, old -> new): designed circuit 4.6 -> 1.0, recruiting circuit 5.4 -> 1.3, adjusting
+  1.7 -> 0.9, healing circuit 1.2 -> 1.2 and healing cascade 0.9 -> 1.2 (these two need longer lives: their
+  leaderboard is at 30,000 and 100,000 ticks). Taking mismatch away (a diagnostic only) separates the causes: the
+  designed circuit 2.54 with none, 1.63 at 3%, 1.02 at 10%; the recruiting circuit 3.27, 1.81, 1.26; the healing
+  circuit 1.52, 1.50, 1.18. So mostly mismatch; the rest of the designed circuit's loss (4.6 to 2.5 with no
+  mismatch) is the new noise or the random timing, not yet traced. These brains were built by hand on
+  exact parts and never asked to survive mismatch; the minimal circuit search's designs, tuned with mismatch and
+  varied noise from the start, do survive it, and polished under the new rules they improve (minimal/NOTEBOOK.md,
+  M7). The polish shrank every sensor's capacitance (by a third to two thirds) and raised its resistance, keeping its
+  time constant on smaller currents: under a fixed noise per node the search had begun making nodes big to drown it;
+  now a big node is noisier in absolute terms, so the cheat is gone and the search goes the other way. The
+  recruitment series' results
+  (`experiments/LEADERBOARD.md`) stand only for the old simulator until they are re-run.
+- **What else cost the designed circuit (the night of 2026-10-20; diagnostics with switches the rules forbid, in
+  scratch code only).** With no mismatch it fell from 4.6 to 2.5. Putting the body's pulses back on tick boundaries
+  changes nothing (2.41 against 2.54): the hand-built neurons never leaned on lockstep. The noise level does: at half
+  the noise the creature never moves (no meal in 32 lives), at 0.75 food:poison 1.54, at 1 2.54, at 1.5 1.64, at 2
+  0.88. Noise is both its engine (the spontaneous spikes that make it move and search) and its enemy (it blurs which
+  colour was seen), so it was tuned to the old noise's pattern across its nodes, and no level of the new one gives
+  that back.
+- **Mismatch breaks the neurons, not the learning.** With mismatch in one group of parts at a time (64 lives, last
+  third food:poison): none 1.70, the neurons' own parts 0.99, synapses 2.05, learning (E, P and their writers) 1.59,
+  hush 2.15, taste 2.02. So the neurons alone do the damage. Of 200 standard neurons under 10% mismatch, half fire
+  more than 10 times per 1,000 ticks of their own accord, and those that don't miss pulses; moving them further from
+  threshold trades one for the other (bias -2.0: 14% fire on their own, 28% of pulses missed; no margin tried gives
+  both under 10%). An excitable neuron sits near the point where it starts to oscillate, and 10% mismatch pushes a
+  share of them over it.
+- **Rate homeostasis restores the rates, not the function** (an experiment, not kept): each neuron given a knob, a
+  memory node charged by a steady current and drained by its own spikes, feeding a current back into it, so that it
+  settles at its designed rate (sensors 19, motors 45 per 1,000 ticks; the target mismatched like every part). Under
+  10% mismatch the rates come back (sensors from 0.1-179 to 12-37, 10th-90th percentile; motors from 0.3-199 to
+  31-74), but food:poison barely moves (1.11 against 0.97; sensors only 0.92). A rate can't tell a spike the eye
+  caused from one of the neuron's own, so a dull sensor is woken until noise fills its quota. The minimal search's
+  winners escape all of this: their sensors are leaky integrators, not spiking relays, so mismatch only rescales them.
 
 ## Recruitment, step 0: the baseline (2026-10-18)
 
@@ -774,6 +854,21 @@ menu (inhibit or excite each attached neuron, turn down a synapse) and a local r
   guided bridge about 200), most of it the enables' pairwise rivalry: n(n-1) ungated elements, fully biased for ever.
   Gating each latch, rivalry and knock-out element by its own source cut it to about the guided bridge's (gated
   average 550 against 528), with behaviour unchanged. Gate every element by the node whose state it reports.
+- **Open: level 1 has no rules (the user's question, 2026-10-20).** Level 0 is strict (nodes and elements only), but
+  the parts built from them are invented as needed. A grown healing circuit has 48 nodes and 128 elements, of which 6
+  are neurons; the other 42 are about eight unnamed kinds (eligibility trace, weight, pulse, slow level, comparator,
+  latch, resting-open gate, hold). The block view draws them all as the same meter, though some are states belonging
+  to a neuron or synapse and others are functional units in their own right. And half the recruit (21 nodes, about
+  60 elements) is machinery for choosing among 7 options, while its choice of where to connect is trivial: the
+  decisions sit inside complicated parts, not in how simple parts connect. A proposal: a small catalogue of level-1
+  parts, each with named ports, a glyph and rules for what may connect to what. The parts: a neuron, with its own
+  adaptation; a synapse, with its weight, eligibility and an optional gate (presynaptic inhibition); and a modulator,
+  a diffuse signal like ouch and yum. The rules, for example: only neurons send spikes, and a weight changes only when
+  eligibility and a modulator coincide (three-factor learning). Growth would add only catalogue parts, connected port
+  to port. Win-stay lose-shift would become 7 mutually inhibiting neurons whose adaptation is the tiredness
+  (winner-take-all with adaptation, the textbook rivalry circuit). The test: rebuild the healing circuit from the
+  catalogue and check it still learns, then redraw the block view to match, before a harder test bed makes the
+  structural choices real.
 
 ## The second body: a square with two forward thrusters (withdrawn 2026-10-17)
 

@@ -1,7 +1,7 @@
 """What every circuit brain shares (the designed, minimal, adjusting, knowing and recruiting circuits): a
 mixed-feedback circuit (mixed_feedback.py) with two sensor and two motor neurons and a taste node, run SPEED circuit
-ticks to each tick of the world; the body injects currents into the sensors and the taste node, and counts the motors'
-spikes. Each brain wires its own circuit between them (build).
+ticks to each tick of the world; the body gives pulses of current to the sensors and the taste node, each at a moment
+of its own within the tick, and counts the motors' spikes. Each brain wires its own circuit between them (build).
 """
 
 from __future__ import annotations
@@ -35,27 +35,27 @@ class CircuitBrain:
         self.motors = [c.neuron(f"M{k}") for k in (0, 1)]
         self.taste_node = c.node("taste", R=0.5)
         self.build(c)
-        self.inject = np.zeros(len(c.names))
+        self.last_inject = np.zeros(len(c.names))              # (watching: the charge each node took last tick)
         self.history = deque(maxlen=TRACE)                      # watching: (voltages, spikes) each tick
         self.log = None                                         # measuring: a list, to record every tick
 
     def build(self, c: Circuit) -> None:
         raise NotImplementedError
 
-    def stimulate(self, sensor: int) -> None:
-        self.inject[self.sensors[sensor]] = STIMULUS
+    def stimulate(self, sensor: int, at: float) -> None:
+        """A stimulus, `at` (0..1) of the way through the next tick."""
+        self.circuit.pulse(self.sensors[sensor], STIMULUS, at * SPEED)
 
-    def taste(self, value: float) -> None:
-        self.inject[self.taste_node] = TASTE * value
+    def taste(self, value: float, at: float) -> None:
+        self.circuit.pulse(self.taste_node, TASTE * value, at * SPEED)
 
     def step(self) -> list:
         return self._motors(self._tick())
 
     def _tick(self) -> np.ndarray:
         """One tick of the world: the circuit's spikes, per node."""
-        injected = self.last_inject = self.inject.copy()          # (watching: what went in this tick)
-        spikes = self.circuit.tick(self.inject, SPEED)          # inputs last the first circuit tick
-        self.inject[:] = 0.0
+        spikes = self.circuit.tick(SPEED)
+        injected = self.last_inject = self.circuit.last_charge  # (watching: the charge the pulses brought this tick)
         self.history.append((self.circuit.V.copy(), spikes))
         if self.log is not None:                                # measuring: what went in, and what happened
             self.log.append((injected, spikes, self.circuit.vmax.copy(), self.circuit.V.copy()))

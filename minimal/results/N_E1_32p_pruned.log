@@ -1,0 +1,14 @@
+start: 32 parts, score +0.114 (keeping within 0.1 of it)
+  unfilter M1<-M1: 30 parts, score +0.405 (best of 22)
+  no leak on n6: 29 parts, score +0.407 (best of 21)
+  ungate m<-n6|m: 28 parts, score +0.407 (best of 20)
+  delete m<-n6: 27 parts, score +0.407 (best of 19)
+  delete n6<-S1: 25 parts, score +0.321 (best of 18)
+  delete M1<-S0|M0: 23 parts, score +0.518 (best of 17)
+  no leak on M1: 22 parts, score +0.313 (best of 15)
+  delete M1<-M1: 21 parts, score +0.180 (best of 14)
+  nothing more can go
+N_E1_32p_pruned: parts {'C': 7, 'R': 5, 'D': 0, 'T': 9, 'total': 21, 'nodes': 6, 'elements': 5}; fastest slew 6.2 per circuit tick (limit 10)
+  net +0.32 [+0.19, +0.43] (food - poison +0.83), food 1.33, poison 0.50, last third 4.12, power 1.32
+  DOES THE JOB
+  (826 s)

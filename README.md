@@ -31,8 +31,11 @@ then the creature (right) learns which colour is food](media/life.gif)
   wiring it draws at random each life. Approaching and avoiding are behaviour, not concepts in the brain.
 - **Nor is the simulator.** Whatever a simulation lets a design exploit, whoever optimises it will find: once, asked
   to cut the channels between cells, an agent packed several into different bits of one floating-point number. So:
-  no clock, no global signal, no lockstep (units update at random times), noise in every number, nothing carried
-  below the noise, and a result must hold at a finer step and on fresh lives.
+  no clock, no global signal, no lockstep (units update at random times, and the body's inputs arrive at random
+  moments), noise in every number, nothing carried below the noise, and a result must hold at a finer step and on
+  fresh lives. In a circuit brain the noise is modelled on biology's and built into the simulator, where nothing can
+  turn it off: **shot noise** on every current, **membrane noise** on every capacitor, and **mismatch** in every
+  part (Terms).
 - **Everything in a circuit brain is explicit circuit**, so it can always be drawn as a circuit diagram. The one
   exception is growth: a recruited unit appears suddenly, triggered by a node's own voltage, attached locally.
 
@@ -71,7 +74,7 @@ In the live view:
 | `b` | the next brain (the sheet brain, then the circuit brains in turn), in a new world with the same seed |
 | `s` | the designed circuit's schematic (wheel: zoom, drag: pan, Esc: close) |
 | space | pause |
-| up / down | faster / slower (takes over from the automatic speed; `r` hands it back) |
+| up / down | faster / slower (`r`: automatic again); below a tick a frame, down waits 2, 4 ... 32 frames per tick |
 | Esc | quit |
 
 ### What you're seeing
@@ -97,7 +100,10 @@ In the live view:
   netlist and drawn live. Neurons are circles (brightness: voltage; white: a spike), synapses arrows (solid excites,
   dashed inhibits, thickness: current), and every other node a meter hung where it belongs (on the synapse it gates,
   or by the neuron it acts on), with the eyes, thrusters and taste at the edges. A unit grown in the life (the
-  recruiting circuit's bridge, the healing circuit's recruits) appears as a new circle, outlined for a while.
+  recruiting circuit's bridge, the healing circuit's recruits) appears as a new circle, outlined for a while. A
+  circuit with no neurons to find (the minimal search's) gets the **node view** instead: level 0, every node a circle
+  (a memory a square), every element an arrow, a dotted line from the node that gates it, a loop for a node's
+  feedback on itself.
 
 For the sheet brain, the view runs at 10 ticks a frame, but slows to 1 while the paths grow and until a little after
 the creature starts moving, so the pulses can be seen running down them. A life goes: "where am I" (to about tick
@@ -288,7 +294,9 @@ voltage, with a sign (positive or negative feedback) and a timescale, perhaps ga
 nodes and elements; level 1, the motifs built from them (neurons, synapses, the states they hold), as the block view
 draws them. A memory node (a knob) holds its value, noisy only when written. Every circuit brain shares two sensor
 neurons, two motor neurons and a taste node (`brains/circuit.py`), runs 4 of its ticks to each tick of the world,
-and has noise on every node; nothing in it says what a sensor senses or what a motor does. Compiled with numba, with
+and has noise and mismatch as biology makes them (Terms); nothing in it says what a sensor senses or what a motor
+does. Each eye fires at random moments, at a rate set by what it sees, and each pulse (a taste too) starts at a
+moment of its own within the tick. Compiled with numba, with
 the world, a life of 10,000 ticks takes about half a second.
 
 ### The designed circuit, for comparison
@@ -306,7 +314,10 @@ sets the plastic synapse's strength. Noise on every node makes the odd spontaneo
 nothing still moves. Its time is continuous: its lives don't change with the integration step (DT 0.2 to 0.01), though
 its learning does depend on the shape of the taste pulse (`LESSONS.md`).
 
-`--measure` runs the sheet brain and the designed circuit on the same lives (the same worlds and wirings):
+`--measure` runs the sheet brain and the designed circuit on the same lives (the same worlds and wirings). These
+results, and the recruitment series' below, were measured with the earlier noise (a fixed noise per node, no
+mismatch). Under noise and mismatch as biology makes them (2026-10-20) every circuit brain falls to about 1:1
+(`LESSONS.md`, Noise as biology makes it), mostly from the 10% mismatch: none was built to survive it.
 
 |  | learned | food minus poison per 1,000 ticks, by third of life after moving | food:poison, by third |
 |---|---|---|---|
@@ -366,6 +377,17 @@ recruits) and the lessons are in `LESSONS.md`.
   wave-1 recruit still frustrated long after it came is frustrated itself and grows wave 2, attached one step
   further out. A **cascade** is that hand-off.
 - **Level 0, level 1**: nodes and elements; the motifs built from them.
+- **Shot noise**: a current is carried by discrete events (ion channels opening, vesicles released, electrons
+  crossing a transistor), so it flickers, with variance in proportion to its size. Every device's current in a
+  circuit brain carries it, summed over all the currents on a node, not their net. A circuit can drown its noise by
+  raising its currents only as the square root, at a cost in power in proportion.
+- **Membrane noise**: a node's capacitance is membrane area, whose leak channels flicker even at rest: noise in
+  proportion to the capacitance, so a node made k times bigger is quieter only by the square root of k. A memory
+  node has none: still until written, then rough by the square root of what is written.
+- **Mismatch**: no two parts are alike. Every part of a circuit brain is off by about 10% of itself, drawn at birth
+  for each part (offsets by 0.1 V), so no design can lean on exact values or exact cancellations.
+- **Nominal noise**: the noise as the simulator makes it (`mixed_feedback.py`); a circuit is judged there. It can
+  be scaled only between half and double, never off.
 - Names: in prose "the sheet brain", "the designed circuit", "the knowing circuit"; on the command line `sheet`,
   `designed-circuit`, `knowing-circuit` and so on.
 
@@ -390,6 +412,10 @@ python creature.py --brain knowing-circuit    # the starting animal: knows what 
 python creature.py --brain recruiting-circuit # rung 1, guided: grows the bridge that lets that knowledge act
 python creature.py --brain healing-circuit    # rung 1 by a generic recruit that knows nothing of the circuit
 python creature.py --brain healing-cascade    # the first recruit can't help; a second, further out, can
+python creature.py --spec minimal/results/N_E1_23p.json --brain N_E1_23p  # a circuit of the minimal search, live
+python -m minimal.search DESIGN|RESULTS.json 120   # the minimal search: polish a circuit, then prune it
+python -m minimal.league            # its league table (minimal/LEAGUE.md); python -m minimal.check RESULTS.json:
+                                    # a circuit in the real Life at two integration steps
 python -m experiments.e1_oracle     # the rung-1 experiments, E1 to E7 (experiments/NOTEBOOK.md)
 python -m experiments.h_run 64 100000 "share*"  # the healing experiments (H series): named rules, on the leaderboard
 python recruit_test.py 32           # recruitment's local signals, neuron by neuron, watched from outside
@@ -420,7 +446,8 @@ python creature.py --record frames  # save a life's frames as PNGs, headless (me
 | `brains/recruiting.py` | the recruiting circuit: the knowing circuit growing, in its life, the bridge that lets its knowledge act (rung 1) |
 | `brains/healing.py` | the healing circuit and cascade: rung 1 by a generic recruit that knows nothing of the circuit |
 | `recruit_test.py` | recruitment's local signals, watched from outside a circuit brain |
-| `blocks.py` | the block view: a circuit brain at level 1 (neurons, synapses, the states they hold), live |
+| `blocks.py` | the block view: a circuit brain at level 1 (neurons, synapses, the states they hold), live; and the node view, level 0, for circuits without neurons |
+| `minimal/` | the minimal circuit search: how simple can a circuit be that learns the bit (its notebook `NOTEBOOK.md`, league table `LEAGUE.md`, winners' schematics `winners.html`) |
 | `experiments/` | the recruitment experiments (E series: the recruiting circuit; H series: the healing circuit), their lab notebook (`NOTEBOOK.md`) and leaderboard (`LEADERBOARD.md`) |
 | `mixed_feedback.py` | the mixed-feedback element and circuit every circuit brain is built from |
 | `sheet.py` | the engine: the only code that knows the grid |

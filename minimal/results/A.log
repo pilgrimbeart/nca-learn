@@ -1,0 +1,66 @@
+gen   0  mean -0.450  best -0.862  sigma 0.150
+gen   1  mean -0.262  best -0.531  sigma 0.137
+gen   2  mean -0.338  best -0.131  sigma 0.127
+gen   3  mean +0.269  best +0.013  sigma 0.122
+gen   4  mean -1.294  best -0.056  sigma 0.118
+gen   5  mean -0.287  best -0.250  sigma 0.118
+gen   6  mean +0.262  best -0.944  sigma 0.115
+gen   7  mean -0.481  best -0.656  sigma 0.116
+gen   8  mean +0.569  best -0.419  sigma 0.112
+gen   9  mean -0.175  best -0.181  sigma 0.112
+gen  10  mean -0.150  best -0.019  sigma 0.113
+gen  11  mean +0.400  best +0.600  sigma 0.110
+gen  12  mean -0.281  best +0.669  sigma 0.101
+gen  13  mean +0.306  best +0.519  sigma 0.100
+gen  14  mean +0.125  best +0.781  sigma 0.103
+gen  15  mean +0.481  best +0.494  sigma 0.100
+gen  16  mean +0.344  best +0.625  sigma 0.105
+gen  17  mean -0.519  best +0.769  sigma 0.102
+gen  18  mean +0.381  best +0.481  sigma 0.100
+gen  19  mean -0.081  best +0.494  sigma 0.094
+gen  20  mean -0.150  best +0.450  sigma 0.090
+gen  21  mean -0.088  best +0.244  sigma 0.092
+gen  22  mean +0.469  best +0.531  sigma 0.088
+gen  23  mean +0.225  best +0.388  sigma 0.088
+gen  24  mean +0.231  best +0.550  sigma 0.081
+gen  25  mean -0.350  best +0.438  sigma 0.075
+gen  26  mean +0.663  best +0.944  sigma 0.073
+gen  27  mean +0.831  best +0.869  sigma 0.068
+gen  28  mean +0.406  best +0.913  sigma 0.068
+gen  29  mean +0.650  best +0.631  sigma 0.066
+gen  30  mean +0.438  best +0.687  sigma 0.062
+gen  31  mean +0.300  best +0.644  sigma 0.058
+gen  32  mean +0.306  best +0.738  sigma 0.058
+gen  33  mean +0.369  best +0.662  sigma 0.056
+gen  34  mean +0.800  best +0.837  sigma 0.052
+gen  35  mean +0.575  best +0.613  sigma 0.049
+gen  36  mean +0.425  best +0.844  sigma 0.047
+gen  37  mean +0.575  best +0.887  sigma 0.044
+gen  38  mean +0.019  best +0.869  sigma 0.044
+gen  39  mean +0.488  best +0.625  sigma 0.042
+gen  40  mean +0.387  best +0.512  sigma 0.038
+gen  41  mean +0.650  best +0.675  sigma 0.036
+gen  42  mean +0.394  best +0.756  sigma 0.034
+gen  43  mean +0.875  best +0.906  sigma 0.035
+gen  44  mean +0.319  best +0.744  sigma 0.035
+gen  45  mean +0.069  best +0.669  sigma 0.035
+gen  46  mean +0.519  best +0.706  sigma 0.035
+gen  47  mean +0.650  best +0.913  sigma 0.035
+gen  48  mean +0.500  best +0.800  sigma 0.037
+gen  49  mean +0.719  best +0.750  sigma 0.036
+gen  50  mean +0.469  best +0.975  sigma 0.033
+gen  51  mean +0.625  best +0.800  sigma 0.030
+gen  52  mean +0.419  best +0.769  sigma 0.028
+gen  53  mean +0.163  best +0.825  sigma 0.026
+gen  54  mean +0.519  best +0.775  sigma 0.027
+gen  55  mean +0.475  best +0.644  sigma 0.028
+gen  56  mean +1.125  best +0.825  sigma 0.028
+gen  57  mean +0.587  best +0.537  sigma 0.029
+gen  58  mean +0.763  best +0.737  sigma 0.027
+gen  59  mean +0.356  best +0.787  sigma 0.025
+A: parts {'C': 8, 'R': 7, 'D': 2, 'T': 10, 'total': 27, 'nodes': 6, 'elements': 6}
+  noise x1: net +0.67 [+0.52, +0.83] (food - poison +1.14), food 1.61, poison 0.47, last third 5.27  (job)
+  noise x0.5: net +0.16 [-0.20, +0.45] (food - poison +0.62), food 0.92, poison 0.30, last third 4.31
+  noise x2: net -0.16 [-0.35, +0.02] (food - poison +1.55), food 3.26, poison 1.71, last third 2.12
+  does not do the job at all three
+  (447 s)

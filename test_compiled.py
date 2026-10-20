@@ -1,6 +1,7 @@
 """Checks that the compiled simulation computes what its plain description says (python test_compiled.py): the
 circuit's integration (mixed_feedback.py) and the eyes and mouth (world.py), each against a plain numpy version of
-the same equations, on the designed circuit and on random circuits and scenes. The world must agree exactly; the
+the same equations, on the designed circuit and on random circuits and scenes; and that the noise, mismatch and pulses
+can't be dodged (the same at any integration step, size buying quiet only as its square root, every part mismatched). The world must agree exactly; the
 circuit to rounding (numpy's exp and tanh may differ from the compiled ones in the last bit), with the same spikes.
 """
 
@@ -15,9 +16,10 @@ import world
 from brains.designed import DesignedBrain
 
 
-def plain_tick(c, V, Vx, armed, inject, z):
-    """One tick of circuit c by the equations in mixed_feedback's docstring, plainly in numpy; z: its noise draws."""
-    bias, leak, cap, lo, hi, write = c.node_arr
+def plain_tick(c, V, Vx, armed, drive, z):
+    """One tick of circuit c by the equations in mixed_feedback's docstring, plainly in numpy; drive: each step's pulse
+    currents, z: its noise draws."""
+    bias, leak, cap, lo, hi, memory = c.node_arr
     gain, offset, slope, tau, sig = c.el_arr
     to, frm, gate = c.link
     spikes = np.zeros(len(V), dtype=np.int64)
@@ -27,15 +29,23 @@ def plain_tick(c, V, Vx, armed, inject, z):
         x = slope * (Vx - offset)
         f = np.where(sig > 0.5, 1.0 / (1.0 + np.exp(-x)), np.tanh(x))
         f = np.where(gate >= 0, f * np.clip(V[gate], 0.0, 1.0), f)
-        dV = -leak * V + bias + inject
+        I = bias - leak * V
+        dV = I + drive[k]
+        gross = np.abs(I) + np.abs(drive[k])
         np.add.at(dV, to, gain * f)
-        d = mf.DT * dV / cap
-        rough = np.where(write > 0, write * np.abs(d) * z[k], c.noise * np.sqrt(mf.DT) * z[k] / cap)
-        V = np.clip(V + d + rough, lo, hi)
+        np.add.at(gross, to, np.abs(gain * f))
+        var = mf.SHOT * gross + np.where(memory > 0, 0.0, mf.MEMBRANE * cap)
+        V = np.clip(V + (mf.DT * dV + c.noise * np.sqrt(mf.DT) * np.sqrt(var) * z[k]) / cap, lo, hi)
         up = armed & (V > mf.SPIKE)
         spikes += up
         armed = (armed & ~up) | (V < mf.RESET)
     return V, Vx, armed, spikes
+
+
+def plain_pulse(buf, node, current, at, length=1.0):
+    """A pulse by its description: each step gets the current times the share of the step within the pulse."""
+    t0 = np.arange(len(buf)) * mf.DT
+    buf[:, node] += current * np.clip(np.minimum(t0 + mf.DT, at + length) - np.maximum(t0, at), 0.0, None) / mf.DT
 
 
 def random_circuit(rng):
@@ -54,39 +64,111 @@ def random_circuit(rng):
 
 
 def check_circuit(c, inputs, ticks, rng):
-    """Runs c compiled and plainly from the same state and noise; the largest voltage difference, and whether every
-    tick's spikes agreed."""
+    """Runs c compiled and plainly from the same state and noise, with pulses at random moments (some running on into
+    the next tick); the largest voltage difference, and whether every tick's spikes agreed."""
     c._ready()
     V, Vx, armed = c.V.copy(), c.Vx.copy(), c.armed.copy()
     worst, same = 0.0, True
     per = int(round(1 / mf.DT))
+    buf = np.zeros((3 * per, len(c.names)))
     for t in range(ticks):
-        inject = np.zeros(len(c.names))
         if rng.random() < 0.3:
-            inject[rng.choice(inputs)] = rng.uniform(-3, 6)
+            node, current, at = int(rng.choice(inputs)), rng.uniform(-3, 6), rng.uniform(0, 1)
+            c.pulse(node, current, at)
+            plain_pulse(buf, node, current, at)
         state = c.rng.bit_generator.state
         z = c.rng.standard_normal((per, len(c.names)))
         c.rng.bit_generator.state = state                     # the compiled tick draws the same noise
-        got = c.tick(inject)
-        V, Vx, armed, want = plain_tick(c, V, Vx, armed, inject, z)
+        got = c.tick()
+        V, Vx, armed, want = plain_tick(c, V, Vx, armed, buf[:per], z)
+        buf = np.concatenate([buf[per:], np.zeros((per, len(c.names)))])
         worst = max(worst, float(np.abs(V - c.V).max()))
         same &= bool(np.array_equal(got, want))
         V, Vx, armed = c.V.copy(), c.Vx.copy(), c.armed.copy()   # carry on from the compiled state
     return worst, same
 
 
-def check_memory():
-    """A memory node holds its value exactly while nothing writes it, and is written roughly (by about WRITE of each
-    change) when something does."""
-    c = mf.Circuit(seed=5)
-    n = c.neuron("n")
-    idle = c.node("idle", R=None, lo=0.0, hi=1.0, start=0.3, memory=True)
-    used = c.node("used", R=None, lo=-50.0, hi=50.0, start=0.0, memory=True)
-    c.element(used, n, 0.0, 0.0)                                # a gain of 0: no write ...
-    c.element(used, c.node("one", bias=1.0, R=1.0), 0.05, -10.0, sigmoid=True)   # ... and a steady small write
-    c.tick(np.zeros(len(c.names)), 1000)
-    rough = abs(c.V[used] - 0.05 * 1000) / (0.05 * 1000)
-    return c.V[idle] == 0.3, rough
+def spread(build, ticks, dt, lives=100):
+    """The spread (sd) over lives of one node's voltage after ticks, at integration step dt: build(c) -> the node.
+    Without mismatch (only here, to see the noise alone: each life's own mismatch would move its mean)."""
+    old, out, mismatch = mf.DT, [], mf.MISMATCH
+    mf.DT, mf.MISMATCH = dt, 0.0
+    try:
+        for s in range(lives):
+            c = mf.Circuit(seed=1000 + s)
+            n = build(c)
+            c.tick(ticks)
+            out.append(c.V[n])
+    finally:
+        mf.DT, mf.MISMATCH = old, mismatch
+    return float(np.std(out))
+
+
+def check_noise():
+    """The noise model (mixed_feedback's docstring): the same at any integration step; a memory still while idle and
+    written roughly by the square root of the charge written; size buys quiet only as its square root; the noise
+    can't be turned off."""
+    def written(c):                                             # a memory written 10 (0.05 x 200 ticks)
+        m = c.node("m", R=None, lo=-50.0, hi=50.0, start=0.0, memory=True)
+        c.node("idle", R=None, lo=0.0, hi=1.0, start=0.3, memory=True)
+        c.element(m, c.node("one", bias=1.0, R=1.0), 0.05, -10.0, sigmoid=True)
+        return m
+
+    def leaky(k):                                               # a node at rest, scaled k times
+        return lambda c: c.node("x", bias=0.5 * k, R=2.0 / k, C=1.0 * k)
+
+    out = {}
+    w1, w2 = spread(written, 200, 0.05), spread(written, 200, 0.025)
+    want = np.sqrt(mf.SHOT * 0.05 * 200)
+    out["memory written: sd at step 0.05 and 0.025, expected about %.2f" % want] = (
+        (w1, w2), 0.75 < w1 / w2 < 1.33 and 0.75 < w1 / want < 1.33)
+    c = mf.Circuit(seed=1)
+    written(c)
+    c.tick(200)
+    out["memory idle: held exactly"] = (c.V[1], c.V[1] == 0.3)
+    a1, a2 = spread(leaky(1), 50, 0.05), spread(leaky(1), 50, 0.025)
+    out["leaky node: sd at step 0.05 and 0.025, expected about %.2f" % np.sqrt(0.01 * 2.0)] = (
+        (a1, a2), 0.75 < a1 / a2 < 1.33)
+    big = spread(leaky(4), 50, 0.05)
+    out["the same node 4 times as big: quieter by about 2 (sqrt 4), not 4"] = ((a1, big), 1.6 < a1 / big < 2.5)
+    try:
+        mf.Circuit(noise=0.0)
+        off = True
+    except AssertionError:
+        off = False
+    out["the noise can't be turned off"] = (off, not off)
+    return out
+
+
+def check_mismatch():
+    """Every part is off by about MISMATCH, each by draws of its own, also when grown in a life."""
+    c = mf.Circuit(seed=3)
+    for i in range(200):
+        c.node(f"n{i}", bias=1.0, R=1.0, C=1.0)
+        c.element(i, i, 1.0, 0.0, tau=1.0, slope=1.0)
+    c._ready()
+    sd = float(np.std(c.node_arr[2] - 1.0)), float(np.std(c.el_arr[0] - 1.0)), float(np.std(c.el_arr[1]))
+    before = c.el_arr[0, :5].copy()
+    g = c.element(0, 1, 1.0, 0.0)
+    c.grow()
+    kept = np.array_equal(c.el_arr[0, :5], before)
+    grown = c.el_arr[0, g] != 1.0
+    ok = all(0.7 * mf.MISMATCH < x < 1.3 * mf.MISMATCH for x in sd) and kept and grown
+    return sd, kept, grown, ok
+
+
+def check_pulse(rng):
+    """A pulse brings the same charge however it falls across steps, and none before it starts."""
+    worst, early = 0.0, False
+    for _ in range(200):
+        c = mf.Circuit(seed=0)
+        c.node("x")
+        c.element(0, 0, 0.0, 0.0)
+        at, length = rng.uniform(0, 4), rng.uniform(0.3, 2)
+        c.pulse(0, 3.0, at, length)
+        worst = max(worst, abs(c.drive[:, 0].sum() * mf.DT - 3.0 * length))
+        early |= bool(c.drive[: int(at / mf.DT), 0].any())
+    return worst, early
 
 
 def check_growth():
@@ -95,18 +177,20 @@ def check_growth():
     c = mf.Circuit(seed=7)
     a, b = c.neuron("a"), c.neuron("b")
     e = c.synapse(b, a, 1.0)
-    pulse = np.zeros(2)
-    pulse[a] = 3.0
-    before = sum(c.tick(pulse, 4)[b] for _ in range(200))
+    before = 0
+    for _ in range(200):
+        c.pulse(a, 3.0, 0.0)
+        before += c.tick(4)[b]
     V = c.V.copy()
     r = c.neuron("relay")
     c.redirect(e, r)
     c.synapse(b, r, 1.0)
     c.grow()
     kept = np.array_equal(c.V[:2], V)
-    pulse = np.zeros(3)
-    pulse[a] = 3.0
-    after = sum(c.tick(pulse, 4)[b] for _ in range(200))
+    after = 0
+    for _ in range(200):
+        c.pulse(a, 3.0, 0.0)
+        after += c.tick(4)[b]
     return kept, before, after
 
 
@@ -178,9 +262,16 @@ if __name__ == "__main__":
     print(f"growth: state kept {kept}; target spikes {before} before a relay split its synapse, {after} after:"
           f" {'ok' if ok else 'FAILED'}")
     failed |= not ok
-    held, rough = check_memory()
-    ok = held and rough < 3 * mf.WRITE / np.sqrt(1000 / mf.DT) + 0.01
-    print(f"memory nodes: held exactly while idle {held}; written 50.0 with error {rough:.4f}: {'ok' if ok else 'FAILED'}")
+    for what, (got, ok) in check_noise().items():
+        print(f"noise, {what}: {got}: {'ok' if ok else 'FAILED'}")
+        failed |= not ok
+    sd, kept, grown, ok = check_mismatch()
+    print(f"mismatch: spread of capacitance, gain, offset {sd[0]:.3f}, {sd[1]:.3f}, {sd[2]:.3f} (about"
+          f" {mf.MISMATCH:g}); kept on growth {kept}; a grown part mismatched {grown}: {'ok' if ok else 'FAILED'}")
+    failed |= not ok
+    worst, early = check_pulse(rng)
+    ok = worst < 1e-9 and not early
+    print(f"pulses: charge right within {worst:.1e}, none early {not early}: {'ok' if ok else 'FAILED'}")
     failed |= not ok
     bad = check_world(rng, 3000)
     print(f"world, 3,000 random scenes: {'ok' if not bad else f'{bad} differ: FAILED'}")

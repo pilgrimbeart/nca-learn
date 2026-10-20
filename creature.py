@@ -54,6 +54,7 @@ BRAINS = {"sheet": SheetBrain, "designed-circuit": DesignedBrain, "minimal-circu
           "healing-cascade": functools.partial(HealingBrain, menu="inputs", listen="all", sign="inh", cascade=True,
                                                trigger="root", judge="share", tire=0.05, starve=20000.0)}
 FAST, SLOW = 10, 1  # watching: ticks per frame, slow while the brain wires itself and first drives the body
+SLOWEST = 1 / 32    # watching: down halves the speed to this, a tick every 32 frames (about 1 a second)
 SCHEMATIC = "media/designed_circuit.png"    # watching: the designed circuit (drawn by schematic.py)
 SETTLE = 200        # watching: ticks after the creature starts moving before speeding up again
 BLOCKS = 300        # watching: the height of the block view below (blocks.py)
@@ -78,9 +79,9 @@ class Life:
         self.moving = None                                      # when a thruster first fired
 
     def step(self) -> None:
-        for c, seen in self.body.sees().items():                # sensors fire at what they see
-            if self.rng.random() < SENSE * seen:
-                self.brain.stimulate(self.sensor[c])
+        for c, seen in self.body.sees().items():                # each eye fires at random moments (Poisson), at
+            for _ in range(self.rng.poisson(SENSE * seen)):     # a rate set by what it sees
+                self.brain.stimulate(self.sensor[c], self.rng.random())
         motors = self.brain.step()
         fired = [f for f in THRUSTERS for _ in range(motors.count(self.motor[f]))]
         if fired and self.moving is None:
@@ -94,8 +95,10 @@ class Life:
             taste += -1.0 if c == self.poison else 1.0
             if c == self.poison:
                 self.yuck = self.t
-        if self.learning and taste != 0.0:
-            self.brain.taste(min(max(taste, -1.0), 1.0))            # one pulse, however many meals at once
+        if taste != 0.0:
+            at = self.rng.random()                              # (drawn with learning off too: the same lives)
+            if self.learning:                                   # one pulse, however many meals at once, at a moment
+                self.brain.taste(min(max(taste, -1.0), 1.0), at)   # within the next tick
         self.t += 1
 
     def drive(self, colour: str) -> float:
@@ -157,7 +160,8 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
           all_food: bool = False) -> None:
     """A life, live. Left, the brain's own panel, in greys. Right, the world: blocks lettered R (dark) and B (light),
     the creature a triangle with its point marked, and what its eyes see. It runs FAST ticks a frame, but SLOW while the
-    brain wires itself and until a little after the creature starts moving; up and down take over the speed. Buttons
+    brain wires itself and until a little after the creature starts moving; up and down take over the speed (down, past
+    a tick a frame, waits 2, 4 ... 32 frames between ticks, so single spikes can be followed). Buttons
     below: switch brain (a new world, the same seed), and with the designed circuit, its schematic (the life waits
     while it is open). With record, no window: every frame is saved there as a PNG, until the given tick. all_food:
     both colours are food."""
@@ -171,16 +175,23 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
     pygame.init()
     side = wpx = 490
     base = max(side, wpx)
-    from blocks import BlockView
+    from blocks import BlockView, NodeView
     screen = pygame.display.set_mode((side + 12 + wpx, base + 108 + BLOCKS))
     view = None                                                     # the block view of a circuit brain
     pygame.display.set_caption("a brain learns which colour is food")
     font, small = pygame.font.SysFont(None, 22), pygame.font.SysFont(None, 18)
     per_frame, auto, paused, clock = FAST, True, False, pygame.time.Clock()   # auto: speed set by the stage
+    owed = 0.0                                                      # ticks owed, below a tick a frame
     poison = None if all_food else COLOURS[seed % 2]
     life = Life(seed, poison, brain=brain)
     to_px = lambda p: (side + 12 + int(p[0] / WORLD * wpx), int((WORLD - p[1]) / WORLD * wpx))
     viewer = None                                                   # the schematic, while it is open
+
+    def speed():
+        """The speed, as shown."""
+        if per_frame >= 1:
+            return f"{per_frame:g} tick{'s' if per_frame > 1 else ''} per frame"
+        return f"{round(1 / per_frame)} frames per tick"
 
     def buttons():
         """The buttons below, as (key, label, rect)."""
@@ -227,7 +238,7 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
                 elif event.key == pygame.K_UP:
                     per_frame, auto = per_frame * 2, False
                 elif event.key == pygame.K_DOWN:
-                    per_frame, auto = max(1, per_frame // 2), False
+                    per_frame, auto = per_frame // 2 if per_frame > 1 else max(SLOWEST, per_frame / 2), False
                 elif event.key == pygame.K_r:
                     seed += 1
                     poison = None if all_food else COLOURS[seed % 2]
@@ -247,7 +258,10 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
             continue
         if not paused:
             started = time.time()
-            for i in range(per_frame):
+            owed += per_frame
+            ticks = int(owed)
+            owed -= ticks
+            for i in range(ticks):
                 life.step()
                 if not record and time.time() - started > 0.2:
                     break
@@ -293,7 +307,7 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
         lines = (f"tick {life.t:6d}   brain: {brain}   stage: {stage}   poison: {poison or 'none (all food)'}   eaten: red {eaten['red']},"
                  f" blue {eaten['blue']}",
                  "recent meals: " + " ".join(m[0].upper() for _, m in life.meals[-14:]),
-                 f"{per_frame} ticks per frame   r new life   d damage (at the mouse)   space pause   up/down{'' if auto else ' (r: auto)'}   Esc")
+                 f"{speed()}   r new life   d damage (at the mouse)   space pause   up/down{'' if auto else ' (r: auto)'}   Esc")
         for i, line in enumerate(lines):
             screen.blit(font.render(line, True, (255, 255, 255)), (6, base + 6 + 22 * i))
         hover = pygame.mouse.get_pos()
@@ -304,7 +318,7 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
         strip = pygame.Rect(0, base + 108, side + 12 + wpx, BLOCKS)     # below: the brain as blocks
         if hasattr(life.brain, "circuit"):
             if view is None or view.brain is not life.brain:
-                view = BlockView(life.brain)
+                view = (NodeView if getattr(life.brain, "level0", False) else BlockView)(life.brain)
             view.draw(screen, strip, life, font, small)
         else:
             pygame.draw.rect(screen, (18, 18, 18), strip)
@@ -390,15 +404,26 @@ class SchematicViewer:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--brain", choices=tuple(BRAINS), default="sheet", help="the brain to watch or record")
+    parser.add_argument("--brain", default="sheet", help="the brain to watch or record: one of BRAINS, or a --spec")
+    parser.add_argument("--spec", nargs="+", default=[], metavar="RESULTS",
+                        help="also offer these circuits of the minimal search (minimal/results/*.json), named by file")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--measure", type=int, metavar="LIVES", help="measure every brain over this many lives (headless)")
     parser.add_argument("--ticks", type=int, default=10000, help="ticks per life when measuring or recording")
     parser.add_argument("--record", metavar="DIR", help="save a life's frames to DIR as PNGs, headless")
-    parser.add_argument("--brains", nargs="+", choices=tuple(BRAINS), default=list(BRAINS),
+    parser.add_argument("--brains", nargs="+", default=None,
                         help="the brains to measure")
     parser.add_argument("--all-food", action="store_true", help="both colours are food (nothing to learn)")
     args = parser.parse_args()
+    for path in args.spec:                                  # a minimal-search circuit, as a brain like any other
+        import json
+        import os
+        from minimal.spec import make
+        BRAINS[os.path.basename(path)[:-5]] = make(json.load(open(path))["spec"])
+    args.brains = args.brains or list(BRAINS)
+    for b in [args.brain, *args.brains]:
+        if b not in BRAINS:
+            parser.error(f"{b}: not a brain (one of {', '.join(BRAINS)})")
     if args.measure:
         measure(args.measure, args.ticks, args.brains, args.all_food)
     else:

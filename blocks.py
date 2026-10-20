@@ -209,11 +209,6 @@ class BlockView:
         for n, (corner, k) in at.items():
             self.meter(screen, small, corner, n, k)
         # neurons
-        names = {}
-        for colour, k in life.sensor.items():
-            names[b.sensors[k]] = f"{colour} eye"
-        for thruster, k in life.motor.items():
-            names[b.motors[k]] = f"{thruster} thruster"
         grown = {b._bridge_of(s, m): t for t, s, m in getattr(b, "bridges", [])} if hasattr(b, "_bridge_of") else {}
         for n in neurons:
             p = X(pos[n])
@@ -223,7 +218,22 @@ class BlockView:
             pygame.draw.circle(screen, WHITE, p, R + (5 if new else 1), 3 if new else 1)
             label = small.render(c.names[n] + ("  grown" if new else ""), True, LIGHT)
             screen.blit(label, (p[0] - label.get_width() // 2, p[1] - R - 16))
-        # the body's contacts
+        self.contacts(screen, rect, life, small, pos, R, inj, getattr(b, "T", None))
+        screen.blit(font.render("block view (level 1): neurons, synapses, and the states they hold", True, MID),
+                    (rect.x + 8, rect.y + 4))
+        screen.blit(small.render(LEGEND, True, MID), (rect.x + 8, rect.bottom - 16))
+
+    def contacts(self, screen, rect, life, small, pos, R, inj, T):
+        """The body's contacts at the edges: the eyes (lit while their colour is seen), the thrusters (lit when they
+        fire), the taste (+ or - when a meal is tasted), wired to T if it is drawn."""
+        import pygame
+        b, c = self.brain, self.brain.circuit
+        X = lambda p: (int(rect.x + p[0] * rect.w), int(rect.y + p[1] * rect.h))
+        names = {}
+        for colour, k in life.sensor.items():
+            names[b.sensors[k]] = f"{colour} eye"
+        for thruster, k in life.motor.items():
+            names[b.motors[k]] = f"{thruster} thruster"
         stim = inj if inj is not None else np.zeros(len(c.V))
         for s in b.sensors:
             p = X(pos[s])
@@ -239,7 +249,6 @@ class BlockView:
             pygame.draw.rect(screen, WHITE if on else DARK, box, 0 if on else 1)
             screen.blit(small.render(names.get(m, ""), True, INK if on else LIGHT), (box.x + 4, box.y + 3))
             pygame.draw.line(screen, MID, (p[0] + R, p[1]), (box.x, p[1]), 1)
-        T = getattr(b, "T", None)
         tp = X(pos[T]) if T in pos else X((0.5, 0.86))
         box = pygame.Rect(tp[0] - 150, tp[1] - 10, 70, 20)
         recent = life.t - self.last_taste[0] < TASTE_SHOW
@@ -248,9 +257,6 @@ class BlockView:
         screen.blit(small.render(mark, True, INK if recent else LIGHT), (box.x + 4, box.y + 3))
         if T in pos:
             pygame.draw.line(screen, MID, (box.right, tp[1]), (tp[0] - R, tp[1]), 1)
-        screen.blit(font.render("block view (level 1): neurons, synapses, and the states they hold", True, MID),
-                    (rect.x + 8, rect.y + 4))
-        screen.blit(small.render(LEGEND, True, MID), (rect.x + 8, rect.bottom - 16))
 
     def meter(self, screen, small, at, n, k=0):
         """A node's level as a bar (0..1 of its range, or of -1..1 if it has none), labelled with its name."""
@@ -266,3 +272,100 @@ class BlockView:
         pygame.draw.rect(screen, MID, bar, 1)
         label = small.render(c.names[n], True, MID)              # labels alternate below and above, so they don't
         screen.blit(label, (at[0] + 5 - label.get_width() // 2, at[1] + 30 if k % 2 == 0 else at[1] - 14))  # collide
+
+
+class NodeView(BlockView):
+    """The node view, for a circuit with no neurons to find (the minimal search's): level 0, every node and element.
+    A node is a circle (a memory node a square), its brightness its voltage between the rails, white when it spikes;
+    an element is an arrow from the node it reads to the node it feeds, solid if it excites and dashed if it
+    inhibits, as thick as its recent current, with a dotted line from the node that gates it; an element on its own
+    node is a loop, marked + or -. The body's contacts as in the block view."""
+
+    def layout(self):
+        b, n = self.brain, len(self.brain.circuit.names)
+        pos = {}
+        for i, s in enumerate(b.sensors):
+            pos[s] = (0.16, 0.22 + 0.42 * i)
+        for i, m in enumerate(b.motors):
+            pos.setdefault(m, (0.84, 0.22 + 0.42 * i))
+        pos.setdefault(b.taste_node, (0.34, 0.84))
+        rest = [k for k in range(n) if k not in pos]
+        for i, k in enumerate(rest):
+            pos[k] = (0.52 + 0.12 * (i // 2), 0.43 + 0.3 * (i % 2))
+        return pos
+
+    def draw(self, screen, rect, life, font, small):
+        import pygame
+        b, c = self.brain, self.brain.circuit
+        pygame.draw.rect(screen, (18, 18, 18), rect)
+        if c.V is None:
+            return
+        pos = self.layout()
+        X = lambda p: np.array((rect.x + p[0] * rect.w, rect.y + p[1] * rect.h))
+        spikes = b.history[-1][1] if b.history else np.zeros(len(c.V), dtype=int)
+        for n in range(len(c.V)):
+            if n < len(spikes) and spikes[n] > 0:
+                self.last_spike[n] = life.t
+        inj = getattr(b, "last_inject", None)
+        if inj is not None and inj[b.taste_node] != 0:
+            self.last_taste = (life.t, float(np.sign(inj[b.taste_node])))
+        R = max(10, rect.h // 18)
+        gain, offset, slope, _, sig = c.el_arr
+        loops = {}
+        for e, (_, (t, f, g)) in enumerate(c.elements):
+            x = slope[e] * (c.Vx[e] - offset[e])
+            out = 1.0 / (1.0 + np.exp(-x)) if sig[e] > 0.5 else np.tanh(x)
+            if g >= 0:
+                out *= min(max(c.V[g], 0.0), 1.0)
+            self.current[e] = SMOOTH * self.current.get(e, 0.0) + (1 - SMOOTH) * abs(gain[e] * out)
+            width = 1 + int(6 * min(self.current[e] / 3, 1.0))
+            colour = LIGHT if self.current[e] > 0.05 else MID
+            if t == f:                                  # its own node: a loop above it, marked + or -
+                k = loops.get(t, 0)
+                loops[t] = k + 1
+                centre = X(pos[t]) + np.array((-R + 2 * R * k, -R * 1.6))
+                pygame.draw.circle(screen, colour, centre.astype(int), int(R * 0.7), width)
+                mark = small.render("+" if gain[e] >= 0 else "-", True, LIGHT)
+                screen.blit(mark, (centre[0] - 3, centre[1] - R * 0.7 - 14))
+                continue
+            a, z = X(pos[f]), X(pos[t])
+            d = z - a
+            L = max(np.linalg.norm(d), 1.0)
+            d /= L
+            a2, z2 = a + d * (R + 2), z - d * (R + 4)
+            if gain[e] >= 0:
+                pygame.draw.line(screen, colour, a2, z2, width)
+                side = np.array([-d[1], d[0]]) * 6
+                pygame.draw.polygon(screen, colour, [z2, z2 - d * 10 + side, z2 - d * 10 - side])
+            else:
+                span = np.linalg.norm(z2 - a2)
+                for k in range(0, int(span), 12):
+                    pygame.draw.line(screen, colour, a2 + d * k, a2 + d * min(k + 6, span), width)
+                bar = np.array([-d[1], d[0]]) * 8
+                pygame.draw.line(screen, colour, z2 - bar, z2 + bar, 3)
+            if g >= 0:                                  # the gate: dotted, from its node to the arrow's middle
+                gm, mid = X(pos[g]), (a2 + z2) / 2
+                dg = mid - gm
+                Lg = max(np.linalg.norm(dg), 1.0)
+                dg /= Lg
+                for k in range(int(R), int(Lg), 7):
+                    pygame.draw.circle(screen, MID, (gm + dg * k).astype(int), 1)
+                pygame.draw.circle(screen, MID, mid.astype(int), 3)
+        for n in range(len(c.V)):
+            p = X(pos[n]).astype(int)
+            flash = life.t - self.last_spike.get(n, -10 ** 9) < SPIKE_FLASH
+            fill = WHITE if flash else shade((c.V[n] + 3.0) / 6.0)
+            if c.node_arr[5][n] > 0.5:                  # a memory: a square
+                box = pygame.Rect(p[0] - R, p[1] - R, 2 * R, 2 * R)
+                pygame.draw.rect(screen, fill, box)
+                pygame.draw.rect(screen, WHITE, box, 1)
+            else:
+                pygame.draw.circle(screen, fill, p, R)
+                pygame.draw.circle(screen, WHITE, p, R, 1)
+            label = small.render(c.names[n], True, LIGHT)
+            screen.blit(label, (p[0] + R + 4, p[1] + R - 6))
+        self.contacts(screen, rect, life, small, {k: tuple(v) for k, v in pos.items()}, R, inj, b.taste_node)
+        screen.blit(font.render("node view (level 0): every node and element", True, MID), (rect.x + 8, rect.y + 4))
+        screen.blit(small.render("circle node, square memory, brightness = voltage, white = spike  |  arrows: solid "
+                                 "excites, dashed inhibits, thick = current, dotted = gate, loop = own feedback",
+                                 True, MID), (rect.x + 8, rect.bottom - 16))
