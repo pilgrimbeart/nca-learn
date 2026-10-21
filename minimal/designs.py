@@ -208,6 +208,27 @@ for _c in (True, False):
 # Any circuit as a family of its own parameters (for polishing what the open search found): each leaky node's rest,
 # leak and capacitance, a memory's starting value, and each element's gain, offset, slope and (if filtered) time
 # constant; the topology fixed.
+def hungry(spec: dict, tau: float = 8700.0, C: float = 8.7, rest: float = 1.0) -> dict:
+    """A hunger added to a circuit (minimal/NOTEBOOK.md, M8): a node H charging towards rest over tau circuit ticks,
+    drained by a good taste (an element from the taste node, its step at 1.5 V, well above the taste node's rest, so
+    it doesn't leak at rest), and an element from the clock (motor 1) into motor 0 gated by H, so that while H is high
+    both thrusters fire together and the spin becomes a straight run. The reads become tanh, so the colour the bit
+    calls poison holds motor 0 down (a hungry run stops at poison). 5 parts more."""
+    import copy
+    s = copy.deepcopy(spec)
+    M0, M1 = s["motors"]
+    T = s["taste"]
+    R = tau / C
+    H = len(s["nodes"])
+    s["nodes"].append(["H", rest / R, R, C, None, None, None, False])
+    for e in s["elements"]:
+        if e[0] == M0 and e[2] in s["sensors"]:
+            e[7] = False                                # a read: tanh
+    s["elements"].append([H, T, -1, -20.0, 1.5, 10.0, 0.0, True])          # a good taste drains H
+    s["elements"].append([M0, M1, H, 3.0, 0.0, 5.0, 0.0, True])            # hungry: the clock drives motor 0 too
+    return s
+
+
 def raw(spec: dict):
     """(design, params) for a raw spec: its numbers as parameters, each searched within a factor of 4 of where it is
     (offsets and rests +-1.5 V), inside the bounds of the open search."""

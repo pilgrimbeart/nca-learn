@@ -1,0 +1,41 @@
+gen   0  best +0.70 (34 parts, power 10.0)  front (score > 0): 22p/5.4W:+0.68 23p/1.3W:+0.22 34p/10.0W:+0.70
+gen   1  best +0.81 (36 parts, power 13.0)  front (score > 0): 22p/5.9W:+0.41 23p/1.2W:+0.19 28p/10.9W:+0.41 34p/10.7W:+0.56 36p/13.0W:+0.81
+gen   2  best +0.81 (28 parts, power 10.4)  front (score > 0): 21p/1.3W:+0.55 22p/5.6W:+0.78 22p/5.3W:+0.57 23p/1.2W:+0.17 28p/10.4W:+0.81
+gen   3  best +0.88 (30 parts, power 11.2)  front (score > 0): 22p/5.8W:+0.25 22p/6.2W:+0.48 28p/9.0W:+0.62 30p/11.2W:+0.88
+gen   4  best +0.80 (34 parts, power 10.6)  front (score > 0): 21p/1.5W:+0.13 22p/6.2W:+0.78 34p/10.6W:+0.80
+gen   5  best +0.64 (22 parts, power 5.8)  front (score > 0): 22p/5.8W:+0.64 22p/5.5W:+0.31 27p/1.2W:+0.06
+gen   6  best +1.00 (24 parts, power 6.2)  front (score > 0): 21p/1.4W:+0.33 22p/5.8W:+0.64 22p/6.2W:+0.91 24p/6.2W:+1.00
+gen   7  best +0.81 (28 parts, power 10.5)  front (score > 0): 21p/1.4W:+0.25 22p/6.0W:+0.41 23p/1.4W:+0.40 28p/10.5W:+0.81 34p/10.4W:+0.80
+gen   8  best +0.70 (28 parts, power 11.1)  front (score > 0): 22p/5.7W:+0.48 22p/5.4W:+0.18 26p/5.6W:+0.32 28p/11.1W:+0.70
+gen   9  best +0.86 (34 parts, power 10.1)  front (score > 0): 21p/1.6W:+0.22 22p/6.3W:+0.52 24p/6.3W:+0.74 34p/10.1W:+0.86
+gen  10  best +0.77 (24 parts, power 6.0)  front (score > 0): 22p/4.0W:+0.44 22p/6.0W:+0.69 23p/1.9W:+0.27 24p/6.0W:+0.77
+gen  11  best +0.75 (27 parts, power 11.6)  front (score > 0): 21p/1.4W:+0.22 22p/6.0W:+0.61 23p/1.3W:+0.17 24p/6.0W:+0.65 27p/11.6W:+0.75
+gen  12  best +0.89 (34 parts, power 10.0)  front (score > 0): 21p/1.4W:+0.06 22p/5.4W:+0.58 23p/1.3W:+0.21 34p/10.0W:+0.89
+gen  13  best +0.58 (22 parts, power 6.6)  front (score > 0): 22p/6.6W:+0.58 24p/6.4W:+0.55
+gen  14  best +0.97 (22 parts, power 5.9)  front (score > 0): 21p/1.3W:+0.67 22p/5.9W:+0.97 24p/5.4W:+0.68
+gen  15  best +0.57 (28 parts, power 10.5)  front (score > 0): 22p/6.3W:+0.05 24p/6.3W:+0.27 28p/10.5W:+0.57
+gen  16  best +0.72 (28 parts, power 11.1)  front (score > 0): 22p/5.6W:+0.59 22p/5.4W:+0.29 24p/5.5W:+0.60 24p/5.4W:+0.47 28p/11.1W:+0.72
+gen  17  best +0.84 (22 parts, power 6.6)  front (score > 0): 21p/1.4W:+0.10 22p/6.6W:+0.84 22p/6.2W:+0.48 24p/6.5W:+0.64
+gen  18  best +0.75 (28 parts, power 10.0)  front (score > 0): 22p/5.6W:+0.53 24p/5.5W:+0.30 28p/10.0W:+0.75
+gen  19  best +0.76 (22 parts, power 6.1)  front (score > 0): 22p/5.8W:+0.76 22p/6.1W:+0.76 24p/4.7W:+0.11
+gen  20  best +0.91 (22 parts, power 5.3)  front (score > 0): 22p/5.3W:+0.91
+gen  21  best +0.83 (24 parts, power 5.7)  front (score > 0): 22p/5.6W:+0.74 24p/4.6W:+0.23 24p/5.7W:+0.83
+gen  22  best +0.57 (22 parts, power 5.6)  front (score > 0): 21p/1.0W:+0.27 22p/5.6W:+0.57
+gen  23  best +0.64 (22 parts, power 5.4)  front (score > 0): 21p/1.2W:+0.07 22p/5.4W:+0.64 24p/5.0W:+0.55
+gen  24  best +0.63 (24 parts, power 5.8)  front (score > 0): 21p/1.0W:+0.12 22p/5.5W:+0.53 22p/5.8W:+0.63 25p/1.1W:+0.14
+gen  25  best +1.05 (28 parts, power 19.5)  front (score > 0): 21p/1.0W:+0.69 22p/5.9W:+0.74 28p/19.5W:+1.05
+gen  26  best +0.81 (22 parts, power 6.2)  front (score > 0): 21p/1.0W:+0.05 22p/6.2W:+0.81 24p/5.5W:+0.38
+gen  27  best +0.78 (28 parts, power 19.4)  front (score > 0): 21p/0.9W:+0.15 22p/5.7W:+0.69 22p/5.0W:+0.36 24p/4.6W:+0.21 25p/1.0W:+0.33 28p/19.4W:+0.78
+gen  28  best +0.56 (22 parts, power 6.0)  front (score > 0): 21p/1.0W:+0.33 22p/6.0W:+0.56 25p/1.1W:+0.36
+gen  29  best +0.48 (22 parts, power 6.0)  front (score > 0): 21p/1.2W:+0.04 22p/6.0W:+0.48 24p/5.6W:+0.20
+gen  30  best +0.48 (28 parts, power 17.5)  front (score > 0): 21p/1.0W:+0.25 28p/17.5W:+0.48
+gen  31  best +0.44 (24 parts, power 5.6)  front (score > 0): 21p/1.0W:+0.26 24p/5.6W:+0.44 25p/0.8W:+0.10
+gen  32  best +0.82 (28 parts, power 19.3)  front (score > 0): 21p/1.0W:+0.01 22p/5.6W:+0.64 24p/5.0W:+0.60 25p/1.1W:+0.16 26p/4.9W:+0.68 28p/19.3W:+0.82
+gen  33  best +0.41 (28 parts, power 19.3)  front (score > 0): 22p/5.6W:+0.41 24p/5.3W:+0.31 25p/1.1W:+0.14 28p/19.3W:+0.41
+gen  34  best +0.70 (22 parts, power 6.1)  front (score > 0): 21p/1.0W:+0.12 22p/6.1W:+0.70 24p/5.3W:+0.28 26p/5.0W:+0.32 28p/5.0W:+0.48
+gen  35  best +0.86 (24 parts, power 4.7)  front (score > 0): 21p/0.9W:+0.21 22p/4.8W:+0.79 24p/4.4W:+0.39 24p/4.7W:+0.86 26p/4.2W:+0.28
+gen  36  best +0.70 (24 parts, power 5.0)  front (score > 0): 21p/1.0W:+0.14 22p/5.5W:+0.27 24p/5.0W:+0.70
+gen  37  best +0.58 (24 parts, power 6.0)  front (score > 0): 22p/6.1W:+0.57 24p/6.0W:+0.58 24p/5.8W:+0.32 26p/5.7W:+0.33
+gen  38  best +0.92 (22 parts, power 5.7)  front (score > 0): 22p/5.7W:+0.92 24p/4.9W:+0.34 24p/5.5W:+0.51 26p/4.8W:+0.46
+gen  39  best +0.54 (24 parts, power 4.9)  front (score > 0): 21p/1.0W:+0.11 22p/5.4W:+0.28 24p/4.9W:+0.54
+(3381 s)

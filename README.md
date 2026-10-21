@@ -388,6 +388,11 @@ recruits) and the lessons are in `LESSONS.md`.
   for each part (offsets by 0.1 V), so no design can lean on exact values or exact cancellations.
 - **Nominal noise**: the noise as the simulator makes it (`mixed_feedback.py`); a circuit is judged there. It can
   be scaled only between half and double, never off.
+- **Stranding**: a life that eats, then finds nothing more (in the minimal search, no food at all in the last third
+  of the life). A creature that travels only towards food it sees spins on the spot for ever once it has eaten what
+  is near; the score counts starving life by life and third by third so that this can't hide among other lives.
+- **Pruning**: trying every single simplification of a circuit (an element, a filter, a gate, a leak, a clamp taken
+  away) and keeping the best that costs no more than a little score, until none does (`minimal/prune.py`).
 - Names: in prose "the sheet brain", "the designed circuit", "the knowing circuit"; on the command line `sheet`,
   `designed-circuit`, `knowing-circuit` and so on.
 

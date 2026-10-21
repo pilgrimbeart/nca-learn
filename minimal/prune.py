@@ -1,6 +1,6 @@
 """Pruning, a standard step after every polish (minimal/NOTEBOOK.md, M7): the polish (CMA-ES) tunes values and cannot
 remove a part, so parts that have stopped mattering stay (N_E1_32p carried 7). Here every single simplification is
-tried, each a part or more fewer: delete an element (and any node it leaves untouched), take away an element's filter
+tried, each a part or more fewer: delete an element (and any node then read by nothing), take away an element's filter
 or gate, a node's leak or a clamp. All are scored on the same lives (paired), lives of their own (neither the
 search's nor the held-out ones), and the best that scores within TOL of where pruning started is kept; then again,
 until none is. Held to the start, not to the last step, so that small losses can't add up.
@@ -19,30 +19,12 @@ import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from minimal.spec import net, parts, score, violations  # noqa: E402
+from minimal.spec import net, parts, score, tidy, violations  # noqa: E402
 
-SEEDS = range(20000, 20032)     # pruning's own lives (the search's start at 10000, the held-out are 100-163, 200-231)
+SEEDS = range(15000, 15032)     # pruning's own lives (the polish's start at 10000, the open search's at 20000, the
+                                # held-out are 100-163 and 200-231)
 TOL = 0.1                       # the most pruning may cost in score, from where it started (paired lives)
 RESULTS = os.path.join(os.path.dirname(__file__), "results")
-
-
-def interface(spec: dict) -> set:
-    return {*spec["sensors"], *spec["motors"], spec["taste"]}
-
-
-def tidy(spec: dict) -> dict:
-    """Delete every node that no element touches and the body doesn't use, renumbering the rest."""
-    s = copy.deepcopy(spec)
-    while True:
-        used = interface(s) | {i for e in s["elements"] for i in e[:3] if i >= 0}
-        idle = [i for i in range(len(s["nodes"])) if i not in used]
-        if not idle:
-            return s
-        i = idle[0]
-        at = lambda k: k - (k > i) if k >= 0 else k
-        del s["nodes"][i]
-        s["elements"] = [[at(e[0]), at(e[1]), at(e[2]), *e[3:]] for e in s["elements"]]
-        s["sensors"], s["motors"], s["taste"] = [at(k) for k in s["sensors"]], [at(k) for k in s["motors"]], at(s["taste"])
 
 
 def simpler(spec: dict) -> list:

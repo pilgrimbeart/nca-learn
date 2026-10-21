@@ -51,7 +51,7 @@ if __name__ == "__main__":
         lf = Life(seed, poison, brain=DesignedBrain)
         while lf.t < 3000:
             lf.step()
-        meals, moving, _ = life(DesignedBrain, seed, poison, 3000)
+        meals, moving, _, _ = life(DesignedBrain, seed, poison, 3000)
         same &= [(a, c) for a, c in lf.meals] == meals and moving == lf.moving
     report("fastlife: the same lives as creature.Life (3 lives, 3,000 ticks)", same)
 
@@ -90,17 +90,22 @@ if __name__ == "__main__":
     p = parts(base())
     report(f"parts counted (6 C, 5 R, 2 D, 2 T: {p['C']}, {p['R']}, {p['D']}, {p['T']})",
            (p["C"], p["R"], p["D"], p["T"]) == (6, 5, 2, 2))
-    from minimal.prune import simpler, tidy
+    from minimal.prune import simpler
+    from minimal.spec import Lived, net, tidy
     s = base()                                          # an extra node n, read only by an element into M1
     s["nodes"].insert(1, ["n", -0.5, 2.0, 1.0, None, None, None, False])
     s["elements"] = [[3, 0, 6, 4.0, 0.5, 5.0, 0.0, True], [4, 1, -1, 1.0, 0.0, 1.0, 0.0, True]]
     s["sensors"], s["motors"], s["taste"] = [0, 2], [3, 4], 5
     t = tidy(dict(s, elements=s["elements"][:1]))
-    report("pruning: a node nothing uses goes, and the rest are renumbered",
+    report("pruning: a node nothing reads goes, and the rest are renumbered",
            [n[0] for n in t["nodes"]] == ["S0", "S1", "M0", "M1", "T", "m"] and t["elements"] == base()["elements"]
            and (t["sensors"], t["motors"], t["taste"]) == ([0, 1], [2, 3], 4))
     options = dict(simpler(base()))
     report("pruning: each option is legal and has fewer parts",
            all(not violations(o) and parts(o)["total"] < parts(base())["total"] for o in options.values())
            and {"ungate M0<-S0|m", "no leak on T", "no low clamp on m"} <= set(options))
+    even = [Lived([(2, 0, 1000)] * 3 + [(0, 0, 0)]) for _ in range(2)]            # two lives, each eating steadily
+    strand = [Lived([(4, 0, 1000), (2, 0, 1000), (0, 0, 1000), (0, 0, 0)]), even[0]]  # the same food, one stranding
+    report(f"the score counts starving life by life and third by third (even {net(even):+.2f}, one stranding"
+           f" {net(strand):+.2f})", net(strand) < net(even))
     sys.exit(1 if failed else 0)

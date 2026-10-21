@@ -529,6 +529,26 @@ which subthreshold silicon shares (Sarpeshkar, Delbrueck and Mead 1993), and the
   caused from one of the neuron's own, so a dull sensor is woken until noise fills its quota. The minimal search's
   winners escape all of this: their sensors are leaky integrators, not spiking relays, so mismatch only rescales them.
 
+## Stranding, and what a summed score hides (night of 2026-10-20)
+
+- **A score summed over lives hides lives that fail.** The minimal search's winners did the job on every measure
+  (food, food:poison, held-out seeds, a finer step), yet the user, watching one life, saw the creature eat 14 meals
+  and then spin on the spot for the remaining 4,500 ticks. A fifth of all their lives did that; summed food was
+  carried by the rest. The search had found a strategy (spin to look, dash only at food it sees) that is optimal on
+  average and fatal in a fifth of worlds. Count a failure where it happens: the score now charges each third of each
+  life for its own shortfall, and the job limits stranded lives (minimal/NOTEBOOK.md, M8). Watching a life live
+  found what no table did (AGENTS: show a working behaviour live before reporting it).
+- **Exploring is a job of its own.** The old winners could only travel towards food they saw. A hunger (a node
+  drained by a good taste, gating the clock into the second thruster) makes them travel when they haven't eaten;
+  with it the winner keeps eating over 100,000-tick lives in every tenth. A first version did nothing, because its
+  drain leaked at rest exactly as fast as it charged: a polish tuned a circuit that was never hungry, and only a
+  trace of the node's voltage showed it. Trace the mechanism, not just the score.
+- **Judged at one noise level, pruning trades mechanism for noise.** Twice in one night pruning reached fewer parts by
+  deleting a clock's feedback or a hunger's drive and letting noise do the job (a damped resonance rung by noise; a
+  gate opened by noise). Both did the job at the nominal noise and failed at half of it. Noise costs no parts, so a
+  search that pays for parts but never varies the noise will buy noise. The old half-and-double check caught exactly
+  this; whether to restore it is the user's call.
+
 ## Recruitment, step 0: the baseline (2026-10-18)
 
 The plan (`RECRUITMENT.md`, agreed with the user): keep the one-bit task, start from a brain with no machinery for

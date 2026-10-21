@@ -345,3 +345,102 @@ predicted every design would now fail, mostly on the mismatch (from 3% to 10%).
   pulses, so once it has eaten what is near, it never moves again. Over the league's lives **21-24% of the winners'
   lives eat nothing in their last third**, hidden because the score summed food over all lives. See M8.
 
+
+## M8: stranding, and a way to explore (night of 2026-10-20)
+
+The user watched N_E1_23p live: on seed 1, after 10 food and 4 poison, it spun on the spot (a 2.5-unit patch) for the
+rest of its life. Reproduced (`creature.Life`, seed 1: last meal at tick 5,425; N_E1_32p strands at 8,004). The
+winners travel only towards food they see, and a distant block gives few eye pulses; with nothing near, they spin
+for ever. Over the league's lives 21-24% of their lives eat nothing in the last third; over 100,000-tick lives 75%
+eat nothing in the last tenths. The score summed food over all lives, so stranded lives hid among the others.
+
+- **The score now counts starving life by life and third by third** (`spec.net`: cost x how far each third of each
+  life falls short of 1 food per 1,000 ticks), and **the job allows at most 5% of lives stranded** (no food in the
+  last third; a creature eating 1.4 per 1,000 goes a last third without food by chance about 1% of the time). The
+  user suggested a penalty for not eating; this is it, counted where it happens.
+- **Moving costs nothing** unless an experiment sets `spec.THRUST` (`search.py --thrust`), the user's other
+  suggestion, tried once below as an experiment, not a rule: the user doesn't want to wire in a guess at the body's
+  power against the brain's.
+- **Ways to explore.** (1) Run and tumble (as E. coli): M0 firing now and then of its own, so straight runs break the
+  spin; no new parts, only M0's rest nearer threshold, which a polish under the new score may find (S_E1_23p, from
+  N_E1_23p). (2) **Hunger** (H_E1_23p, by hand, then polished): a node H charging towards a high rest over about
+  1,500 ticks, drained by a good taste; while it is high, an element gated by H copies the clock's spikes into M0, so
+  both thrusters fire together and the spin becomes a straight run. 5 parts more (H's C and R, an element from T, a
+  gated element from M1). Untuned, on 32 held-out seeds x 2: stranded 6% against N_E1_23p's 22%, food 1.71 against
+  1.40, but poison 0.68 against 0.41 (it runs through poison too) and last third 2.98 against 6.90.
+- **Under the new score nothing does the job** (league, 64 held-out seeds x 2): every circuit strands in 8-56% of
+  its lives. The best of the old winners: N_E1_32p_pruned 21%, N_E1_23p 21%, N_E1_23p_pruned 18%; the old evolved
+  circuits, with weaker learning, strand less (E1_28p 8%, E1_25p 10%) but miss on food:poison.
+- **Run and tumble didn't emerge**: polished under the new score from N_E1_23p (S_E1_23p, 120 generations), stranding
+  fell only from 21% to 19% (score +0.09, food 1.59, last third 3.92, power 10.4): it raised M0's rest (-2.59 to
+  -1.90 V) but strengthened its leak four times over (R 2.41 to 0.66), which holds M0 down against the noise, so M0
+  still rarely fires of its own. Spontaneous runs by noise would hang on the noise level anyway (the lower bound's
+  item 6).
+- **Hunger helps, but the polish trades it away** (league seeds): untuned, stranded 10%, food 1.55, poison 0.64, last
+  third 2.76, score -0.14; polished (H_E1_23p, 28 parts, 120 generations), stranded 15%, food 1.39, poison 0.44, last
+  third 4.62, score +0.03, power 7.6. A straight run eats whatever lies in its path, half of it poison, and under the
+  score a poison meal costs as much as a third of a life short by one meal per 1,000 ticks, so the polish weakened
+  the hunger for fewer poison meals. A hunger that stops at the poison colour (the bit gating the run, as it gates the
+  reads) would need more parts; not tried yet.
+- **The hunger had a bug**: H never charged (it sat at -2.5 to -2.8 V all life). The drain from T was a sigmoid about
+  1.6 V above T's rest, whose trickle at rest (0.003) matched H's charging current; so every run was a food chase,
+  and the polish above tuned a circuit that was never hungry. Fixed (the drain's step at 1.5 V, slope 10, gain -20):
+  H charges, the creature breaks out on long straight runs (42 units in 500 ticks), and **stranding falls to 4%**,
+  inside the job, untuned; but poison 0.92 (last third 1.92). **With tanh reads** (no new parts: the read for the
+  colour the bit calls poison then holds M0 down, cutting a hungry run short when poison is in view, while at birth
+  both still excite): food 1.59, poison 0.65, last third 3.19, **stranded 7%**, score -0.09, untuned: nearly the job.
+  Polished overnight (HFT_E1_23p; its start is `minimal.designs.hungry(N_E1_23p)`, saved as
+  `results/HFT_E1_23p_start.json`).
+- **HFT_E1_23p does the job under the new rules** (the fixed hunger with tanh reads, polished 120 generations; league
+  seeds): 28 parts, score +0.37 [+0.22, +0.53], food 2.01 (the most of any circuit yet), poison 0.71, last third
+  3.87, **stranded 2%**, power 10.1, thruster firings 322 per 1,000 ticks.
+- **Pruned, HFT_E1_23p becomes a steering vehicle that leans on the noise.** Pruning took M1's leak, H's leak, H's
+  drain, one of M1's feedbacks, then ungated the copy (so H went): **HFT_E1_23p_pruned**, 22 parts, power 6.0, score
+  +0.37, food 2.16, last third 3.64, stranded 5% (the limit): it does the job. M1 is now a slow oscillator (no leak,
+  one negative feedback, gain -12.9 through a filter of 204), and M0 copies it while it is high, so the creature runs
+  in M1's high phases and spins in its low ones, steered by the tanh reads. But at half and double the noise (32
+  held-out seeds x 2; a diagnostic, the rules judge at nominal only):
+
+  | | x0.5 | x1 | x2 |
+  |---|---|---|---|
+  | HFT_E1_23p (28 parts): score, stranded | +0.30, 5% | +0.35, 2% | +0.43, 0% |
+  | its clock alone, spikes per 1,000 | 268 | 268 | 266 |
+  | HFT_E1_23p_pruned (22): score, stranded | -0.40, 19% | +0.36, 6% | +0.14, 0% |
+  | its clock alone | 107 | 219 | 261 |
+
+  The 28-part circuit is sturdy; the pruned one does the job only at the nominal noise. (The 28-part clock is a true
+  oscillator. Its hunger is part noise too: the polish moved H's rest from +1 to -0.11 V, just short of the gate
+  opening at 0, so after a meal drains H to about -2 V it relaxes back over 1,000-3,000 ticks and its noise carries it
+  over 0; then the creature runs, 55-73 units in 500 ticks against 1-5 while it spins. That holds at half the noise,
+  stranded 5%.) **Pruning judged at the nominal noise alone trades mechanism for noise** (twice tonight: here and
+  N_E1_32p_pruned), because noise costs no parts. A check at half and double the noise, at least in the final
+  judgement, would stop it; that is the user's call (the user settled on nominal only on 2026-10-20).
+- **Stress tests of HFT_E1_23p**: learning off, food and poison equal (1,483 each), so its preference is all learned.
+  Over 100,000-tick lives (32), food per 1,000 ticks stays at 2.0-2.5 and food:poison at 3.9-4.9 in every tenth after
+  the first, and **no life goes a tenth without food** (the old winners: food down to 0.3, 75% of lives eating
+  nothing in the last tenths). A reversal halfway through still fails (food:poison 0.32, 0.38, 0.53 in the sixths
+  after the swap), creeping back only through what hungry runs eat by chance: it still learns from food alone.
+- **If moving costs** (the user's suggestion, as an experiment: `--thrust 0.002`, 0.002 of score per thruster firing
+  per 1,000 ticks, polished 80 generations from HFT_E1_23p): T_HFT_E1_23p fires 182 times per 1,000 ticks against
+  322, eats less (food 1.78 against 2.01) but chooses better (poison 0.55 against 0.71, last third 5.31 against
+  3.87), and strands a little more (5%, the limit); score +0.00 after paying 0.36 for its firings, so about +0.36
+  before, the same as HFT_E1_23p's. Paying to move makes it choosier, not lazier. Not adopted: the weight is a guess at
+  the body's power against the brain's, which the user doesn't want wired in.
+- **The open search under the new score** (`evolve`, 40 generations, population 48, starting from HFT_E1_23p and its
+  pruned form, the hunger and run-and-tumble polishes, N_E1_23p and N_E1_32p_pruned). Its archive's best per part
+  count, on held-out seeds (64 x 2) at half, usual and double the noise (the job: food, food:poison and stranding):
+
+  | | parts | power | x0.5: score, stranded | x1: score, stranded | x2: score, stranded |
+  |---|---|---|---|---|---|
+  | EV_24p | 24 | 5.9 | -0.50, 24% | +0.44, 2% (job) | +0.29, 0% |
+  | EV_26p | 26 | 5.1 | -0.92, 30% | +0.09, 2% (job) | -0.26, 0% |
+  | **EV_27p** | 27 | 11.9 | +0.37, 5% (job) | +0.36, 2% (job) | +0.53, 0% (job) |
+  | EV_28p | 28 | 18.9 | -0.42, 20% | +0.30, 2% (job) | +0.04, 0% |
+
+  (EV_21p, 23p and 25p miss at the usual noise; its 22-part best was HFT_E1_23p_pruned unchanged.) In the real
+  `Life` at the step and at half of it (32 other seeds x 2) everything that does the job holds: EV_27p last third 3.92
+  and 3.52, HFT_E1_23p 3.96 and 4.79, HFT_E1_23p_pruned 3.27 and 3.58, T_HFT_E1_23p 5.08 and 5.68.
+- **Where this leaves the search.** Under the rules as they stand (nominal noise only) the league's leader is
+  HFT_E1_23p_pruned (22 parts, power 5.9, Pareto with EV_24p and EV_26p). But all three strand in a quarter of their
+  lives at half the noise. Only two circuits do the job at half, usual and double noise: **EV_27p** (27 parts, power
+  11.9) and **HFT_E1_23p** (28 parts, power 10.1). Whether to judge at three noise levels again is the user's call.

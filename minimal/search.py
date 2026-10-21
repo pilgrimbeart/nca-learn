@@ -101,7 +101,8 @@ def report(name, spec, v: dict) -> str:
     done = v["job"] and v["over"] == 0
     return (f"{name}: parts {parts(spec)}; fastest slew {slew(spec):.1f} per circuit tick (limit {SLEW:g})\n"
             f"  net {v['net']:+.2f} [{v['lo']:+.2f}, {v['hi']:+.2f}] (food - poison {v['plain']:+.2f}), food"
-            f" {v['food']:.2f}, poison {v['poison']:.2f}, last third {v['last']:.2f}, power {v['power']:.2f}\n"
+            f" {v['food']:.2f}, poison {v['poison']:.2f}, last third {v['last']:.2f}, stranded {v['stranded']:.0%},"
+            f" power {v['power']:.2f}, thruster firings {v['firings']:.0f} per 1,000\n"
             f"  {'DOES THE JOB' if done else 'does not do the job'}")
 
 
@@ -115,7 +116,10 @@ if __name__ == "__main__":
     ap.add_argument("--lam", type=int, default=16)
     ap.add_argument("--start", help="a results file to start from")
     ap.add_argument("--name", help="the results file's name (default: the design's)")
+    ap.add_argument("--thrust", type=float, default=0.0, help="an experiment: the score's cost per thruster firing")
     a = ap.parse_args()
+    import minimal.spec
+    minimal.spec.THRUST = a.thrust                      # (the score is reckoned here, in this process)
     if a.design.endswith(".json"):                     # polish a raw circuit (one the open search found)
         from minimal.designs import raw
         found = json.load(open(a.design))

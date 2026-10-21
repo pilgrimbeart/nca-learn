@@ -23,7 +23,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from minimal.spec import JOB, net, parts, score, summary  # noqa: E402
+from minimal.spec import interface, net, parts, remove_node, score, tidy  # noqa: E402
 
 RESULTS = os.path.join(os.path.dirname(__file__), "results")
 BOUNDS = {"C": (0.05, 100.0), "R": (0.1, 1000.0), "gain": 20.0, "slope": (0.5, 30.0), "tau": (0.5, 200.0),
@@ -64,34 +64,6 @@ def born(rng) -> dict:
     return spec
 
 
-def used(spec) -> set:
-    return set(spec["sensors"]) | set(spec["motors"]) | {spec["taste"]}
-
-
-def remove_node(spec, i) -> None:
-    """Drop node i (not one the body uses) and every element touching it; renumber."""
-    spec["elements"] = [e for e in spec["elements"] if i not in (e[0], e[1]) and e[2] != i]
-    del spec["nodes"][i]
-    re = lambda j: j - (j > i)
-    for e in spec["elements"]:
-        e[0], e[1] = re(e[0]), re(e[1])
-        if e[2] >= 0:
-            e[2] = re(e[2])
-    spec["sensors"] = [re(j) for j in spec["sensors"]]
-    spec["motors"] = [re(j) for j in spec["motors"]]
-    spec["taste"] = re(spec["taste"])
-
-
-def tidy(spec) -> dict:
-    """Drop nodes nothing reads and the body doesn't use (they can't matter), and elements into them."""
-    while True:
-        read = {e[1] for e in spec["elements"]} | {e[2] for e in spec["elements"] if e[2] >= 0}
-        dead = [i for i in range(len(spec["nodes"])) if i not in used(spec) and i not in read]
-        if not dead:
-            return spec
-        remove_node(spec, dead[-1])
-
-
 def mutate(spec, rng) -> dict:
     s = copy.deepcopy(spec)
     n, T = len(s["nodes"]), s["taste"]
@@ -125,7 +97,7 @@ def mutate(spec, rng) -> dict:
             e1[0], e2[1] = n, n
             s["elements"] += [e1, e2]
         elif k < 0.76:                                  # remove a node the body doesn't use
-            free = [i for i in range(n) if i not in used(s)]
+            free = [i for i in range(n) if i not in interface(s)]
             if free:
                 remove_node(s, int(rng.choice(free)))
         elif k < 0.84 and s["elements"]:                # re-route an element's input, gate or target
@@ -147,7 +119,7 @@ def mutate(spec, rng) -> dict:
             else:
                 nd[4] = nd[5] = None
         elif k < 0.96:                                  # a node not on the interface: leaky <-> memory
-            free = [i for i in range(n) if i not in used(s)]
+            free = [i for i in range(n) if i not in interface(s)]
             if free:
                 i = int(rng.choice(free))
                 nd = s["nodes"][i]
@@ -229,7 +201,7 @@ if __name__ == "__main__":
         start = []
         for path in a.start:
             r = json.load(open(path))
-            start.append(DESIGNS[r["design"]][0](r["params"]))
+            start.append(r["spec"] if "spec" in r else DESIGNS[r["design"]][0](r["params"]))
     t0 = time.time()
     evolve(a.gens, a.pop, a.seed, name=a.name, start=start)
     print(f"({time.time() - t0:.0f} s)")

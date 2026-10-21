@@ -81,7 +81,11 @@ The task, body and interface stay as for every brain. The rules, each enforced i
 - **Judged honestly**: held-out seeds, at the nominal noise with the simulator's mismatch (both above: no circuit
   can change them), and a finer step in the real `creature.Life`; paired lives (red, then blue, as poison, on one
   seed), so a circuit that ignores taste scores below 0. (Until 2026-10-20 also at half and double the old fixed
-  noise; with noise modelled on biology, the user settled on the nominal level alone.)
+  noise; with noise modelled on biology, the user settled on the nominal level alone.) Starving is counted life by
+  life and third by third, and the job allows at most 5% of lives stranded (no food in the last third): summed over
+  all lives, a fifth of the winners' lives spinning on the spot for ever went unseen (the user found it live).
+- **Moving is free** unless an experiment says otherwise (`spec.THRUST`, `search.py --thrust`): the user doesn't want
+  to wire in a guess at the body's power against the brain's.
 - **Counted plainly**: parts are capacitors, resistors, diodes and transistors (a gated element two, a filtered input
   a resistor and capacitor more); power is what each device dissipates, its current times the voltage across it.
   Simplicity and power are ranked 50:50 in `minimal/LEAGUE.md` among the circuits that do the job.
