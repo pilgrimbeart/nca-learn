@@ -70,16 +70,16 @@ brain with no learning machinery approaches every block; to do better it needs u
 active and the taste was bad", and gate that sensor's drive: conjunction detectors, which the designed circuit has
 built in and a recruiting circuit must build in its life. The control: all-food lives, where nothing should be
 recruited.
-1. The baseline: the minimal circuit (`brains/minimal.py`), its sensors driving both motors, taste going nowhere,
+1. The baseline: the baseline circuit (`brains/baseline.py`), its sensors driving both motors, taste going nowhere,
    measured in poison and all-food lives (done: `LESSONS.md`).
 2. The trigger, with nothing placed for the job, and rung 0, all of it circuit (done: `LESSONS.md`): every neuron
    adjusts its own excitability through a memory node (`brains/adjusting.py`), watched from outside
    (`python recruit_test.py`). Rung 0 cuts poison by a third; the poison sensor ends frustrated (its decisions settled,
    what it receives still predicting pain, the pain going on), the food sensor and every all-food life calm.
    Everything that affects behaviour is explicit circuit; the only exception is growth, sudden and locally triggered.
-3. The starting animal, changed (the user): one that may *know* but can't *act*. The minimal circuit plus a taste
+3. The starting animal, changed (the user): one that may *know* but can't *act*. The baseline circuit plus a taste
    neuron that learns what predicts pain (plastic synapses from the sensors) but has no outputs (`brains/knowing.py`;
-   done: `LESSONS.md`). It learns the association and anticipates poison, its behaviour exactly the minimal circuit's;
+   done: `LESSONS.md`). It learns the association and anticipates poison, its behaviour exactly the baseline circuit's;
    frustrated in poison lives, calm in all-food lives.
 4. Rung 1, done (`brains/recruiting.py`; `experiments/NOTEBOOK.md`, E0-E7): frustration at the taste neuron, help
    routed back along its learned input synapses, competing sprouts, and the growth primitive grow a bridge on the

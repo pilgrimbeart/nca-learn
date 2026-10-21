@@ -9,6 +9,7 @@ the simulator's: test_compiled.py.)
 from __future__ import annotations
 
 import os
+import copy
 import sys
 
 import numpy as np
@@ -108,4 +109,45 @@ if __name__ == "__main__":
     strand = [Lived([(4, 0, 1000), (2, 0, 1000), (0, 0, 1000), (0, 0, 0)]), even[0]]  # the same food, one stranding
     report(f"the score counts starving life by life and third by third (even {net(even):+.2f}, one stranding"
            f" {net(strand):+.2f})", net(strand) < net(even))
+    from minimal.spec import THRUST, efficiency
+    busy = [Lived(l) for l in even]                     # the same lives, the thrusters firing twice as often
+    for l, k in zip(even + busy, (1, 1, 2, 2)):
+        l.firings = 300.0 * k
+    from minimal.spec import NEED
+    report(f"moving costs (a firing {THRUST:g} of a meal: {net(even):+.2f} against {net(busy):+.2f} firing twice as"
+           f" often), and efficiency is meals eaten per meal spent ({efficiency(even):.2f}, {efficiency(busy):.2f})",
+           THRUST > 0 and abs(net(even) - net(busy) - THRUST * 300) < 1e-9
+           and abs(efficiency(even) - 2 / (NEED + THRUST * 300)) < 1e-9
+           and abs(efficiency(busy) - 2 / (NEED + THRUST * 600)) < 1e-9)
+    from minimal.spec import boot_index, per_pair, resampled, wilson
+    rng = np.random.default_rng(0)                      # 32 seeds' pairs: b fires half as much again as a on the same
+    a_l, b_l = [], []                                   # lives (efficiency about 15% lower)
+    for _ in range(64):
+        thirds = [(int(rng.poisson(6)), 0, 3000)] * 3 + [(0, 0, 100)]
+        for out, k in ((a_l, 1.0), (b_l, 1.5)):
+            out.append(Lived(thirds))
+            out[-1].firings = 280.0 * k * rng.uniform(0.97, 1.03)
+    idx = boot_index(32)
+    diff = resampled(per_pair(a_l), idx)["efficiency"] - resampled(per_pair(b_l), idx)["efficiency"]
+    lo, hi = wilson(0, 128)
+    report(f"confidence: paired lives tell a 15% difference in efficiency (95% interval {np.percentile(diff, 2.5):+.3f}"
+           f" to {np.percentile(diff, 97.5):+.3f}), and no life of 128 stranded is still up to {hi:.1%}",
+           np.percentile(diff, 2.5) > 0 and lo == 0 and 0.02 < hi < 0.04)
+    mixed = dict(base(), rules="mixed")                 # Sepulchre's rules: every node leaks but memory, no clamp
+    leaky = copy.deepcopy(mixed)
+    for nd in leaky["nodes"]:
+        if nd[2] is None and not nd[7]:
+            nd[1], nd[2] = 0.0, 10.0
+        nd[4] = nd[5] = None
+    stuck = copy.deepcopy(leaky)                        # a node neither leaky nor memory
+    stuck["nodes"][0][1], stuck["nodes"][0][2] = 0.0, None
+    report("mixed feedback's rules refuse a clamp or a node with no leak (but a memory node), and allow memory nodes"
+           " and gates (learning and storage, on which Sepulchre is silent)",
+           bool(violations(mixed)) and bool(violations(stuck)) and not violations(leaky) and not violations(base())
+           and any(nd[7] for nd in leaky["nodes"]) and any(e[2] >= 0 for e in leaky["elements"]))
+    lo, hi = Lived(even[0]), Lived(even[0])             # one level's lives eat well, the other's badly
+    lo.noise, hi.noise = 0.5, 2.0
+    hi[0] = hi[1] = hi[2] = (0, 0, 1000)
+    report(f"judged across noise levels, the worst level's score counts ({net([lo, lo]):+.2f} and {net([hi, hi]):+.2f}:"
+           f" {net([lo, lo, hi, hi]):+.2f})", abs(net([lo, lo, hi, hi]) - min(net([lo, lo]), net([hi, hi]))) < 1e-9)
     sys.exit(1 if failed else 0)

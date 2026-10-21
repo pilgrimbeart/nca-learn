@@ -48,7 +48,7 @@ the same at any step and can't be dodged.
 Brains: the **sheet brain** (`brains/sheet.py`, the grid of cells, below) and the **circuit brains**, built from
 mixed-feedback parts (`mixed_feedback.py`, sharing `brains/circuit.py`): the **designed circuit** (`brains/designed.py`,
 drawn by `schematic.py`: redraw it when the circuit changes), kept for comparison; and the recruitment series, the
-**minimal**, **adjusting**, **knowing**, **recruiting** and **healing circuits** and the **healing cascade**
+**baseline**, **adjusting**, **knowing**, **recruiting** and **healing circuits** and the **healing cascade**
 (`RECRUITMENT.md`; experiments in `experiments/NOTEBOOK.md`, ranked in `experiments/LEADERBOARD.md`). Terms coined
 along the way are defined in the README (Terms); define any new one there when it first appears in a user-facing
 document. The circuit brains keep: no
@@ -84,11 +84,25 @@ The task, body and interface stay as for every brain. The rules, each enforced i
   noise; with noise modelled on biology, the user settled on the nominal level alone.) Starving is counted life by
   life and third by third, and the job allows at most 5% of lives stranded (no food in the last third): summed over
   all lives, a fifth of the winners' lives spinning on the spot for ever went unseen (the user found it live).
-- **Moving is free** unless an experiment says otherwise (`spec.THRUST`, `search.py --thrust`): the user doesn't want
-  to wire in a guess at the body's power against the brain's.
+- **Moving costs, in meals** (the user's decision, 2026-10-21: a low-energy brain is no use if it drives the body
+  wastefully): a thruster firing costs `spec.THRUST` (0.002) of a meal, and the circuit's power `spec.ENERGY` (0.001)
+  per unit, so that today's circuits spend about a hundredth on thinking of what they spend on moving (R = 100, fixed,
+  not tied to any circuit). Both are guesses, to adjust; `search.py --thrust` tries another price.
 - **Counted plainly**: parts are capacitors, resistors, diodes and transistors (a gated element two, a filtered input
   a resistor and capacitor more); power is what each device dissipates, its current times the voltage across it.
-  Simplicity and power are ranked 50:50 in `minimal/LEAGUE.md` among the circuits that do the job.
+  Simplicity and the body's efficiency (meals eaten per meal spent: resting, `spec.NEED` per 1,000 ticks, moving and
+  thinking, so that both haste and dawdling cost) are separate dimensions, never traded: the
+  league (`minimal/LEAGUE.md`) says what the simplest circuit doing the job achieves and the best efficiency found at
+  any complexity, and the open search keeps both (with the score) as objectives.
+- **Sure, or within noise**: the league shows every measure with its 95% interval (a bootstrap over seeds, each
+  seed's pair of lives together; stranding a Wilson interval) and compares designs paired on the same seeds: one is
+  above another only if the interval of the difference excludes 0, else they are tied, and a design does the job
+  surely only if every interval is within the limits. Claim no order the league marks as tied.
+
+An experiment may declare **Sepulchre's rules** in a spec (`rules: "mixed"`): every node leaky except memory nodes, no
+clamps. Sepulchre is silent on learning and non-volatile storage, so our gates and memory nodes (floating gates) stay
+allowed under his rules (the user's decision, 2026-10-21; `MIXED_FEEDBACK.md`). `--noises 0.5 1 2` judges a polish,
+pruning or open search across the noise range, the worst level counting.
 
 Every polish (`minimal/search.py`) ends with pruning (`minimal/prune.py`): the polish tunes values and can't remove
 a part, so parts that stopped mattering stay (one winner carried 7) unless something tries taking each away.

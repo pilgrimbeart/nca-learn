@@ -10,7 +10,7 @@ A rule is a module that declares its cell's numbers and one compiled function:
     BIRTH = {"a": 0.0, ...}         # every cell is born with these ...
     BIRTH_NOISE = {"b": 1.0}        # ... plus, for these, an independent random number up to this size (uniform)
 
-    @njit
+    @njit(RULE, cache=True)             # (RULE from rules.interface: the compiler is told what update is)
     def update(me, mean, count, inp, out):
         # me: this cell's numbers; mean: its neighbours' mean of each shared number (in SHARED's order);
         # count: how many neighbours it has (3 at a corner, 5 on an edge, 8 inside); inp: what the body delivered
@@ -34,11 +34,14 @@ damage() cells (replace them with new-born ones), as with the lizard.
 from __future__ import annotations
 
 import numpy as np
-from numba import njit
+from numba import njit, types
+
+from rules.interface import RULE    # a rule's update, declared (so the sheet, taking one, can be cached)
 
 UPDATE = 0.5        # the chance that a cell updates in a tick
 NOISE = 1e-3        # noise added to every number a cell keeps, at every update
 SHOW = 0.01         # noise on what a cell shows its neighbours (each shared number clipped to -1..1), every tick
+_SHEET = types.float64[:, :, ::1]
 
 
 @njit(cache=True)
@@ -46,7 +49,8 @@ def _seed(seed):
     np.random.seed(seed)
 
 
-@njit
+@njit(types.void(_SHEET, _SHEET, _SHEET, types.float64[:, ::1], _SHEET, types.int64[::1], types.FunctionType(RULE),
+                  types.int64, types.float64, types.float64, types.float64), cache=True)
 def _ticks(s, s2, mean, count, inp, shared, update, ticks, p, noise, show):
     n = s.shape[0]
     nv, ns, ni = s.shape[2], shared.shape[0], inp.shape[2]

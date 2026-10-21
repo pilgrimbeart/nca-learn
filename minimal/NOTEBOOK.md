@@ -360,7 +360,7 @@ eat nothing in the last tenths. The score summed food over all lives, so strande
   user suggested a penalty for not eating; this is it, counted where it happens.
 - **Moving costs nothing** unless an experiment sets `spec.THRUST` (`search.py --thrust`), the user's other
   suggestion, tried once below as an experiment, not a rule: the user doesn't want to wire in a guess at the body's
-  power against the brain's.
+  power against the brain's. (Superseded in M9: moving now costs.)
 - **Ways to explore.** (1) Run and tumble (as E. coli): M0 firing now and then of its own, so straight runs break the
   spin; no new parts, only M0's rest nearer threshold, which a polish under the new score may find (S_E1_23p, from
   N_E1_23p). (2) **Hunger** (H_E1_23p, by hand, then polished): a node H charging towards a high rest over about

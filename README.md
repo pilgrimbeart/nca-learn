@@ -63,7 +63,8 @@ python creature.py                 # watch a life (the sheet brain; --brain desi
 Once the environment is active, `python` is its Python. In a new terminal, activate it again first. On Ubuntu, if
 `python3 -m venv` says ensurepip is missing: `sudo apt install python3-venv`.
 
-Each run starts with a pause of a few seconds while numba compiles the rules.
+The first run after a brain's code changes pauses for 15-30 s while numba compiles it (the window says so); after
+that it starts in about a second, from numba's cache.
 
 In the live view:
 
@@ -73,6 +74,7 @@ In the live view:
 | `d` | damage the sheet brain: replace a disc of cells under the mouse with new-born ones |
 | `b` | the next brain (the sheet brain, then the circuit brains in turn), in a new world with the same seed |
 | `s` | the designed circuit's schematic (wheel: zoom, drag: pan, Esc: close) |
+| `i` | the rules the simulation enforces: the interface, noise, limits, seeds, the job, the score, what is measured (wheel or up/down: scroll; numbers read from the code; "copy all" puts them on the clipboard as text, "open as text" opens them in a text viewer; `python creature.py --rules` prints them) |
 | space | pause |
 | up / down | faster / slower (`r`: automatic again); below a tick a frame, down waits 2, 4 ... 32 frames per tick |
 | Esc | quit |
@@ -94,8 +96,9 @@ In the live view:
   triangle pointing the way it faces, its point (the mouth) marked, and what its eyes see: a pale beam ahead, the
   corridor its mouth will sweep, fading with distance, each of its rays stopping at the first block it meets (so a
   near block casts a shadow). A ring at a corner of the tail shows that thruster firing. "yuck!" is a poison meal.
-- **Below:** the tick, the stage of life, which colour is poison this life, and the recent meals; and buttons for `b`
-  and `s` (above). The life waits while the schematic is open.
+- **Below:** the tick, the stage of life, which colour is poison this life, and the recent meals; and buttons for `b`,
+  `i` and `s` (above). The life waits while the rules or the schematic are open. The window can be resized or
+  maximised: the panels stay square, centred, and the block view takes the rest.
 - **At the bottom, for the circuit brains, the block view** (`blocks.py`): the brain at level 1, found from its
   netlist and drawn live. Neurons are circles (brightness: voltage; white: a spike), synapses arrows (solid excites,
   dashed inhibits, thickness: current), and every other node a meter hung where it belongs (on the synapse it gates,
@@ -337,9 +340,9 @@ that can't learn at all, each step measured against the one below:
 
 | brain | what it is |
 |---|---|
-| minimal circuit (`brains/minimal.py`) | the designed circuit's four neurons alone, each sensor driving both motors, taste going nowhere: drives at every block (the baseline) |
+| baseline circuit (`brains/baseline.py`) | the designed circuit's four neurons alone, each sensor driving both motors, taste going nowhere: drives at every block (the baseline) |
 | adjusting circuit (`brains/adjusting.py`) | rung 0: each neuron adjusts its own excitability from taste (a knob); cuts poison by a third, by ignoring rather than avoiding |
-| knowing circuit (`brains/knowing.py`) | the starting animal: the minimal circuit plus a taste neuron, T, that learns what predicts pain but has no outputs; it knows, but behaves exactly as the minimal circuit |
+| knowing circuit (`brains/knowing.py`) | the starting animal: the baseline circuit plus a taste neuron, T, that learns what predicts pain but has no outputs; it knows, but behaves exactly as the baseline circuit |
 | recruiting circuit (`brains/recruiting.py`) | rung 1, guided: T's frustration grows a *bridge* on the poison sensor's pathway that lets the knowledge act |
 | healing circuit (`brains/healing.py`) | rung 1 by a generic recruit that knows nothing of the circuit, choosing among actions on what it is attached to |
 | healing cascade (the same file) | the first recruit can't reach the cure; frustrated itself, it grows a second, one step further out, which can |
@@ -393,8 +396,20 @@ recruits) and the lessons are in `LESSONS.md`.
   is near; the score counts starving life by life and third by third so that this can't hide among other lives.
 - **Pruning**: trying every single simplification of a circuit (an element, a filter, a gate, a leak, a clamp taken
   away) and keeping the best that costs no more than a little score, until none does (`minimal/prune.py`).
+- **Body efficiency**: meals eaten per meal's worth of energy spent, counting resting (the 1 meal per 1,000 ticks
+  every creature needs, whatever it does), moving (0.002 of a meal a thruster firing) and thinking (the circuit's
+  power, for today's circuits a hundredth of moving). Above 1 a creature gains. Haste wastes fuel and dawdling the
+  resting cost, so a careful creature, thinking before it moves, has a best speed. In the minimal search it is ranked
+  apart from parts, never traded against them.
+- **Area**: what a circuit would take on a chip, by analogy with subthreshold analogue CMOS, in unit transistors: an
+  element 5 (a transconductance amplifier), a gate 3 more, a leak 2, a clamp 1, a memory node's floating gate 5, and
+  each capacitor 10 per unit of its value. Capacitors dominate, as on real neuromorphic chips; their price is a guess.
+- **Thrift** and **speed**: food per 1,000 thruster firings (fuel alone, time no object) and food per 1,000 ticks.
+  With efficiency, the three answers to "best at what?" that a survival situation might ask; the league names the
+  best circuit doing the job at each, and says whether it is surely best or tied within noise.
 - Names: in prose "the sheet brain", "the designed circuit", "the knowing circuit"; on the command line `sheet`,
-  `designed-circuit`, `knowing-circuit` and so on.
+  `designed-circuit`, `knowing-circuit` and so on. The recruitment series' baseline, the **baseline circuit**, was
+  called the minimal circuit until 2026-10-21; "minimal" now means only the minimal circuit search (`minimal/`).
 
 ## Next
 
@@ -411,7 +426,7 @@ outward along the network until it cures the pain or its wiring costs too much).
 python creature.py --seed 3         # a particular life
 python creature.py --measure 32     # every brain, 32 lives each with learning and 32 without, headless
                                     # (--brains to choose; --all-food: lives where both colours are food)
-python creature.py --brain minimal-circuit    # the baseline for recruitment: drives at every block
+python creature.py --brain baseline-circuit   # the baseline for recruitment: drives at every block
 python creature.py --brain adjusting-circuit  # rung 0: each neuron adjusts its own excitability
 python creature.py --brain knowing-circuit    # the starting animal: knows what predicts pain, acts on nothing
 python creature.py --brain recruiting-circuit # rung 1, guided: grows the bridge that lets that knowledge act
@@ -445,9 +460,9 @@ python creature.py --record frames  # save a life's frames as PNGs, headless (me
 | `brains/sheet.py` | the sheet brain: the sheet, by the names its cells took |
 | `brains/circuit.py` | what every circuit brain shares: two sensor and two motor neurons, a taste node, running and drawing |
 | `brains/designed.py` | the designed circuit: four excitable neurons, designed by hand |
-| `brains/minimal.py` | the minimal circuit: those neurons alone, driving at every block (the baseline for recruitment) |
+| `brains/baseline.py` | the baseline circuit: those neurons alone, driving at every block (the baseline for recruitment) |
 | `brains/adjusting.py` | the adjusting circuit: every neuron adjusting its own excitability (rung 0 of recruitment) |
-| `brains/knowing.py` | the knowing circuit: the minimal circuit plus a taste neuron that learns what predicts pain but has no outputs (recruitment's starting animal) |
+| `brains/knowing.py` | the knowing circuit: the baseline circuit plus a taste neuron that learns what predicts pain but has no outputs (recruitment's starting animal) |
 | `brains/recruiting.py` | the recruiting circuit: the knowing circuit growing, in its life, the bridge that lets its knowledge act (rung 1) |
 | `brains/healing.py` | the healing circuit and cascade: rung 1 by a generic recruit that knows nothing of the circuit |
 | `recruit_test.py` | recruitment's local signals, watched from outside a circuit brain |

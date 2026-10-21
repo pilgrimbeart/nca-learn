@@ -16,6 +16,9 @@ from __future__ import annotations
 import os
 
 os.environ["NUMBA_BOUNDSCHECK"] = "1"   # every rule runs with its array indices checked: none can reach past its own
+import tempfile
+os.environ["NUMBA_CACHE_DIR"] = tempfile.mkdtemp()  # compiled afresh here: numba's cache doesn't know the bounds check,
+                                                    # and code cached without it would check nothing
 
 import ast
 import importlib

@@ -21,6 +21,8 @@ come first). Neighbours see only means.
 import numpy as np
 from numba import njit
 
+from rules.interface import RULE
+
 from rules import organs, wiring
 
 STEPS = 20.0        # p is kept in twentieths
@@ -43,7 +45,7 @@ M_TASTE, M_PING = len(wiring.SHARED), len(wiring.SHARED) + 1
 STIMULUS, TASTE = range(2)
 
 
-@njit
+@njit(RULE, cache=True)
 def update(me, mean, count, inp, out):
     organs.update(me, mean, count, inp, out)
     name = np.round(out[organs.NAME])

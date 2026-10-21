@@ -1,6 +1,6 @@
 # Lab notebook: rung 1 of recruitment
 
-*Names (2026-10-18): the "grown brain" is now the **sheet brain**, and the "mixed-signal brain" the **designed circuit**; the minimal, adjusting, knowing and recruiting brains are the **…-circuit** brains. Earlier entries keep the names they were written with.*
+*Names (2026-10-18): the "grown brain" is now the **sheet brain**, and the "mixed-signal brain" the **designed circuit**; the minimal, adjusting, knowing and recruiting brains are the **…-circuit** brains. Earlier entries keep the names they were written with. (2026-10-21: the minimal circuit is now the **baseline circuit**, `baseline-circuit`, so that "minimal" means only the minimal circuit search; the printed results in `results/` keep the old label.)*
 
 Rung 1 (RECRUITMENT.md): the knowing circuit (brains/knowing.py) learns what predicts pain in its taste neuron T, but T
 has no outputs. Can it grow, in its life and by local means only, the link that lets that knowledge change behaviour?
@@ -39,14 +39,14 @@ the creature starts moving. Scripts: `python -m experiments.e<N>_...`; raw recor
   "bad taste" threshold (-0.5), and F integrated those leaks over thousands of ticks (F about 0.08 in all-food lives);
   the threshold for F is now -0.8 (a bad taste takes the node to about -1.3).
 - **Common random numbers.** The recruiting circuit with growth off ate 3.49 food per 1,000 ticks in all-food lives
-  against the minimal circuit's 3.14, intervals not overlapping, though its extra nodes have no outputs. Paired by seed,
+  against the baseline circuit's 3.14, intervals not overlapping, though its extra nodes have no outputs. Paired by seed,
   the difference was +0.34 with a standard deviation of 1.00: paired lives were uncorrelated, because all nodes drew
   noise from one stream and adding nodes reshuffled the sensors' and motors' noise. The noise stream, not the seed,
   decides a life. Fix: each node draws from its own stream, seeded by its index (`Circuit(streams=True)`, used by the
   recruitment brains; the sheet brain and the designed circuit keep theirs, so their lives are unchanged). Then the
-  minimal, knowing and recruiting-without-growth brains live *identical* lives (paired difference 0.00, standard
+  baseline, knowing and recruiting-without-growth brains live *identical* lives (paired difference 0.00, standard
   deviation 0.00): nothing in the extra circuitry leaks into behaviour, and the +0.34 was chance. Lessons: at 64 lives
-  two independent noise streams differ by about 0.15 food per 1,000 ticks by chance alone (the minimal circuit's own
+  two independent noise streams differ by about 0.15 food per 1,000 ticks by chance alone (the baseline circuit's own
   figure moved from 3.14 to 3.02 with the change of stream), so unpaired comparisons of different brains are weak; with
   common random numbers, variants are compared life for life.
 
@@ -232,11 +232,11 @@ threshold fires more by itself; for the taste neuron that means false "danger", 
 bridges under mismatch (23 against 2). The fix belongs to the neuron (a design that keeps its margin under
 mismatch), a change of substrate outside rung 1.
 
-*(d) Cost* (at the end of one poison life): minimal 5 nodes, 12 elements, sum of gains 20; knowing 10, 23, 49; R3
+*(d) Cost* (at the end of one poison life): baseline 5 nodes, 12 elements, sum of gains 20; knowing 10, 23, 49; R3
 22, 42, 531; designed 11, 24, 1,006. The sum of gains approximates static power in the worst case (each element an
 amplifier drawing about its gain as bias current, all fully biased). *Corrected (the user asked for detail):* a gated
 amplifier's bias is set by its gate, so the more physical measure is gain x gate, averaged over the second half of a
-life. Worst case / gated average: minimal 20 / 20; knowing 49 / 48; designed 1,005 / 264; R3 531 / 412; R4 650 / 456.
+life. Worst case / gated average: baseline 20 / 20; knowing 49 / 48; designed 1,005 / 264; R3 531 / 412; R4 650 / 456.
 So R3 needs about half the designed circuit's power only in the worst case; by the gated average R4 needs about 1.7
 times as much. Breakdown: big currents go with big quiet capacitors (current = C x rate: the designed circuit's
 learning amplifiers into P, C = 1,000, gains 231 each; R4's frustration charger into F, C = 775, gain 298); gating

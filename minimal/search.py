@@ -102,8 +102,12 @@ def report(name, spec, v: dict) -> str:
     return (f"{name}: parts {parts(spec)}; fastest slew {slew(spec):.1f} per circuit tick (limit {SLEW:g})\n"
             f"  net {v['net']:+.2f} [{v['lo']:+.2f}, {v['hi']:+.2f}] (food - poison {v['plain']:+.2f}), food"
             f" {v['food']:.2f}, poison {v['poison']:.2f}, last third {v['last']:.2f}, stranded {v['stranded']:.0%},"
-            f" power {v['power']:.2f}, thruster firings {v['firings']:.0f} per 1,000\n"
-            f"  {'DOES THE JOB' if done else 'does not do the job'}")
+            f" power {v['power']:.2f}, thruster firings {v['firings']:.0f} per 1,000, efficiency"
+            f" {v['efficiency']:.2f} meals eaten per meal spent\n"
+            + "".join(f"  at x{k} noise: net {w['net']:+.2f}, food {w['food']:.2f}, last third {w['last']:.2f},"
+                      f" stranded {w['stranded']:.0%}, efficiency {w['efficiency']:.2f}, job {w['job']}\n"
+                      for k, w in v.get("by_noise", {}).items())
+            + f"  {'DOES THE JOB' if done else 'does not do the job'}")
 
 
 if __name__ == "__main__":
@@ -116,10 +120,17 @@ if __name__ == "__main__":
     ap.add_argument("--lam", type=int, default=16)
     ap.add_argument("--start", help="a results file to start from")
     ap.add_argument("--name", help="the results file's name (default: the design's)")
-    ap.add_argument("--thrust", type=float, default=0.0, help="an experiment: the score's cost per thruster firing")
+    ap.add_argument("--thrust", type=float, help="an experiment: the score's cost per thruster firing, in meals"
+                                                 " (default spec.THRUST)")
+    ap.add_argument("--noises", type=float, nargs="+", help="an experiment: judge at these noise levels (shares of"
+                                                                 " the usual), the worst counting (default spec.JUDGED)")
     a = ap.parse_args()
+    if a.noises:
+        import minimal.spec
+        minimal.spec.JUDGED = tuple(a.noises)           # (lives are scored in this process, at these levels)
     import minimal.spec
-    minimal.spec.THRUST = a.thrust                      # (the score is reckoned here, in this process)
+    if a.thrust is not None:
+        minimal.spec.THRUST = a.thrust                  # (the score is reckoned here, in this process)
     if a.design.endswith(".json"):                     # polish a raw circuit (one the open search found)
         from minimal.designs import raw
         found = json.load(open(a.design))

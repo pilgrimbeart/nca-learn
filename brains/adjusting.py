@@ -1,5 +1,5 @@
-"""The adjusting circuit: rung 0 of recruitment (RECRUITMENT.md), all of it circuit. The minimal circuit's neurons
-(brains/minimal.py), each sensor driving both motors, and every neuron given the same motif:
+"""The adjusting circuit: rung 0 of recruitment (RECRUITMENT.md), all of it circuit. The baseline circuit's neurons
+(brains/baseline.py), each sensor driving both motors, and every neuron given the same motif:
 
   eligibility, a leaky node charged by the neuron's own spikes, fading over ELIGIBLE ticks;
   a knob, a memory node (no leak, noisy only when written), driving a current of up to RANGE out of the neuron

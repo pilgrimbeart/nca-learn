@@ -39,6 +39,8 @@ Nothing here says what an organ is for. Neighbours see only means, of numbers fr
 import numpy as np
 from numba import njit
 
+from rules.interface import RULE
+
 EX, RF = 2.0, 10.0          # updates a cell is excited, then resting before it can be excited again
 LE, LR = 3.0, 8.0           # updates an edge cell shows a label pulse, then rests from them
 PMIN, PMAX = 30.0, 90.0     # a corner's period, random from birth (updates)
@@ -67,7 +69,7 @@ BIRTH_NOISE = {"timer": PMAX, "period": PMAX - PMIN, "coin": 1.0}     # coin: -0
 M_W, M_W2, M_HAND, M_XL, M_YL, M_X, M_Y, M_MARK = range(8)
 
 
-@njit
+@njit(RULE, cache=True)
 def update(me, mean, count, inp, out):
     corner, edge = count == 3, count < 8
     # 1. the race

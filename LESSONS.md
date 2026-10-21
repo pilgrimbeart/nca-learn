@@ -548,6 +548,17 @@ which subthreshold silicon shares (Sarpeshkar, Delbrueck and Mead 1993), and the
   gate opened by noise). Both did the job at the nominal noise and failed at half of it. Noise costs no parts, so a
   search that pays for parts but never varies the noise will buy noise. The old half-and-double check caught exactly
   this; whether to restore it is the user's call.
+- **A graded memory does quiet work, and a noisy one can't hold it** (2026-10-21, building a circuit of Sepulchre's
+  components). The simplest circuits keep the bit in a perfect integrator (a floating gate). Made leaky, as every
+  mixed-feedback node is, the bit gets the membrane noise every leaky node has and wanders 2.7 V in 1,000 ticks; made a
+  latch, it falls at birth into one guess and, learning only from food, never eats the other colour to correct it.
+  The integrator's middle was an undecided state that let the creature try both colours first. A binary memory needs
+  a way back from a wrong guess (learning from poison), so it costs parts the graded one didn't. Sepulchre is silent
+  on learning and storage, so we allow our floating gates under his rules (MIXED_FEEDBACK.md).
+- **Body efficiency needs a balance, and confidence needs pairing** (2026-10-21). Food per firing alone rewards a
+  creature for dawdling; counting the resting cost (NEED per 1,000 ticks) as well as fuel gives meals eaten per meal
+  spent, which both haste and dawdling lower. And a league ordered by point estimates claimed orders it couldn't back:
+  compare designs paired on the same seeds, with intervals on the difference, and call the rest ties.
 
 ## Recruitment, step 0: the baseline (2026-10-18)
 
@@ -555,7 +566,7 @@ The plan (`RECRUITMENT.md`, agreed with the user): keep the one-bit task, start 
 telling food from poison, and let it discover in its life that it needs more. The control, agreed too: all-food lives
 (`--all-food`), where tastes are never bad and nothing should be recruited.
 
-- **The minimal circuit** (`brains/minimal.py`): the designed circuit's four neurons, each sensor driving both motors
+- **The baseline circuit** (`brains/baseline.py`): the designed circuit's four neurons, each sensor driving both motors
   through a synapse that relays every spike, taste into a node connected to nothing. Both circuit brains now share
   `CircuitBrain` (neurons, taste node, running, drawing); 32 recorded lives were unchanged, every meal and firing.
 - **64 lives of 10,000 ticks:**
@@ -566,7 +577,7 @@ telling food from poison, and let it discover in its life that it needs more. Th
   | designed circuit, learning | 2.3, 6.4, 5.3 (55 of 64 learned) | 1.66 | 2.17, 2.54, 2.80 |
 
 - **Machinery costs food when there is nothing to learn.** In all-food lives the learner eats a fifth less than the
-  minimal circuit: its sensors hush each other, and with p at 1/2 half its sightings become veers. Even in poison lives
+  baseline circuit: its sensors hush each other, and with p at 1/2 half its sightings become veers. Even in poison lives
   it eats less food (about 1.3 against 1.6 per 1,000 ticks); what it gains is avoiding poison (about 0.3 against 1.6).
   That cost is what makes recruiting machinery only when needed worth anything.
 - **Why non-learners score exactly 1.0:** lives are paired, each seed run once with red as poison and once with blue,
@@ -597,7 +608,7 @@ telling food from poison, and let it discover in its life that it needs more. Th
   3. *Can I fix it myself?* (frustration): implicated, and adjusting myself doesn't stop it (nothing adjustable,
      or at its limit), so I need help: recruit.
 
-  In the minimal circuit, in a red-poison life: the red sensor is involved and implicated (it was stimulated within
+  In the baseline circuit, in a red-poison life: the red sensor is involved and implicated (it was stimulated within
   10 ticks before 85% of red meals, the other sensor before 17%: "What a sensor can know", above) but can change
   nothing, so it is frustrated: recruitment should start there. The motors fire before bad *and* good tastes:
   involved but conflicted, which shows the colours were merged upstream. In all-food lives there is no pain, so
@@ -636,7 +647,7 @@ telling food from poison, and let it discover in its life that it needs more. Th
     "finished adjusting" means *my own adjustment has stalled (a knob at its limit, or a slow trace of its change near
     zero) while my own discomfort persists*: both observable by the unit itself.
   - *Every parameter is declared a constant (fixed at birth, with noise) or a plastic knob with a local rule.* The
-    minimal circuit has constants only; rung 0 adds one knob, the sensors' excitability.
+    baseline circuit has constants only; rung 0 adds one knob, the sensors' excitability.
   - *Make it the structure*, as `sheet.py` does: each unit's rule sees only its own state, the signals on its own
     connections and what is delivered to it; the engine creates units and connections only when a unit's rule asks,
     attached locally to it; and a test checks that no rule reaches further.
@@ -665,8 +676,8 @@ specification of the local signals a circuit needs.
 - **A knob is a memory: its noise comes with writing, not with time.** At first every kept number got noise every
   tick, knobs included; a knob clamped at its top then walked down from it, the motors (never tasted, so never
   written) ended less excitable (bias -1.67 against -1.60), fewer spontaneous kicks explored, and all-food lives ate
-  2.27 per 1,000 ticks against the minimal circuit's 3.12. With noise only on writes (10% of the change, as agreed for
-  non-volatile memory) the adjusting circuit eats exactly as the minimal circuit where nothing is learned.
+  2.27 per 1,000 ticks against the baseline circuit's 3.12. With noise only on writes (10% of the change, as agreed for
+  non-volatile memory) the adjusting circuit eats exactly as the baseline circuit where nothing is learned.
 - **Slow averages refreshed only at events need a fade.** Updated only at tastes but noised every tick, they
   random-walked in units that never taste; they now fade over 2,000 ticks without evidence.
 - **Rung 0** (`brains/adjusting.py`, `net_rules/adjust.py`): every unit's excitability is a knob, moved by
@@ -751,19 +762,19 @@ specification of the local signals a circuit needs.
   sensor's knob fills, it becomes less excitable, and the creature stops driving at poison. It learns which colour to
   *ignore*, a weaker thing than the designed circuit's veering *away* (an ignored poison block is still eaten beside
   food or by drift): 1.4 food per poison against about 5. And it costs nothing when there is nothing to learn: in
-  all-food lives no knob ever charges and it eats exactly as the minimal circuit, where the designed learner, its
+  all-food lives no knob ever charges and it eats exactly as the baseline circuit, where the designed learner, its
   machinery always on, eats a fifth less. Paying only when there is something to learn is already rung 0's property.
 - **Not yet tried: a knob that also makes a unit keener.** The knobs start empty (as excitable as a neuron can be
   without firing by itself, about 0.2 of bias short of that), so good tastes can't push further. A knob starting
   mid-range could move both ways: keener on what tastes good, which might help even in all-food lives.
-- **The motors' conflict, seen from outside.** In the minimal circuit the motors are involved before every taste
+- **The motors' conflict, seen from outside.** In the baseline circuit the motors are involved before every taste
   (involvement 1.00) with confidence exactly 0.00: equally before good and bad (exactly, as lives are paired). The
   motors can't know this themselves (they feel no taste); the observer can.
 
 ## Recruitment: a starting animal that may know but can't act (2026-10-18)
 
 - **A cleaner test (the user's).** In the rung-0 animal each sensor could change its own behaviour (ignore what
-  predicts pain), so the starting animal could already learn a little. Instead: the minimal circuit plus a taste
+  predicts pain), so the starting animal could already learn a little. Instead: the baseline circuit plus a taste
   neuron T that can *learn* what predicts pain but has *no outputs*. It may know, and must recruit in order to act.
   What it learns is a prediction, available before contact, which is what avoiding needs; its frustration is crisp
   ("I predict pain confidently and it still comes"); and one "danger" signal serves any poison colour. The sensors'
@@ -775,12 +786,12 @@ specification of the local signals a circuit needs.
 
   | | poison lives | all-food lives |
   |---|---|---|
-  | behaviour | food 1.58, poison 1.58 per 1,000 (1.0, as the minimal circuit) | food 3.16 per 1,000 (as the minimal circuit) |
+  | behaviour | food 1.58, poison 1.58 per 1,000 (1.0, as the baseline circuit) | food 3.16 per 1,000 (as the baseline circuit) |
   | T's synapses | from poison's sensor 0.87, from food's 0.13 | 0.00 |
   | T anticipates (a spike within 10 ticks before the taste) | 96% of poison meals; 51% of food meals | (no poison); 19% of meals |
   | T's confidence (when it fired before a meal, the meal was poison) | 0.66 | 0.00 |
 
-  Knowledge leaks nowhere (behaviour as the minimal circuit's). T learns the association, and anticipates nearly every
+  Knowledge leaks nowhere (behaviour as the baseline circuit's). T learns the association, and anticipates nearly every
   poison meal; its false alarms are about chance at its rate (about 50 spikes per 1,000 ticks, against 18 in all-food
   lives, which is its own spontaneous firing): red blocks are often in view on the way to a blue one, so T has become
   a "danger in view" detector, which is arguably the right signal for avoiding. Frustrated by the test (confident,

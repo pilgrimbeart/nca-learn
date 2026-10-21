@@ -22,6 +22,8 @@ to 1, with noise.
 import numpy as np
 from numba import njit
 
+from rules.interface import RULE
+
 from rules import organs, see
 
 STILL = 20          # updates a source's distance must hold before it starts a path
@@ -49,7 +51,7 @@ OFFER, ONV, TIMER, HANDV, LEASEV, ONES, GOS, HELD, GONE, FIRED = range(P0 + 3, N
 SOURCES, SINKS = (organs.S1, organs.S2), (organs.M1, organs.M2)
 
 
-@njit
+@njit(cache=True)
 def stage(me, mean, count, out, ch, send):
     """One channel: whether I am on the path (or a tip), my pulse. send: start a pulse, if I am a source."""
     v, m = BASE + NV * ch, M_BASE + NS * ch
@@ -113,7 +115,7 @@ def stage(me, mean, count, out, ch, send):
     see.show_path(d, kind, out, v + P0)
 
 
-@njit
+@njit(RULE, cache=True)
 def update(me, mean, count, inp, out):
     organs.update(me, mean, count, inp, out)
     stage(me, mean, count, out, 0, inp[0] > 0.5)

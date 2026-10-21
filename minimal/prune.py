@@ -89,7 +89,13 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("results")
     ap.add_argument("--name")
+    ap.add_argument("--noises", type=float, nargs="+", help="an experiment: judge at these noise levels (shares of"
+                                                                 " the usual), the worst counting (default spec.JUDGED)")
     a = ap.parse_args()
+    if a.noises:
+        import minimal.spec
+        minimal.spec.JUDGED = tuple(a.noises)           # (lives are scored in this process, at these levels)
+
     found = json.load(open(a.results))
     name = a.name or os.path.basename(a.results)[:-5] + "_pruned"
     t0 = time.time()

@@ -55,7 +55,7 @@ def o5(life):                       # T's hold inhibits one motor directly: dang
     c.grow()
 
 
-CONDITIONS = [("minimal", "minimal-circuit", None), ("none (knowing)", KNOWING, None),
+CONDITIONS = [("baseline", "baseline-circuit", None), ("none (knowing)", KNOWING, None),
               ("O1 bridge, poison sensor", KNOWING, o1), ("O2 bridge, food sensor", KNOWING, o2),
               ("O3 bridges, poison sensor both", KNOWING, o3), ("O4 bridges, all four", KNOWING, o4),
               ("O5 hold one motor", KNOWING, o5), ("designed circuit", "designed-circuit", None)]

@@ -1,8 +1,9 @@
 """The open search for the minimal circuit (minimal/NOTEBOOK.md, method step 4): evolution over topologies and
 parameters at once, from random circuits, none of the hand designs among them, so it may find what reasoning missed.
 
-Three objectives: the score (minimal/spec.py), up; parts, down; and power, down (tracked apart, as the user asked:
-simplicity and energy, each its own dimension); selection by non-dominated rank (NSGA-II, crowding replaced by
+Three objectives: the score (minimal/spec.py), up; parts, down; and the body's efficiency (meals eaten per meal spent
+resting, moving and thinking: minimal/spec.py), up (each its own dimension, as the user asked: "the minimum circuit achieves body efficiency X; allowing
+any complexity, the best found is Y"; the circuit's power is in the score, at a hundredth of moving's); selection by non-dominated rank (NSGA-II, crowding replaced by
 preferring the higher score within a front). Every generation scores parents and children together on
 fresh seeds, with the simulator's own noise and mismatch, so nothing survives on one lucky evaluation.
 
@@ -23,7 +24,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from minimal.spec import interface, net, parts, remove_node, score, tidy  # noqa: E402
+from minimal.spec import efficiency, interface, net, parts, remove_node, score, tidy  # noqa: E402
 
 RESULTS = os.path.join(os.path.dirname(__file__), "results")
 BOUNDS = {"C": (0.05, 100.0), "R": (0.1, 1000.0), "gain": 20.0, "slope": (0.5, 30.0), "tau": (0.5, 200.0),
@@ -132,12 +133,12 @@ def mutate(spec, rng) -> dict:
 
 
 def dominates(a, b) -> bool:
-    """a at least as good as b on every objective (score up, parts down, power down), and not the same."""
-    return a[0] >= b[0] and a[1] <= b[1] and a[2] <= b[2] and a != b
+    """a at least as good as b on every objective (score up, parts down, efficiency up), and not the same."""
+    return a[0] >= b[0] and a[1] <= b[1] and a[2] >= b[2] and a != b
 
 
 def fronts(objs):
-    """Non-dominated fronts of (score up, parts down, power down)."""
+    """Non-dominated fronts of (score up, parts down, efficiency up)."""
     left, out = list(range(len(objs))), []
     while left:
         f = [i for i in left if not any(dominates(objs[j], objs[i]) for j in left)]
@@ -164,8 +165,7 @@ def evolve(gens=200, pop=48, seed=0, seeds=8, ticks=10000, name="evolve0", log=p
         lives = score(everyone, seeds=range(20000 + seed * 100000 + g * seeds,
                                             20000 + seed * 100000 + (g + 1) * seeds),
                       ticks=ticks)
-        objs = [(round(net(l), 3), parts(s)["total"], round(float(np.mean([x.power for x in l])), 1))
-                for s, l in zip(everyone, lives)]
+        objs = [(round(net(l), 3), parts(s)["total"], round(efficiency(l), 2)) for s, l in zip(everyone, lives)]
         for (sc, pt, _), s in zip(objs, everyone):
             if pt not in archive or sc > archive[pt][0]:
                 archive[pt] = (sc, s)
@@ -178,8 +178,8 @@ def evolve(gens=200, pop=48, seed=0, seeds=8, ticks=10000, name="evolve0", log=p
         P = [everyone[i] for i in nxt]
         best = max(objs)
         front = sorted({objs[i] for i in fronts(objs)[0] if objs[i][0] > 0}, key=lambda o: o[1])
-        log(f"gen {g:3d}  best {best[0]:+.2f} ({best[1]} parts, power {best[2]})  front (score > 0): " +
-            " ".join(f"{p}p/{w}W:{s:+.2f}" for s, p, w in front))
+        log(f"gen {g:3d}  best {best[0]:+.2f} ({best[1]} parts, efficiency {best[2]})  front (score > 0): " +
+            " ".join(f"{p}p/{e}e:{s:+.2f}" for s, p, e in front))
         if g % 10 == 9 or g == gens - 1:
             os.makedirs(RESULTS, exist_ok=True)
             json.dump({"gen": g, "population": P, "archive": {str(k): v for k, v in sorted(archive.items())}},
@@ -194,7 +194,13 @@ if __name__ == "__main__":
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--name", default="evolve0")
     ap.add_argument("--start", nargs="*", help="tuned designs' results files to begin from")
+    ap.add_argument("--noises", type=float, nargs="+", help="an experiment: judge at these noise levels (shares of"
+                                                                 " the usual), the worst counting (default spec.JUDGED)")
     a = ap.parse_args()
+    if a.noises:
+        import minimal.spec
+        minimal.spec.JUDGED = tuple(a.noises)           # (lives are scored in this process, at these levels)
+
     start = None
     if a.start:
         from minimal.designs import DESIGNS

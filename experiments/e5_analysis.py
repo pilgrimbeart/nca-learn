@@ -112,7 +112,7 @@ if __name__ == "__main__":
                   flush=True)
     if "d" in parts:
         print()
-        for name, make in (("minimal", "minimal-circuit"), ("knowing", "knowing-circuit"),
+        for name, make in (("baseline", "baseline-circuit"), ("knowing", "knowing-circuit"),
                            ("R3 at the end of a poison life", R3),
                            ("designed circuit", "designed-circuit")):
             n, m, e = cost(make)

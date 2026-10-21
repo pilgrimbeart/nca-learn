@@ -18,9 +18,9 @@ block: the brain must work out what earned it. Nothing else goes in or out.
 
 Brains: the sheet brain ("sheet", brains/sheet.py), a sheet of identical cells that builds itself, then learns; and
 the circuit brains: "designed-circuit" (brains/designed.py), a small circuit of excitable neurons designed by hand;
-"minimal-circuit" (brains/minimal.py), its neurons alone, driving at every block, with taste going nowhere (the
+"baseline-circuit" (brains/baseline.py), its neurons alone, driving at every block, with taste going nowhere (the
 baseline for recruitment, RECRUITMENT.md); "adjusting-circuit" (brains/adjusting.py), each neuron adjusting its own
-excitability from taste (rung 0); "knowing-circuit" (brains/knowing.py), the minimal circuit plus a taste neuron that
+excitability from taste (rung 0); "knowing-circuit" (brains/knowing.py), the baseline circuit plus a taste neuron that
 learns what predicts pain but has no outputs (recruitment's starting animal); "recruiting-circuit"
 (brains/recruiting.py), the knowing circuit growing, in its life, the link that lets that knowledge act (rung 1);
 "healing-circuit" (brains/healing.py), the same done by a generic recruit that knows nothing of the circuit, choosing
@@ -34,30 +34,47 @@ which should then not happen.
 from __future__ import annotations
 
 import argparse
+import os
 import functools
 import time
 
 import numpy as np
 
-from brains.adjusting import AdjustingBrain
-from brains.sheet import SheetBrain
-from brains.knowing import KnowingBrain
-from brains.minimal import MinimalBrain
-from brains.healing import HealingBrain
-from brains.recruiting import RecruitingBrain
-from brains.designed import DesignedBrain
 from world import COLOURS, SENSE, THRUSTERS, WORLD, Body
 
-BRAINS = {"sheet": SheetBrain, "designed-circuit": DesignedBrain, "minimal-circuit": MinimalBrain,
-          "adjusting-circuit": AdjustingBrain, "knowing-circuit": KnowingBrain, "recruiting-circuit": RecruitingBrain,
-          "healing-circuit": functools.partial(HealingBrain, listen="all", sign="inh", judge="share", tire=0.05),
-          "healing-cascade": functools.partial(HealingBrain, menu="inputs", listen="all", sign="inh", cascade=True,
-                                               trigger="root", judge="share", tire=0.05, starve=20000.0)}
+
+class Brains(dict):
+    """The brains by name, each imported when first asked for: importing a brain compiles it (numba: about 15 s the
+    first time after its code changes, then from the cache), which only the brains in use should pay for, and the
+    live view only once its window can say so. A value is (module, class, keywords) until then."""
+
+    def __getitem__(self, name):
+        v = dict.__getitem__(self, name)
+        if isinstance(v, tuple):
+            import importlib
+            module, cls, kw = v
+            v = getattr(importlib.import_module(module), cls)
+            v = functools.partial(v, **kw) if kw else v
+            dict.__setitem__(self, name, v)
+        return v
+
+
+BRAINS = Brains({
+    "sheet": ("brains.sheet", "SheetBrain", {}), "designed-circuit": ("brains.designed", "DesignedBrain", {}),
+    "baseline-circuit": ("brains.baseline", "BaselineBrain", {}),
+    "adjusting-circuit": ("brains.adjusting", "AdjustingBrain", {}),
+    "knowing-circuit": ("brains.knowing", "KnowingBrain", {}),
+    "recruiting-circuit": ("brains.recruiting", "RecruitingBrain", {}),
+    "healing-circuit": ("brains.healing", "HealingBrain", dict(listen="all", sign="inh", judge="share", tire=0.05)),
+    "healing-cascade": ("brains.healing", "HealingBrain", dict(menu="inputs", listen="all", sign="inh", cascade=True,
+                                                               trigger="root", judge="share", tire=0.05,
+                                                               starve=20000.0))})
 FAST, SLOW = 10, 1  # watching: ticks per frame, slow while the brain wires itself and first drives the body
 SLOWEST = 1 / 32    # watching: down halves the speed to this, a tick every 32 frames (about 1 a second)
 SCHEMATIC = "media/designed_circuit.png"    # watching: the designed circuit (drawn by schematic.py)
 SETTLE = 200        # watching: ticks after the creature starts moving before speeding up again
-BLOCKS = 300        # watching: the height of the block view below (blocks.py)
+BLOCKS = 300        # watching: the height of the block view below (blocks.py), in the window as it opens
+TEXT = 108          # watching: the height of the lines and buttons between the panels and the block view
 LEARNED = 0.2       # measuring: a sensor has learned once its chance of firing both is this near right
 
 
@@ -161,9 +178,10 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
     """A life, live. Left, the brain's own panel, in greys. Right, the world: blocks lettered R (dark) and B (light),
     the creature a triangle with its point marked, and what its eyes see. It runs FAST ticks a frame, but SLOW while the
     brain wires itself and until a little after the creature starts moving; up and down take over the speed (down, past
-    a tick a frame, waits 2, 4 ... 32 frames between ticks, so single spikes can be followed). Buttons
-    below: switch brain (a new world, the same seed), and with the designed circuit, its schematic (the life waits
-    while it is open). With record, no window: every frame is saved there as a PNG, until the given tick. all_food:
+    a tick a frame, waits 2, 4 ... 32 frames between ticks, so single spikes can be followed). The window can be
+    resized (or maximised): the panels stay square, centred, in the proportions it opens with. Buttons
+    below: switch brain (a new world, the same seed), the rules the simulation enforces (i), and with the designed
+    circuit, its schematic (the life waits while either is open). With record, no window: every frame is saved there as a PNG, until the given tick. all_food:
     both colours are food."""
     import os
     import pathlib
@@ -173,18 +191,37 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
         os.makedirs(record, exist_ok=True)
     import pygame
     pygame.init()
-    side = wpx = 490
-    base = max(side, wpx)
     from blocks import BlockView, NodeView
-    screen = pygame.display.set_mode((side + 12 + wpx, base + 108 + BLOCKS))
+    OPEN = 490                                                      # the panels' side as the window opens
+    screen = pygame.display.set_mode((2 * OPEN + 12, OPEN + TEXT + BLOCKS), 0 if record else pygame.RESIZABLE)
+
+    def layout():
+        """The two square panels' side and the left one's x, from the window's present size."""
+        w, h = screen.get_size()
+        side = max(100, min((w - 12) // 2, (h - TEXT) * OPEN // (OPEN + BLOCKS)))
+        return side, max(0, (w - 2 * side - 12) // 2)
+    side, x0 = layout()
     view = None                                                     # the block view of a circuit brain
     pygame.display.set_caption("a brain learns which colour is food")
     font, small = pygame.font.SysFont(None, 22), pygame.font.SysFont(None, 18)
     per_frame, auto, paused, clock = FAST, True, False, pygame.time.Clock()   # auto: speed set by the stage
     owed = 0.0                                                      # ticks owed, below a tick a frame
     poison = None if all_food else COLOURS[seed % 2]
+
+    def wait_note():
+        """While a brain is first loaded: numba may be compiling it (only after its code has changed)."""
+        screen.fill((0, 0, 0))
+        w, h = screen.get_size()
+        for i, line in enumerate((f"Please wait while numba compiles the {brain} brain ...",
+                                  "(only after its code has changed: about 15 to 30 s; otherwise a moment)")):
+            text = (font if i == 0 else small).render(line, True, (255, 255, 255) if i == 0 else (170, 170, 170))
+            screen.blit(text, ((w - text.get_width()) // 2, h // 2 - 20 + 30 * i))
+        pygame.display.flip()
+        pygame.event.pump()
+
+    wait_note()
     life = Life(seed, poison, brain=brain)
-    to_px = lambda p: (side + 12 + int(p[0] / WORLD * wpx), int((WORLD - p[1]) / WORLD * wpx))
+    to_px = lambda p: (x0 + side + 12 + int(p[0] / WORLD * side), int((WORLD - p[1]) / WORLD * side))
     viewer = None                                                   # the schematic, while it is open
 
     def speed():
@@ -198,10 +235,10 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
         names = list(BRAINS)
         other = names[(names.index(brain) + 1) % len(names)]
         out, x = [], 6
-        for key, label in (("b", f"brain: {brain}   switch to {other}  (b)"),) + \
+        for key, label in (("b", f"brain: {brain}   switch to {other}  (b)"), ("i", "rules  (i)")) + \
                           ((("s", "schematic  (s)"),) if brain == "designed-circuit" else ()):
             w = font.size(label)[0] + 20
-            out.append((key, label, pygame.Rect(x, base + 74, w, 28)))
+            out.append((key, label, pygame.Rect(x, side + 74, w, 28)))
             x += w + 10
         return out
 
@@ -210,11 +247,16 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
         if key == "b":                                              # another brain, in a new world
             names = list(BRAINS)
             brain = names[(names.index(brain) + 1) % len(names)]
+            wait_note()
             life, auto, viewer = Life(seed, poison, brain=brain), True, None
         elif key == "s" and brain == "designed-circuit":
             viewer = SchematicViewer(pygame, screen, pathlib.Path(__file__).parent / SCHEMATIC, font)
+        elif key == "i":
+            viewer = RulesViewer(pygame, font, small)
 
     while True:
+        screen = pygame.display.get_surface()                       # (resized with the window)
+        side, x0 = layout()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -230,8 +272,8 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
                 for key, _, rect in buttons():
                     if rect.collidepoint(event.pos):
                         press(key)
-            if event.type == pygame.KEYDOWN and event.key in (pygame.K_b, pygame.K_s):
-                press("b" if event.key == pygame.K_b else "s")
+            if event.type == pygame.KEYDOWN and event.key in (pygame.K_b, pygame.K_s, pygame.K_i):
+                press({pygame.K_b: "b", pygame.K_s: "s", pygame.K_i: "i"}[event.key])
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     paused = not paused
@@ -246,6 +288,7 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
                     auto = True
                 elif event.key == pygame.K_d and hasattr(life.brain, "damage_at"):    # damage, at the mouse
                     mx, my = pygame.mouse.get_pos()
+                    mx -= x0
                     inside = 0 <= mx < side and 0 <= my < side
                     life.brain.damage_at(mx / side if inside else 0.5, my / side if inside else 0.5)
         if auto:
@@ -269,12 +312,13 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
         yuck = life.t - life.yuck < 60
         sensors = [next(f"{c} {life.drive(c):.2f}" for c in COLOURS if life.sensor[c] == k) for k in (0, 1)]
         motors = [next(f for f in THRUSTERS if life.motor[f] == k) for k in (0, 1)]
-        life.brain.draw(screen, side, font, sensors, motors, life.sensor[poison] if yuck else None)
-        pygame.draw.rect(screen, (25, 25, 25), (side + 12, 0, wpx, wpx))
+        life.brain.draw(screen.subsurface((x0, 0, side, side)), side, font, sensors, motors,
+                        life.sensor[poison] if yuck else None)
+        pygame.draw.rect(screen, (25, 25, 25), (x0 + side + 12, 0, side, side))
         body = life.body
         f, h = body.forward(), body.head()
         r = np.array([f[1], -f[0]])                                 # the creature's right
-        beam = pygame.Surface((wpx, wpx), pygame.SRCALPHA)
+        beam = pygame.Surface((side, side), pygame.SRCALPHA)
         across, far, _ = body.look()
         half_ray = EAT / RAYS                           # what the eyes see: each ray, fading as a block there would
         for o, length in zip(across, far):              # count less, up to the first block it meets
@@ -285,8 +329,8 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
                     for oy in (-WORLD, 0, WORLD):
                         q = np.array([ox, oy])
                         pts = [to_px(p + q + s * half_ray * r) for p, s in ((a, 1), (b, 1), (b, -1), (a, -1))]
-                        pygame.draw.polygon(beam, (255, 255, 255, alpha), [(x - side - 12, y) for x, y in pts])
-        screen.blit(beam, (side + 12, 0))
+                        pygame.draw.polygon(beam, (255, 255, 255, alpha), [(x - x0 - side - 12, y) for x, y in pts])
+        screen.blit(beam, (x0 + side + 12, 0))
         for (x, y), k in zip(body.xy, body.kind):
             c = COLOURS[k]
             px = to_px((x, y))
@@ -309,13 +353,14 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
                  "recent meals: " + " ".join(m[0].upper() for _, m in life.meals[-14:]),
                  f"{speed()}   r new life   d damage (at the mouse)   space pause   up/down{'' if auto else ' (r: auto)'}   Esc")
         for i, line in enumerate(lines):
-            screen.blit(font.render(line, True, (255, 255, 255)), (6, base + 6 + 22 * i))
+            screen.blit(font.render(line, True, (255, 255, 255)), (6, side + 6 + 22 * i))
         hover = pygame.mouse.get_pos()
         for _, label, rect in buttons():
             pygame.draw.rect(screen, (90, 90, 90) if rect.collidepoint(hover) else (50, 50, 50), rect, border_radius=4)
             pygame.draw.rect(screen, (200, 200, 200), rect, 1, border_radius=4)
             screen.blit(font.render(label, True, (255, 255, 255)), (rect.x + 10, rect.y + 6))
-        strip = pygame.Rect(0, base + 108, side + 12 + wpx, BLOCKS)     # below: the brain as blocks
+        strip = pygame.Rect(0, side + TEXT, screen.get_width(), max(0, screen.get_height() - side - TEXT))   # below:
+                                                                                        # the brain as blocks
         if hasattr(life.brain, "circuit"):
             if view is None or view.brain is not life.brain:
                 view = (NodeView if getattr(life.brain, "level0", False) else BlockView)(life.brain)
@@ -323,7 +368,7 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
         else:
             pygame.draw.rect(screen, (18, 18, 18), strip)
             screen.blit(font.render("block view: for the circuit brains (b to switch)", True, (120, 120, 120)),
-                        (8, base + 112))
+                        (8, side + TEXT + 4))
         pygame.display.flip()
         if record:
             pygame.image.save(screen, os.path.join(record, f"{life.t:06d}.png"))
@@ -332,6 +377,233 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
                 return
             continue
         clock.tick(30)
+
+
+def rules() -> list:
+    """Watching: the rules the simulation enforces, as (depth, text): 0 a heading, 1 a point, 2 a point under it. The
+    numbers are read from the code, so the list can't drift from what is enforced."""
+    import mixed_feedback as mf
+    import sheet
+    import world
+    from brains import circuit
+    from minimal import spec
+    noisy = f"{mf.NOISY[0]:g} to {mf.NOISY[1]:g}"
+    return [
+        (0, "The body and the brain"),
+        (1, "A brain meets the body only through two sensors, two motors and one taste: nothing else passes either way."),
+        (1, f"Each eye fires at random moments (a Poisson process), up to {world.SENSE:g} times a tick for its colour"
+            f" seen close up, half as often at {world.REACH:g} units, nothing beyond {world.RANGE:g}; it says how much"
+            " of its colour is ahead, never where."),
+        (1, "The taste is +1 (food) or -1 (poison) for one tick when a block touches the mouth, else 0, and never says"
+            " which sensor it is about."),
+        (1, "Which colour feeds which sensor, and which motor drives which thruster, is drawn at random for each life:"
+            " no brain can be built knowing it."),
+        (1, "A thruster fires once for each spike of its motor; a motor spikes when its voltage rises through"
+            f" {mf.SPIKE:g} V, and can spike again only once it has fallen below {mf.RESET:g} V."),
+        (1, "The body must never become part of the solution: it does no job a brain could do (credit, timing,"
+            " filtering, choosing what learns)."),
+        (0, "The circuit simulator (every circuit brain)"),
+        (1, "Everything that affects behaviour is explicit circuit: nodes (capacitors, with any leak) and elements (a"
+            " current from a node's voltage, possibly filtered and gated); no program beside it."),
+        (1, f"Continuous time, integrated in steps of {mf.DT:g} tick; the body's pulses arrive anywhere within a tick,"
+            " never on tick boundaries, so nothing can lock to the clock."),
+        (1, f"Shot noise on every device's current (variance {mf.SHOT:g} x its current per tick), summed gross, not"
+            " net: two currents that cancel still flicker."),
+        (1, f"Membrane noise on every node in proportion to its capacitance (variance {mf.MEMBRANE:g} x C per tick); none on a"
+            " memory node, whose only noise is its writes'."),
+        (1, f"Mismatch: every part off by about {mf.MISMATCH:.0%} of itself at birth, drawn once per circuit."),
+        (1, f"The noise can be scaled only within {noisy} of its usual level, never turned off or dodged."),
+        (1, "A result must hold at a finer step and on fresh seeds."),
+        (0, "The minimal circuit search: what a circuit may be"),
+        (1, f"Within the supply: every node within +-{mf.RAIL:g} V; a clamp inside the rails is a part."),
+        (1, f"Not faster than the step: nothing may move a node more than {spec.SLEW:g} V per circuit tick, and a"
+            f" device fed back to itself acts no faster than {spec.LOOP:g} per circuit tick."),
+        (1, "An illegal circuit can't be built or lived (minimal/spec.py, check)."),
+        (1, "Sepulchre's rules, when a circuit declares them: every node leaks except memory nodes, no clamps; gates"
+            " and memory nodes (floating gates) allowed, as Sepulchre is silent on learning and storage."),
+        (0, "Judging: seeds and lives"),
+        (1, "A seed is a world: where the blocks are, where the creature starts, which colour is poison, the circuit's"
+            " noise and mismatch. The same seed gives the same life."),
+        (1, "Each seed is lived twice, red then blue as poison, so a circuit that ignores taste scores below 0."),
+        (1, "Searches choose on seeds of their own, fresh each generation: the polish from 10,000, pruning"
+            " 15,000-15,031, the open search from 20,000."),
+        (1, "Held out: seeds 100-163 judge what a search produced and are never used to choose."),
+        (1, "Headline claims are confirmed once on seeds 500-563, never used before, then retired."),
+        (1, "Judged at the usual noise; an experiment may judge across half, usual and double, the worst level"
+            " counting."),
+        (0, "Judging: the job and the score"),
+        (1, f"The job: at least {spec.JOB[0]:g} food per 1,000 ticks; food:poison at least {spec.JOB[1]:g} over the"
+            f" last third of a 10,000-tick life; at most {spec.JOB[2]:.0%} of lives stranded (no food in their last"
+            " third)."),
+        (1, f"The score, per 1,000 ticks: food, less {spec.COST:g} x poison, less {spec.COST:g} x the food each third"
+            f" of each life falls short of {spec.NEED:g}, less moving and thinking."),
+        (2, f"Moving: a thruster firing costs {spec.THRUST:g} of a meal."),
+        (2, f"Thinking: {spec.ENERGY:g} of a meal per unit of the circuit's power per 1,000 ticks (about a hundredth"
+            " of moving)."),
+        (2, f"Resting: the {spec.NEED:g} meal per 1,000 ticks every creature needs, counted in efficiency."),
+        (0, "Judging: what is measured"),
+        (1, "Parts: capacitors, resistors, diodes and transistors."),
+        (1, f"Area, by analogy with analogue chips, in unit transistors: an element {spec.AREA['element']}, a gate"
+            f" {spec.AREA['gate']} more, a leak {spec.AREA['leak']}, a capacitor {spec.AREA['capacitor']} per unit;"
+            " shown, not ranked on."),
+        (1, "Efficiency: meals eaten per meal spent (resting, moving, thinking). Thrift: food per 1,000 firings."
+            " Speed: food per 1,000 ticks."),
+        (1, "Simplicity and efficiency are kept apart, never traded."),
+        (1, "Confidence: every measure with its 95% interval; two designs compared paired, on the same seeds, and"
+            " one is above the other only if the interval of the difference excludes 0. Otherwise: tied."),
+        (0, "The sheet brain"),
+        (1, "Identical cells running one local rule; a cell sees only its own numbers, its neighbours' mean of each"
+            " shared number, and how many neighbours it has."),
+        (1, f"Shared numbers are clipped to -1..1 and shown with noise {sheet.SHOW:g}; kept numbers get noise"
+            f" {sheet.NOISE:g} at every update; cells update at random, never all at once."),
+        (1, "No hidden size, no magic knowledge: a path finds its target by a signal the target itself sends."),
+    ]
+
+
+def rules_text() -> str:
+    """The rules (rules()) as plain text, Markdown-style, to copy or keep (python creature.py --rules)."""
+    out = ["# What the simulation enforces"]
+    for depth, text in rules():
+        out.append(f"\n## {text}\n" if depth == 0 else ("- " if depth == 1 else "  - ") + text)
+    return "\n".join(out) + "\n"
+
+
+def _wsl() -> bool:
+    import platform
+    return "microsoft" in platform.release().lower()
+
+
+def copy_text(pygame, text: str) -> bool:
+    """Put text on the clipboard: Windows' (clip.exe) under WSL, else SDL's; True if it got there."""
+    import subprocess
+    if _wsl():
+        try:
+            subprocess.run(["clip.exe"], input=text.encode("utf-16"), check=True, timeout=10)
+            return True
+        except (OSError, subprocess.SubprocessError):
+            pass
+    try:
+        pygame.scrap.init()
+        pygame.scrap.put(pygame.SCRAP_TEXT, text.encode())
+        return True
+    except Exception:                                  # (no clipboard this pygame can reach)
+        return False
+
+
+def open_text(text: str, name: str = "nca-learn-rules.txt") -> str:
+    """Write text to a file and open it in the system's viewer (Notepad under WSL), where any of it can be selected;
+    returns the file's path."""
+    import subprocess
+    import tempfile
+    path = os.path.join(tempfile.gettempdir(), name)
+    with open(path, "w") as f:
+        f.write(text)
+    try:
+        if _wsl():
+            win = subprocess.run(["wslpath", "-w", path], capture_output=True, text=True, timeout=10).stdout.strip()
+            subprocess.Popen(["explorer.exe", win])
+        else:
+            subprocess.Popen(["xdg-open", path])
+    except OSError:
+        pass
+    return path
+
+
+class RulesViewer:
+    """Watching: the rules the simulation enforces (rules()), over the whole window. The wheel or up and down scroll;
+    copy all puts them on the clipboard as text, open as text opens them in a text viewer; Esc, i or close shuts it."""
+    BAR = 30
+
+    def __init__(self, pygame, font, small):
+        self.pg, self.font, self.small = pygame, font, small
+        self.items, self.top = rules(), 0
+        self.said, self.said_at = "", 0.0              # what the last button did, shown for a few seconds
+
+    @property
+    def close(self):
+        return self.pg.Rect(self.pg.display.get_surface().get_width() - 110, 2, 104, self.BAR - 4)
+
+    @property
+    def copy(self):
+        return self.pg.Rect(self.close.x - 110, 2, 100, self.BAR - 4)
+
+    @property
+    def opened(self):
+        return self.pg.Rect(self.copy.x - 130, 2, 120, self.BAR - 4)
+
+    def handle(self, event) -> bool:
+        """Takes an event; False once it is closed."""
+        pg = self.pg
+        if event.type == pg.KEYDOWN and event.key in (pg.K_ESCAPE, pg.K_i):
+            return False
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1 and self.close.collidepoint(event.pos):
+            return False
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1 and self.copy.collidepoint(event.pos):
+            ok = copy_text(pg, rules_text())
+            self.said = "copied to the clipboard" if ok else "no clipboard reachable: try open as text"
+            self.said_at = time.time()
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1 and self.opened.collidepoint(event.pos):
+            self.said, self.said_at = f"opened {open_text(rules_text())}", time.time()
+        if event.type == pg.MOUSEWHEEL:
+            self.top = max(0, self.top - 3 * event.y)
+        elif event.type == pg.KEYDOWN and event.key in (pg.K_UP, pg.K_DOWN, pg.K_PAGEUP, pg.K_PAGEDOWN):
+            step = {pg.K_UP: -1, pg.K_DOWN: 1, pg.K_PAGEUP: -15, pg.K_PAGEDOWN: 15}[event.key]
+            self.top = max(0, self.top + step)
+        return True
+
+    def lines(self, width):
+        """The rules wrapped to the width: (depth, first line of its item, text)."""
+        out = []
+        for depth, text in self.items:
+            f = self.font if depth == 0 else self.small
+            indent = (0, 22, 44)[depth]
+            words, line = text.split(), ""
+            first = True
+            for w in words:
+                if line and f.size(line + " " + w)[0] > width - indent - 40:
+                    out.append((depth, first, line))
+                    line, first = w, False
+                else:
+                    line = f"{line} {w}" if line else w
+            out.append((depth, first, line))
+        return out
+
+    def draw(self) -> None:
+        pg = self.pg
+        screen = pg.display.get_surface()
+        w, h = screen.get_size()
+        screen.fill((24, 24, 24))
+        lines = self.lines(w)
+        self.top = min(self.top, max(0, len(lines) - 5))
+        y = self.BAR + 10
+        for depth, first, text in lines[self.top:]:
+            if y > h - 20:
+                break
+            if depth == 0:
+                y += 8
+                screen.blit(self.font.render(text, True, (255, 255, 255)), (16, y))
+                pg.draw.line(screen, (120, 120, 120), (16, y + 21), (w - 16, y + 21), 1)    # headings underlined
+                y += 28
+                continue
+            x = 16 + (22, 44)[depth - 1]
+            if first:
+                mark = (x - 12, y + 7)
+                if depth == 1:
+                    pg.draw.circle(screen, (220, 220, 220), mark, 3)             # a point: a dot
+                else:
+                    pg.draw.line(screen, (220, 220, 220), (mark[0] - 3, mark[1]), (mark[0] + 3, mark[1]), 2)   # under it: a dash
+            screen.blit(self.small.render(text, True, (230, 230, 230)), (x, y))
+            y += 19
+        pg.draw.rect(screen, (40, 40, 40), (0, 0, w, self.BAR))
+        title = "what the simulation enforces   wheel or up/down: scroll"
+        if self.said and time.time() - self.said_at < 6:
+            title = self.said
+        screen.blit(self.font.render(title, True, (255, 255, 255)), (8, 7))
+        for rect, label in ((self.opened, "open as text"), (self.copy, "copy all"), (self.close, "close (Esc)")):
+            hover = rect.collidepoint(pg.mouse.get_pos())
+            pg.draw.rect(screen, (90, 90, 90) if hover else (60, 60, 60), rect, border_radius=4)
+            pg.draw.rect(screen, (200, 200, 200), rect, 1, border_radius=4)
+            screen.blit(self.font.render(label, True, (255, 255, 255)), (rect.x + 10, rect.y + 5))
 
 
 class SchematicViewer:
@@ -346,10 +618,14 @@ class SchematicViewer:
         self.fit = min(w / iw, (h - self.BAR) / ih)
         self.zoom, self.ox, self.oy = self.fit, 0.0, 0.0            # screen pixels per image pixel; image at top left
         self.drag = None
-        self.close = pygame.Rect(w - 110, 2, 104, self.BAR - 4)
         self._clamp()
 
+    @property
+    def close(self):
+        return self.pg.Rect(self.screen.get_width() - 110, 2, 104, self.BAR - 4)
+
     def _clamp(self):
+        self.screen = self.pg.display.get_surface()                 # (resized with the window)
         w, h = self.screen.get_size()
         iw, ih = self.image.get_size()
         vw, vh = w / self.zoom, (h - self.BAR) / self.zoom          # the view, in image pixels
@@ -381,6 +657,7 @@ class SchematicViewer:
         return True
 
     def draw(self) -> None:
+        self.screen = self.pg.display.get_surface()                 # (resized with the window)
         pg, screen = self.pg, self.screen
         w, h = screen.get_size()
         iw, ih = self.image.get_size()
@@ -414,7 +691,11 @@ if __name__ == "__main__":
     parser.add_argument("--brains", nargs="+", default=None,
                         help="the brains to measure")
     parser.add_argument("--all-food", action="store_true", help="both colours are food (nothing to learn)")
+    parser.add_argument("--rules", action="store_true", help="print the rules the simulation enforces, as text")
     args = parser.parse_args()
+    if args.rules:
+        print(rules_text(), end="")
+        raise SystemExit
     for path in args.spec:                                  # a minimal-search circuit, as a brain like any other
         import json
         import os

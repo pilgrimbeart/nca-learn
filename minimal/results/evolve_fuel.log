@@ -1,0 +1,61 @@
+gen   0  best +0.34 (28 parts, efficiency 9.4)  front (score > 0): 22p/11.0e:+0.27 26p/9.0e:+0.30 26p/8.9e:+0.31 28p/9.4e:+0.34
+gen   1  best +0.31 (28 parts, efficiency 9.6)  front (score > 0): 22p/7.2e:+0.02 26p/8.3e:+0.17 28p/9.6e:+0.31
+gen   2  best +0.38 (28 parts, efficiency 9.4)  front (score > 0): 22p/8.6e:+0.35 24p/8.7e:+0.34 26p/9.2e:+0.34 28p/9.4e:+0.38 28p/10.6e:+0.04
+gen   3  best +0.47 (26 parts, efficiency 9.7)  front (score > 0): 22p/8.0e:+0.14 24p/8.3e:+0.39 26p/9.7e:+0.47
+gen   4  best +0.19 (28 parts, efficiency 10.2)  front (score > 0): 24p/8.3e:+0.11 28p/10.2e:+0.19 28p/10.4e:+0.13
+gen   5  best +0.40 (28 parts, efficiency 8.2)  front (score > 0): 26p/9.1e:+0.05 28p/8.2e:+0.40 28p/10.2e:+0.05 28p/8.6e:+0.24 33p/9.5e:+0.16 39p/8.7e:+0.25
+gen   6  best +0.50 (26 parts, efficiency 10.3)  front (score > 0): 22p/7.9e:+0.01 26p/10.6e:+0.43 26p/12.5e:+0.32 26p/10.3e:+0.50 33p/11.1e:+0.46
+gen   7  best +0.48 (24 parts, efficiency 8.3)  front (score > 0): 22p/7.5e:+0.09 22p/10.6e:+0.05 24p/8.3e:+0.48 33p/9.0e:+0.19
+gen   8  best +0.56 (26 parts, efficiency 10.2)  front (score > 0): 22p/9.8e:+0.13 22p/7.9e:+0.26 24p/8.0e:+0.33 26p/10.2e:+0.56 41p/11.1e:+0.55
+gen   9  best +0.30 (33 parts, efficiency 9.7)  front (score > 0): 26p/10.9e:+0.26 33p/9.7e:+0.30
+gen  10  best +0.33 (33 parts, efficiency 10.1)  front (score > 0): 22p/10.5e:+0.19 33p/10.1e:+0.33
+gen  11  best +0.51 (26 parts, efficiency 9.9)  front (score > 0): 22p/9.9e:+0.06 22p/8.2e:+0.29 24p/9.6e:+0.40 24p/8.7e:+0.46 26p/9.9e:+0.51 33p/10.5e:+0.30
+gen  12  best +0.45 (26 parts, efficiency 9.6)  front (score > 0): 21p/8.8e:+0.01 26p/9.6e:+0.45 33p/9.8e:+0.11 40p/9.9e:+0.35
+gen  13  best +0.74 (33 parts, efficiency 10.8)  front (score > 0): 22p/10.7e:+0.20 24p/9.8e:+0.70 33p/10.8e:+0.74
+gen  14  best +0.35 (38 parts, efficiency 9.1)  front (score > 0): 22p/10.0e:+0.09 26p/9.9e:+0.28 33p/9.8e:+0.34 35p/10.3e:+0.19 38p/9.1e:+0.35
+gen  15  best +0.40 (33 parts, efficiency 10.3)  front (score > 0): 22p/10.4e:+0.30 33p/10.3e:+0.40 38p/11.0e:+0.36 40p/11.4e:+0.24
+gen  16  best +0.33 (26 parts, efficiency 9.0)  front (score > 0): 22p/10.0e:+0.29 26p/9.0e:+0.33 38p/10.1e:+0.17 40p/10.3e:+0.29
+gen  17  best +0.51 (48 parts, efficiency 11.4)  front (score > 0): 22p/10.2e:+0.14 33p/10.0e:+0.29 34p/11.4e:+0.12 38p/10.8e:+0.38 48p/11.4e:+0.51
+gen  18  best +0.40 (38 parts, efficiency 10.7)  front (score > 0): 26p/10.4e:+0.30 38p/10.7e:+0.40 48p/10.9e:+0.21
+gen  19  best +0.21 (48 parts, efficiency 10.2)  front (score > 0): 24p/10.0e:+0.18 40p/10.2e:+0.02 48p/10.2e:+0.21
+gen  20  best +0.23 (26 parts, efficiency 9.6)  front (score > 0): 22p/10.6e:+0.07 26p/9.6e:+0.23
+gen  21  best +0.56 (26 parts, efficiency 10.8)  front (score > 0): 22p/10.0e:+0.42 26p/10.8e:+0.56
+gen  22  best +0.20 (26 parts, efficiency 9.8)  front (score > 0): 26p/9.8e:+0.20
+gen  23  best +0.27 (36 parts, efficiency 9.5)  front (score > 0): 22p/10.9e:+0.20 26p/10.2e:+0.23 36p/9.5e:+0.27
+gen  24  best +0.40 (22 parts, efficiency 10.3)  front (score > 0): 22p/10.3e:+0.40
+gen  25  best +0.50 (26 parts, efficiency 9.1)  front (score > 0): 22p/10.4e:+0.18 24p/10.6e:+0.28 26p/9.1e:+0.50 36p/10.2e:+0.42
+gen  26  best +0.39 (48 parts, efficiency 9.1)  front (score > 0): 26p/8.5e:+0.03 36p/8.9e:+0.38 48p/9.1e:+0.39
+gen  27  best +0.42 (24 parts, efficiency 10.3)  front (score > 0): 22p/10.3e:+0.36 24p/10.3e:+0.42 48p/10.5e:+0.26
+gen  28  best +0.09 (48 parts, efficiency 9.3)  front (score > 0): 26p/8.2e:+0.08 36p/9.4e:+0.04 48p/9.3e:+0.09
+gen  29  best +0.32 (48 parts, efficiency 10.3)  front (score > 0): 36p/9.4e:+0.08 48p/10.3e:+0.32
+gen  30  best +0.15 (35 parts, efficiency 9.4)  front (score > 0): 22p/9.9e:+0.12 35p/9.4e:+0.15 50p/10.1e:+0.05 50p/9.8e:+0.12
+gen  31  best +0.17 (50 parts, efficiency 10.3)  front (score > 0): 30p/13.9e:+0.07 35p/9.3e:+0.10 50p/10.3e:+0.17
+gen  32  best +0.29 (50 parts, efficiency 9.0)  front (score > 0): 22p/9.7e:+0.10 30p/10.1e:+0.00 35p/8.8e:+0.15 50p/9.9e:+0.02 50p/9.0e:+0.29
+gen  33  best +0.59 (35 parts, efficiency 10.5)  front (score > 0): 22p/10.8e:+0.01 24p/9.3e:+0.11 25p/9.9e:+0.02 30p/11.4e:+0.01 35p/10.5e:+0.59
+gen  34  best +0.35 (37 parts, efficiency 10.3)  front (score > 0): 22p/11.1e:+0.20 37p/10.3e:+0.35
+gen  35  best +0.26 (31 parts, efficiency 10.6)  front (score > 0): 31p/10.6e:+0.26
+gen  36  best +0.22 (50 parts, efficiency 8.6)  front (score > 0): 50p/8.6e:+0.22
+gen  37  best +0.23 (32 parts, efficiency 11.2)  front (score > 0): 22p/9.7e:+0.12 30p/11.4e:+0.00 30p/11.1e:+0.22 32p/11.2e:+0.23 44p/11.7e:+0.04
+gen  38  best +0.27 (24 parts, efficiency 9.1)  front (score > 0): 22p/10.1e:+0.06 23p/10.9e:+0.02 23p/8.9e:+0.14 24p/9.1e:+0.27 25p/11.3e:+0.08 33p/12.0e:+0.16
+gen  39  best +0.44 (22 parts, efficiency 11.6)  front (score > 0): 22p/11.6e:+0.44 33p/12.3e:+0.17 55p/11.8e:+0.22
+gen  40  best -0.07 (25 parts, efficiency 11.0)  front (score > 0): 
+gen  41  best +0.49 (22 parts, efficiency 11.3)  front (score > 0): 22p/11.3e:+0.49
+gen  42  best +0.27 (22 parts, efficiency 11.2)  front (score > 0): 21p/9.0e:+0.06 22p/11.2e:+0.27
+gen  43  best +0.33 (22 parts, efficiency 10.6)  front (score > 0): 22p/10.6e:+0.33
+gen  44  best +0.04 (30 parts, efficiency 11.8)  front (score > 0): 30p/11.8e:+0.04
+gen  45  best +0.21 (22 parts, efficiency 8.8)  front (score > 0): 22p/8.8e:+0.21 22p/10.1e:+0.15 25p/9.5e:+0.16
+gen  46  best +0.11 (30 parts, efficiency 9.0)  front (score > 0): 25p/9.8e:+0.10 27p/10.6e:+0.10 30p/9.0e:+0.11
+gen  47  best +0.17 (22 parts, efficiency 10.5)  front (score > 0): 22p/10.5e:+0.17 22p/10.8e:+0.04
+gen  48  best +0.40 (22 parts, efficiency 10.3)  front (score > 0): 22p/10.3e:+0.40 27p/10.6e:+0.06
+gen  49  best +0.26 (22 parts, efficiency 10.1)  front (score > 0): 22p/10.1e:+0.26
+gen  50  best +0.19 (22 parts, efficiency 10.7)  front (score > 0): 22p/10.7e:+0.19
+gen  51  best +0.24 (22 parts, efficiency 10.0)  front (score > 0): 22p/10.0e:+0.24
+gen  52  best +0.25 (22 parts, efficiency 10.1)  front (score > 0): 22p/10.1e:+0.25
+gen  53  best +0.24 (22 parts, efficiency 10.4)  front (score > 0): 22p/10.4e:+0.24
+gen  54  best +0.27 (22 parts, efficiency 8.6)  front (score > 0): 22p/8.6e:+0.27 22p/9.3e:+0.08
+gen  55  best +0.31 (22 parts, efficiency 10.3)  front (score > 0): 22p/10.3e:+0.31
+gen  56  best +0.56 (22 parts, efficiency 10.9)  front (score > 0): 22p/10.9e:+0.56
+gen  57  best +0.05 (22 parts, efficiency 9.3)  front (score > 0): 22p/9.3e:+0.05
+gen  58  best +0.51 (22 parts, efficiency 9.6)  front (score > 0): 22p/9.6e:+0.51
+gen  59  best +0.37 (22 parts, efficiency 10.0)  front (score > 0): 22p/10.0e:+0.37
+(6477 s)

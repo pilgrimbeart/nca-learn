@@ -28,13 +28,13 @@ ATTACH = 3.0        # reads in a row before a cell with no residue takes one
 REST = 6.0          # updates a cell that let go waits before taking a residue again
 
 
-@njit
+@njit(cache=True)
 def ups(mean, count):
     """How many neighbours show +1, from the mean of a flag."""
     return min(max(np.round(count * (mean + 1.0) / 2.0), 0.0), count)
 
 
-@njit
+@njit(cache=True)
 def residues(mean, m, count):
     """Which residues the neighbours show, from the means of a field's K flags starting at m."""
     seen = np.zeros(K, dtype=np.bool_)
@@ -43,7 +43,7 @@ def residues(mean, m, count):
     return seen
 
 
-@njit
+@njit(cache=True)
 def lowest(seen):
     """The lowest residue the neighbours show (the one after the gap), or NONE if none, or -2 if it doesn't fit."""
     n = 0
@@ -62,7 +62,7 @@ def lowest(seen):
     return low
 
 
-@njit
+@njit(cache=True)
 def field(me, mean, count, out, v, m, source):
     """One field. Kept numbers at v: residue, the value worked out last time, how many times in a row, rest. Shared
     flags: their means at m, their kept copies at v + 4 .. v + 3 + K (in out)."""
@@ -101,7 +101,7 @@ PATH, PULSE, TIP = 2.0, 0.4, 1.2   # what a path cell adds to each of its patter
                                     # two path cells in a class, every mix sums at least 0.4 apart
 
 
-@njit
+@njit(cache=True)
 def show_path(r, kind, out, v):
     """A path cell at residue r shows its pattern at the strength for its kind (PATH, PULSE or TIP); 0: not path."""
     for j in range(3):
@@ -119,7 +119,7 @@ def _inverses():
 INVERSES = _inverses()
 
 
-@njit
+@njit(cache=True)
 def path_near(mean, m, count, r):
     """What path cells my neighbours one step nearer, level and one step farther show, in units (sums of PATH, PULSE
     and TIP), from the sums of the three path flags at m. r: my residue."""
@@ -131,7 +131,7 @@ def path_near(mean, m, count, r):
     return out
 
 
-@njit
+@njit(cache=True)
 def kinds(u):
     """(tips, pulses, paths) whose strengths sum to u: at most two cells, at most one of them a tip."""
     best, bt, bq, bp = 1e9, 0.0, 0.0, 0.0
