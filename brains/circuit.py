@@ -1,4 +1,4 @@
-"""What every circuit brain shares (the designed, baseline, adjusting, knowing and recruiting circuits): a
+"""What every circuit brain shares (README: The circuit brains; the minimal search's circuits too, minimal/spec.py): a
 mixed-feedback circuit (mixed_feedback.py) with two sensor and two motor neurons and a taste node, run SPEED circuit
 ticks to each tick of the world; the body gives pulses of current to the sensors and the taste node, each at a moment
 of its own within the tick, and counts the motors' spikes. Each brain wires its own circuit between them (build).

@@ -1,7 +1,7 @@
 """A whole life in one compiled call, for searching for the minimal circuit (minimal/NOTEBOOK.md): the same world, body
 and circuit as creature.Life with a circuit brain, tick for tick, from the same random generators, so a life here is
-the same life (test: python -m minimal.fastlife). About 20x faster than Life, which spends most of its time in Python
-between compiled calls. Only for brains whose noise comes from one stream (STREAMS False). The circuit is stepped by
+the same life (test: python -m minimal.fastlife). About 2-3x faster than Life (about 0.7 s a life of 10,000 ticks), which spends
+its time between compiled calls in Python. Only for brains whose noise comes from one stream (STREAMS False). The circuit is stepped by
 mixed_feedback's own step, noise, pulses and mismatch included, so nothing here can leave them out.
 """
 

@@ -3,7 +3,7 @@ lost afterwards, how far each ends up from where it belongs (in cells: M1 and M2
 the middle of the organiser's y = -1 edge, S1 and S2 likewise on the y = 1 edge), and how near x and y are to straight
 lines.
 
-    python organs_test.py [LIVES] [SIZE] [TICKS]
+    python measure_organs.py [LIVES] [SIZE] [TICKS]
 """
 import sys
 import time

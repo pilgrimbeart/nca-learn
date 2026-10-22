@@ -27,7 +27,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from minimal.spec import does_job, efficiency, gain, interface, net, parts, remove_node, score, tidy  # noqa: E402
+from minimal.spec import does_job, efficiency, gain, interface, net, parts, remove_node, score, tidy, worst  # noqa: E402
 
 RESULTS = os.path.join(os.path.dirname(__file__), "results")
 BOUNDS = {"C": (0.05, 100.0), "R": (0.1, 1000.0), "gain": 20.0, "slope": (0.5, 30.0), "tau": (0.5, 200.0),
@@ -174,7 +174,7 @@ def evolve(gens=200, pop=48, seed=0, seeds=8, ticks=10000, name="evolve0", log=p
         lives = score(everyone, seeds=range(20000 + seed * 100000 + g * seeds,
                                             20000 + seed * 100000 + (g + 1) * seeds),
                       ticks=ticks)
-        objs = [(does_job(l), round(net(l), 3), parts(s)["total"], round(efficiency(l), 2), round(gain(l), 2))
+        objs = [(does_job(l), round(net(l), 3), parts(s)["total"], round(worst(l, efficiency), 2), round(worst(l, gain), 2))
                 for s, l in zip(everyone, lives)]
         for (job, sc, pt, ef, gn), s in zip(objs, everyone):
             if pt not in archive or sc > archive[pt][0]:

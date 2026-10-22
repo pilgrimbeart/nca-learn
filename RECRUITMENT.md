@@ -7,6 +7,12 @@ exploring it with mixed-feedback circuits (`MIXED_FEEDBACK.md`). Written from a 
 mostly from abstracts and summaries; check details against the papers before relying on them. References are
 numbered at the end.
 
+**Status (2026-10-22).** Rungs 0 and 1 were built and measured (below; the record in `experiments/NOTEBOOK.md`, the
+lessons in `LESSONS.md`), all under the earlier noise. Under noise and mismatch as biology makes them (2026-10-20)
+every hand-built circuit brain falls to about 1 food for each poison, because its excitable neurons don't survive 10%
+mismatch; the recruitment machinery itself does. So the next step for recruitment is a neuron that survives mismatch,
+then re-running the ladder.
+
 ## Three timescales, and which may have a god
 
 | | who decides | must be local? |
@@ -70,29 +76,19 @@ brain with no learning machinery approaches every block; to do better it needs u
 active and the taste was bad", and gate that sensor's drive: conjunction detectors, which the designed circuit has
 built in and a recruiting circuit must build in its life. The control: all-food lives, where nothing should be
 recruited.
-1. The baseline: the baseline circuit (`brains/baseline.py`), its sensors driving both motors, taste going nowhere,
-   measured in poison and all-food lives (done: `LESSONS.md`).
-2. The trigger, with nothing placed for the job, and rung 0, all of it circuit (done: `LESSONS.md`): every neuron
-   adjusts its own excitability through a memory node (`brains/adjusting.py`), watched from outside
-   (`python recruit_test.py`). Rung 0 cuts poison by a third; the poison sensor ends frustrated (its decisions settled,
-   what it receives still predicting pain, the pain going on), the food sensor and every all-food life calm.
-   Everything that affects behaviour is explicit circuit; the only exception is growth, sudden and locally triggered.
-3. The starting animal, changed (the user): one that may *know* but can't *act*. The baseline circuit plus a taste
-   neuron that learns what predicts pain (plastic synapses from the sensors) but has no outputs (`brains/knowing.py`;
-   done: `LESSONS.md`). It learns the association and anticipates poison, its behaviour exactly the baseline circuit's;
-   frustrated in poison lives, calm in all-food lives.
-4. Rung 1, done (`brains/recruiting.py`; `experiments/NOTEBOOK.md`, E0-E7): frustration at the taste neuron, help
-   routed back along its learned input synapses, competing sprouts, and the growth primitive grow a bridge on the
-   poison sensor's pathway, the oracle's structure in 61 of 64 held-out lives, as good as an oracle placing it at the
-   same moment, and nothing in all-food lives. Next: a neuron robust to mismatch (the neuron, not the recruitment
-   machinery, is fragile); growth from other starting animals; de-recruitment; rung 2 (recruiting a feature).
-5. Rung 1 again, by a generic recruit that knows nothing (`brains/healing.py`; `experiments/NOTEBOOK.md`, H1-H10;
-   `experiments/LEADERBOARD.md`; done: `LESSONS.md`). The user's healing response: a frustrated unit grows a recruit
-   attached to it and its one-edge neighbours, with a menu (inhibit, excite, turn down a synapse) and a local rule for
-   choosing; a recruit that fails is frustrated itself, and the next reaches one edge further. Win-stay lose-shift,
-   judged by the share of bad tastes after an option, finds the bridge's function in every life and matches the
-   guided bridge (better in the last third); the cascade finds the cure one edge further in about 60% of lives. Next:
-   cures that cost meals (freezing; neuron-level veers) and credit leaking between waves; the recruit's power.
+1. The baseline circuit (`brains/baseline.py`): its sensors drive both motors, taste goes nowhere. Done.
+2. Rung 0, the trigger with nothing placed for the job: every neuron adjusts its own excitability through a memory
+   node (`brains/adjusting.py`). Done: it cuts poison by a third, and the poison sensor ends frustrated, by local
+   signals alone.
+3. The starting animal, changed (the user): one that may *know* but can't *act*, the baseline circuit plus a taste
+   neuron that learns what predicts pain but has no outputs (`brains/knowing.py`). Done.
+4. Rung 1, guided (`brains/recruiting.py`; E0-E7): frustration at the taste neuron grows a bridge on the poison
+   sensor's pathway, as good as an oracle placing it at the same moment, and nothing in all-food lives. Done.
+5. Rung 1 by a generic recruit that knows nothing (`brains/healing.py`; H1-H11, `experiments/LEADERBOARD.md`): the
+   user's healing response, a recruit attached to the frustrated unit and its one-edge neighbours, with a menu and
+   win-stay lose-shift; a recruit that fails is frustrated itself, and the next reaches one edge further. Done: it
+   matches the guided bridge, and the cascade finds the cure one edge further in about 60% of lives. Open: cures that
+   cost meals, credit leaking between waves, de-recruitment, rung 2 (recruiting a feature).
 6. Future (the user's idea, 2026-10-19; not built): a recruit that *walks*. In a circuit where the cure is several
    neurons from the pain, one recruit moves its attachments outward along the network until it cures the pain or
    its wiring costs too much, then emits frustration so another continues. Wire length as hop count, kept locally as
@@ -109,12 +105,9 @@ recruited.
 Honesty test throughout: spare units generic and identical, one rule that knows nothing of roles. Dormant
 pre-designed circuits switched on when needed would be design smuggled in.
 
-**Phase A: the minimal learner (evolution may be the god).** Graph mode, the level-0 vocabulary of
-`mixed_feedback.py`, with the bounds and defences in `LESSONS.md`. Search by increasing size for tiny circuits, and
-keep a MAP-Elites archive [27] with size and energy as axes, so the whole trade-off curve is visible; lexicographic
-parsimony [28] breaks ties in favour of the smaller. Energy is the brain's draw from supply to ground: elements' bias
-currents plus capacitor charging. Seed with the designed circuit, counted honestly at level 0 (11 nodes, 24
-elements).
+**Phase A: the minimal learner (evolution may be the god).** Done differently, as the minimal circuit search
+(`minimal/NOTEBOOK.md`): hand designs, CMA-ES polishing, pruning, and evolution over topologies, under the honesty
+rules, ranked on parts, efficiency and gain rate.
 
 **Phase B: local recruitment (evolution may supply only the rule).**
 1. Lives that differ in what they demand (poison lives and all-food lives), and an energy cost for every active

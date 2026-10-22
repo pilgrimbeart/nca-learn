@@ -1,34 +1,6 @@
 """A new-born creature that learns which colour is food: a body in a world (world.py), and a brain (brains/). Life
-joins them; measure compares brains on the same lives; watch shows a life.
-
-    python creature.py                  # watch a life with the sheet brain (r: new life, d: damage the brain at the
-                                        # mouse, b: the next brain, s: the designed circuit's schematic, space: pause,
-                                        # up/down: speed, Esc: quit)
-    python creature.py --measure 16     # 16 lives with learning and 16 without, for each brain: how soon it learns,
-                                        # what it eats (--all-food: lives where both colours are food)
-    python test_rules.py                # every rule keeps the golden rules
-    python creature.py --record frames  # save a life's frames, headless, as PNGs (for a GIF)
-
-A brain has two sensors and two motors, numbered 0 and 1, alike in all but number; it doesn't know what they are for.
-The body gives them their meaning, by a wiring it draws at random each life: one sensor sees red, the other blue; one
-motor fires the thruster at the tail's left corner, the other the one at its right. It stimulates a sensor when its
-colour is seen, and fires a thruster for each time its motor fires. Its one other input is taste: a pulse, +1 for food
-and -1 for poison, as soon as a block touches the mouth (otherwise nothing). Taste doesn't say which sensor saw the
-block: the brain must work out what earned it. Nothing else goes in or out.
-
-Brains: the sheet brain ("sheet", brains/sheet.py), a sheet of identical cells that builds itself, then learns; and
-the circuit brains: "designed-circuit" (brains/designed.py), a small circuit of excitable neurons designed by hand;
-"baseline-circuit" (brains/baseline.py), its neurons alone, driving at every block, with taste going nowhere (the
-baseline for recruitment, RECRUITMENT.md); "adjusting-circuit" (brains/adjusting.py), each neuron adjusting its own
-excitability from taste (rung 0); "knowing-circuit" (brains/knowing.py), the baseline circuit plus a taste neuron that
-learns what predicts pain but has no outputs (recruitment's starting animal); "recruiting-circuit"
-(brains/recruiting.py), the knowing circuit growing, in its life, the link that lets that knowledge act (rung 1);
-"healing-circuit" (brains/healing.py), the same done by a generic recruit that knows nothing of the circuit, choosing
-among actions on what it is attached to; "healing-cascade", where the first recruit can't help and the cure is
-found by a second wave, one edge further.
-
-In an all-food world (poison None) both colours are food, so there is nothing to learn: the control for recruitment,
-which should then not happen.
+joins them; measure compares brains on the same lives; watch shows a life. How to run it, the live view's keys and the
+brains: the README; the interface between body and brain, and its rules: AGENTS.md.
 """
 
 from __future__ import annotations
@@ -75,6 +47,8 @@ SCHEMATIC = "media/designed_circuit.png"    # watching: the designed circuit (dr
 SETTLE = 200        # watching: ticks after the creature starts moving before speeding up again
 BLOCKS = 300        # watching: the height of the block view below (blocks.py), in the window as it opens
 TEXT = 108          # watching: the height of the lines and buttons between the panels and the block view
+BLOCK_RGB = {"red": (205, 40, 40), "blue": (40, 100, 225)}   # watching: the blocks in their own colours, each also
+                    # lettered (R, B), so that colour is never the only cue (the user is colour-blind)
 LEARNED = 0.2       # measuring: a sensor has learned once its chance of firing both is this near right
 
 
@@ -175,7 +149,7 @@ def measure(lives: int, ticks: int = 10000, brains=tuple(BRAINS), all_food: bool
 
 def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until: int = 10000,
           all_food: bool = False) -> None:
-    """A life, live. Left, the brain's own panel, in greys. Right, the world: blocks lettered R (dark) and B (light),
+    """A life, live. Left, the brain's own panel, in greys. Right, the world: red and blue blocks, lettered R and B,
     the creature a triangle with its point marked, and what its eyes see. It runs FAST ticks a frame, but SLOW while the
     brain wires itself and until a little after the creature starts moving; up and down take over the speed (down, past
     a tick a frame, waits 2, 4 ... 32 frames between ticks, so single spikes can be followed). The window can be
@@ -285,6 +259,7 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
                     seed += 1
                     poison = None if all_food else COLOURS[seed % 2]
                     life = Life(seed, poison, brain=brain)
+                elif event.key == pygame.K_a:
                     auto = True
                 elif event.key == pygame.K_d and hasattr(life.brain, "damage_at"):    # damage, at the mouse
                     mx, my = pygame.mouse.get_pos()
@@ -334,8 +309,8 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
         for (x, y), k in zip(body.xy, body.kind):
             c = COLOURS[k]
             px = to_px((x, y))
-            pygame.draw.rect(screen, (90, 90, 90) if c == "red" else (210, 210, 210), (px[0] - 8, px[1] - 8, 16, 16))
-            screen.blit(small.render(c[0].upper(), True, (255, 255, 255) if c == "red" else (0, 0, 0)), (px[0] - 4, px[1] - 6))
+            pygame.draw.rect(screen, BLOCK_RGB[c], (px[0] - 8, px[1] - 8, 16, 16))
+            screen.blit(small.render(c[0].upper(), True, (255, 255, 255)), (px[0] - 4, px[1] - 6))
         corners = body.corners()
         pygame.draw.polygon(screen, (255, 255, 255) if yuck else (160, 160, 160), [to_px(p) for p in corners], 5 if yuck else 2)
         pygame.draw.circle(screen, (255, 255, 255), to_px(body.head()), 4)
@@ -351,7 +326,7 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
         lines = (f"tick {life.t:6d}   brain: {brain}   stage: {stage}   poison: {poison or 'none (all food)'}   eaten: red {eaten['red']},"
                  f" blue {eaten['blue']}",
                  "recent meals: " + " ".join(m[0].upper() for _, m in life.meals[-14:]),
-                 f"{speed()}   r new life   d damage (at the mouse)   space pause   up/down{'' if auto else ' (r: auto)'}   Esc")
+                 f"{speed()}   r new life   d damage (at the mouse)   space pause   up/down: speed{'' if auto else '   a: auto speed'}   Esc")
         for i, line in enumerate(lines):
             screen.blit(font.render(line, True, (255, 255, 255)), (6, side + 6 + 22 * i))
         hover = pygame.mouse.get_pos()
@@ -388,6 +363,7 @@ def rules() -> list:
     from brains import circuit
     from minimal import spec
     noisy = f"{mf.NOISY[0]:g} to {mf.NOISY[1]:g}"
+    sb = _constants("brains/sheet.py", ("SIZE", "SPEED", "UPDATE"))   # (read, not imported: importing compiles the rules)
     return [
         (0, "The body and the brain"),
         (1, "A brain meets the body only through two sensors, two motors and one taste: nothing else passes either way."),
@@ -402,6 +378,18 @@ def rules() -> list:
             f" {mf.SPIKE:g} V, and can spike again only once it has fallen below {mf.RESET:g} V."),
         (1, "The body must never become part of the solution: it does no job a brain could do (credit, timing,"
             " filtering, choosing what learns)."),
+        (0, "The sheet brain"),
+        (1, f"A {sb['SIZE']} x {sb['SIZE']} sheet of identical cells, born alike bar noise, each running one local rule:"
+            " a cell sees only its own numbers, its neighbours' mean of each shared number and how many neighbours it"
+            " has; never its position, the sheet's size, a clock or any one neighbour."),
+        (1, f"Shared numbers are clipped to -1..1 and shown with noise {sheet.SHOW:g}; kept numbers get noise"
+            f" {sheet.NOISE:g} at every update, whole numbers re-rounded."),
+        (1, f"The sheet updates {sb['SPEED']} times a tick, each cell with chance {sb['UPDATE']:g}: at random, never all"
+            " at once."),
+        (1, "The body reaches only cells by the names they gave themselves: stimuli to S1 and S2, taste to T, thrusts"
+            " counted from M1 and M2."),
+        (1, "No hidden size or fixed waits, no magic knowledge: a path finds its target by a signal the target itself"
+            " sends."),
         (0, "The circuit simulator (every circuit brain)"),
         (1, "Everything that affects behaviour is explicit circuit: nodes (capacitors, with any leak) and elements (a"
             " current from a node's voltage, possibly filtered and gated); no program beside it."),
@@ -429,8 +417,8 @@ def rules() -> list:
             " 15,000-15,031, the open search from 20,000."),
         (1, "Held out: seeds 100-163 judge what a search produced and are never used to choose."),
         (1, "Headline claims are confirmed once on seeds 500-563, never used before, then retired."),
-        (1, "Judged at the usual noise; an experiment may judge across half, usual and double, the worst level"
-            " counting."),
+        (1, f"Judged at {', '.join(f'{k:g}' for k in spec.JUDGED)} x the usual noise, the worst level counting, the job"
+            " required at every level (polish, pruning, open search and held-out judging alike)."),
         (0, "Judging: the job and the score"),
         (1, f"The job: at least {spec.JOB[0]:g} food per 1,000 ticks; food:poison at least {spec.JOB[1]:g} over the"
             f" last third of a 10,000-tick life; at most {spec.JOB[2]:.0%} of lives stranded (no food in their last"
@@ -446,18 +434,21 @@ def rules() -> list:
         (1, f"Area, by analogy with analogue chips, in unit transistors: an element {spec.AREA['element']}, a gate"
             f" {spec.AREA['gate']} more, a leak {spec.AREA['leak']}, a capacitor {spec.AREA['capacitor']} per unit;"
             " shown, not ranked on."),
-        (1, f"Efficiency: meals gained (food, less {spec.COST:g} a poison) per meal spent (resting, moving, thinking). Thrift: food per 1,000 firings."
-            " Speed: food per 1,000 ticks."),
-        (1, "Simplicity and efficiency are kept apart, never traded."),
+        (1, f"Three objectives, never traded, each among circuits doing the job: the simplest (parts); the best for"
+            f" energy (efficiency: meals gained, food less {spec.COST:g} a poison, per meal spent resting, moving and"
+            " thinking); the best for speed and accuracy (gain rate: meals gained per 1,000 ticks). Thrift (food per"
+            " 1,000 firings) shown, not ranked."),
         (1, "Confidence: every measure with its 95% interval; two designs compared paired, on the same seeds, and"
             " one is above the other only if the interval of the difference excludes 0. Otherwise: tied."),
-        (0, "The sheet brain"),
-        (1, "Identical cells running one local rule; a cell sees only its own numbers, its neighbours' mean of each"
-            " shared number, and how many neighbours it has."),
-        (1, f"Shared numbers are clipped to -1..1 and shown with noise {sheet.SHOW:g}; kept numbers get noise"
-            f" {sheet.NOISE:g} at every update; cells update at random, never all at once."),
-        (1, "No hidden size, no magic knowledge: a path finds its target by a signal the target itself sends."),
     ]
+
+
+def _constants(path: str, names) -> dict:
+    """Module-level constants of a source file, read without importing it."""
+    import ast
+    tree = ast.parse(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), path)).read())
+    return {t.id: ast.literal_eval(n.value) for n in tree.body if isinstance(n, ast.Assign)
+            for t in n.targets if isinstance(t, ast.Name) and t.id in names}
 
 
 def rules_text() -> str:

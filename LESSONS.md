@@ -1,47 +1,94 @@
 # Lessons
 
-*Names (2026-10-18): the "grown brain" is now the **sheet brain**, and the "mixed-signal brain" the **designed circuit**; the minimal, adjusting, knowing and recruiting brains are the **…-circuit** brains. Earlier entries keep the names they were written with.*
+What was tried, what worked, what didn't and why, so settled questions aren't reopened. First the lessons that cut
+across the project; then, by line of work, each finding traced to a cause, with what the code does now. Dead ends are
+kept because they are lessons too. The rules these lessons led to are in `AGENTS.md`. Older entries keep the names
+they were written with: the "grown brain" is the sheet brain, the "mixed-signal brain" the designed circuit, and the
+"minimal" circuit of recruitment (until 2026-10-21) the baseline circuit.
 
-What was tried, what worked, what didn't and why, so settled questions aren't reopened. Each finding was traced to a
-cause before it was fixed. Each entry gives the lesson, then what the code does now; dead ends are kept because they
-are lessons too.
-
-## Principles
-
-- **Local behaviour only, no global god.** No global clock, no broadcast, no harness switching the cells' behaviour.
-  The only things from outside are the body's inputs (a sensor's stimulus, and taste), delivered to the cells that
-  named themselves.
-- **The body is never part of the solution.** The body says what happened (this colour is in view; that was food),
-  never what it means for learning (which sensor earned the taste). A body change that lets the brain drop some
-  mechanism has moved that mechanism's job into the body (below: reward at contact).
-- **Nor is the simulator.** Whatever the simulation lets a design exploit, whoever optimises it (an agent, the user,
-  evolution) will find: lockstep, unlimited precision, a fixed seed, integration error, the exact shape of an input.
-  Before this project, the user asked an agent to cut the number of channels between cells, and it packed several
-  into different bits of one floating-point number. The exp(-beta d) cheat (The engine, below) was the same kind. So
-  every brain runs with random timing, noise on everything and limited precision, and a result must survive a finer
-  simulation and fresh seeds (defences for the circuit brains: Simulating the designed circuit, below).
-- **No hidden scale.** A cell knows only its own state and its neighbours' averages; never the sheet's size or its
-  position in it.
-- **Stochastic updates only.** Every cell updates at random times, never in lockstep: lockstep lets rules lean on a
-  shared rhythm and makes artefacts (flipping every tick, checkerboard oscillations).
-- **Noise must matter.** Neighbours see a shared number as the cell shows it, clipped to -1..1 and with noise of 1%.
-  No encoding may squeeze information below the noise or spread it over orders of magnitude. What a cell keeps to
-  itself is not limited (counts and timers are whole numbers, re-rounded at each update).
-- **Inputs spike.** Sparse kicks, never continuous levels.
-- **No magic knowledge.** Every cell learns everything from its neighbours' signals. Above all, a path finds its
-  target by a signal the target cell itself sends out, never by where the rule says the target should be. And no
-  cell knows what an organ is for: the rule is unchanged if the two sensors, or the two actuators, are swapped.
-- **Don't build features into the body or world to make learning easy.** The body and world are as simple as they
-  can be; what the brain needs, it does itself.
-- **Symmetry must be broken, and noise breaks it.** Identical cells in a regular sheet can't choose between equal
-  options (a corner, a handedness, a route). Something local and random breaks the tie, and the rule then has to make
-  the choice stick.
-
-## The engine
+## Lessons that cut across the project
 
 - **Rules kept only in prose drift, so make the rule the structure.** The golden rule is that each cell sees only the
   mean of each number its neighbours share. Earlier experiments (before this project) quietly broke it, reading each
-  neighbour separately (the smallest, one by tag, each one's sums), and nothing in the code stopped them.
+  neighbour separately (the smallest, one by tag, each one's sums), and nothing in the code stopped them. So each rule
+  is enforced in code and tested: the sheet's engine, the circuit brains' circuits, the minimal search's `check`.
+- **When a change lets the brain drop machinery, ask where its job went.** How the body came to assign credit (2026-10-16): The user had described the sensor cell as having "two inputs (what it
+  senses and food/poison)". I read "a food/poison input on the sensor" as licence to route the reward to the right
+  sensor, and proposed "reward at contact": the body gives food or poison only to the eaten colour's sensor. I
+  presented it as removing four mechanisms (chew delay, flavour stimulus, news wave, trace) and one shared number, and
+  argued "the body is allowed to know what it ate and what colour it was, just as it knows which eye saw it". What I
+  didn't say: those four mechanisms were the brain's credit assignment, which this file had already named the hard
+  part ("the old rule did credit assignment for free"). Deleting them didn't simplify the problem; it moved its
+  hardest part into the body. The user agreed to a "simplification", not to that. The warning signs were all
+  written down and passed over: the README's count of shared numbers said "learning: none (everything a sensor learns
+  from is delivered to it by the body)"; the designed circuit was then built on the same `reward(sensor, value)`,
+  with four reward terminals beside the sensors; and learning got faster and cleaner just as the brain got simpler.
+  The user found it from the schematic, by asking where the reward input was. The lesson: whenever a change lets the
+  brain drop machinery, ask where that machinery's job went, and if the answer is the body, say so plainly or don't
+  propose it (now in `AGENTS.md`).
+- **Machinery beside the thing studied does its work: the rules were not circuits** (the user's question, 2026-10-18). The net's unit rules (`net_rules/adjust.py`) are compiled
+  programs layered on the circuit: per-tick traces, event bookkeeping ("pending", a peak over two ticks, an estimate
+  of rest), a hard-coded threshold, and a knob that writes the circuit's bias from outside it. The locality checks
+  stopped a rule seeing other units, but inside a unit it was free digital computation: functionality beyond the
+  literal circuit, which the mixed-feedback track promises not to have ("everything, learning too, is nodes and
+  elements"). It should have been said when the engine was proposed. What stands: the measurements (watching may
+  compute anything) and the rung-0 findings as a specification of which local signals are needed; what doesn't: rung
+  0's behaviour as a mixed-feedback result. The same kind of mistake as "reward at contact": machinery outside the
+  thing being studied doing its work. Rule of thumb: for every number that affects behaviour, ask "which node holds
+  it, and which elements move it?"; if the answer is "the program", it isn't the circuit.
+- **Find what the body allows before blaming the brain.** An oracle that knows the answer, fed only what a brain
+  would see, gives the ceiling: an ideal reflex showed that the square body capped every brain (The body, below:
+  Telling food from poison), and scripted policies that the best circuits drove the body badly (next).
+- **Match the brain's speed to the body's (impedance matching)** (2026-10-21, the user's observation live: the best
+  circuit spins, sweeps its narrow gaze past far food and can't react before it has gone). Scripted policies (not
+  brains) that see only the eyes' pulses and are told the bit from birth showed what the body allows: one that reacts
+  to a food pulse for about 2 ticks scores as EF_22p does (efficiency 1.68 against 1.66, then counting no poison); one
+  that holds its course for 4 ticks after a pulse, 2.9; holding and roaming straight for 15 ticks after 80 of
+  scanning, 3.95. A far block gives about one pulse as the gaze sweeps it, and the spin carries on for about 1.5 ticks
+  after a thruster stops: a brain faster than that loses the sighting, so the brain's time constant has to match the
+  body's sweep and momentum, not be as fast as possible. Turning slower barely helps (one thruster always drives the
+  same circle, about 1.2 units' radius, whatever the rate). The search missed it because a hold is a new node with a
+  time constant of a few ticks, and every start came from circuits that react briefly. With poison free in efficiency
+  the best policy drove into whatever lay ahead (a poison per three meals), so efficiency now counts a poison as COST
+  meals lost, as the score does (the user's decision).
+- **A score summed over lives hides lives that fail.** The minimal search's winners did the job on every measure
+  (food, food:poison, held-out seeds, a finer step), yet the user, watching one life, saw the creature eat 14 meals
+  and then spin on the spot for the remaining 4,500 ticks. A fifth of all their lives did that; summed food was
+  carried by the rest. The search had found a strategy (spin to look, dash only at food it sees) that is optimal on
+  average and fatal in a fifth of worlds. Count a failure where it happens: the score now charges each third of each
+  life for its own shortfall, and the job limits stranded lives (minimal/NOTEBOOK.md, M8). Watching a life live
+  found what no table did (AGENTS: show a working behaviour live before reporting it).
+- **Noise costs no parts, so a search judged at one noise level buys it.** Twice in one night pruning reached fewer parts by
+  deleting a clock's feedback or a hunger's drive and letting noise do the job (a damped resonance rung by noise; a
+  gate opened by noise). Both did the job at the nominal noise and failed at half of it. Noise costs no parts, so a
+  search that pays for parts but never varies the noise will buy noise. The old half-and-double check caught exactly
+  this, so every polish, pruning and final judgement now uses half, nominal and double noise, the worst counting (the
+  user's decision, 2026-10-22).
+- **Trace the mechanism, not just the score.** A hunger meant to make a creature travel did nothing: its drain leaked
+  at rest exactly as fast as it charged, so a polish tuned a circuit that was never hungry, and only a trace of the
+  node's voltage showed it (The minimal circuit search, below).
+- **Enough lives, paired, with intervals on differences.** 16 lives are too few to rank variants (with perfect p from
+  birth, net food came out +0.38 in one run of 32 and the oracle's +0.47); run the oracle in the same batch. Pair
+  lives (the same seeds and, with per-node noise streams, the same noise), so a difference is caused by the variant;
+  a league ordered by point estimates claimed orders it couldn't back, so compare designs on the same seeds, with a
+  95% interval on the difference, and call the rest ties.
+- **Sigmoid tails are constant currents.** Twice: a dozen resting rivals' tails summed past an enable's rise, so none
+  ever won; and a pain input's resting tail, cancelled by the good-taste input's while the steps were equal, charged
+  tiredness once they weren't. Summed over many inputs or a long time constant, "almost zero" isn't.
+
+## The sheet brain
+
+Its rules are in `AGENTS.md`, its design in the README. Three lessons shaped them:
+
+- **Stochastic updates only.** Lockstep lets rules lean on a shared rhythm and makes artefacts (flipping every tick,
+  checkerboard oscillations).
+- **Symmetry must be broken, and noise breaks it.** Identical cells in a regular sheet can't choose between equal
+  options (a corner, a handedness, a route). Something local and random breaks the tie, and the rule then has to make
+  the choice stick.
+- **Inputs spike**: sparse kicks, never continuous levels.
+
+### The engine
+
 - **What `sheet.py` does.** Only the engine knows the grid. A rule module declares its numbers, which are shared, and
   their birth values, and one compiled `update(me, mean, count, inp, out)`: its own numbers, its neighbours' mean of
   each shared one, how many neighbours it has, and what the body delivered. The engine updates each cell with chance
@@ -59,7 +106,7 @@ are lessons too.
   version used it: the election, ring counts, x, y, both distance fields, tips, offers and news. The engine now
   encodes nothing; the user set the range (-1..1) and the noise (first 10%, then 5%, settled at 1%).
 
-## What averages can do, honestly
+### What averages can do, honestly
 
 - **Read sums, not means.** A neighbour moves the mean by at most 2 / count, so a cell works with the sum over its
   neighbours (count x mean), whose noise is about 0.03 at 1%.
@@ -77,7 +124,7 @@ are lessons too.
 - **Not the smallest.** No mean gives the smallest of the neighbours' numbers. What a cell can get instead: a count
   mod K, shown one-hot on K flags (below).
 
-## Distance mod 5 (`rules/see.py`)
+### Distance mod 5 (`rules/see.py`)
 
 - **What it is.** A field from some source cells: each cell shows its distance mod K on K flags. In a settled field
   a cell's neighbours are one step nearer, level or farther, three residues in a row, so the lowest is the one after
@@ -97,7 +144,7 @@ are lessons too.
   (the edge midpoints and the centre lie on that cross); it was dropped for this. Fields from one source (each
   actuator) are fine.
 
-## Where am I (`rules/organs.py`)
+### Where am I (`rules/organs.py`)
 
 - **The race.** Corners beat as pacemakers at random periods; one reached by another's wave before its own beat
   stands down. Exactly one left, the organiser (once called V, when it was also an actuator), in 20 lives of 20,
@@ -145,7 +192,7 @@ are lessons too.
   path to tick 12,000, and 6 lives of 12,000 ticks had no name change after first naming (before: 2 and 4 in two
   lives of 4 at 4,000 ticks).
 
-## Wiring (`rules/wiring.py`)
+### Wiring (`rules/wiring.py`)
 
 - **Breadcrumbs are impossible from averages** (a cell remembering which neighbour a wave came from). Instead a cell
   needs its distance to each sink, and which neighbours are one step nearer or farther.
@@ -171,7 +218,7 @@ are lessons too.
 - **Fading and pulses.** A path cell with no path cell one step farther leaves (after 2 reads). A pulse is carried
   for 6 updates, then rested 7; the next cell must update at least once meanwhile (it almost always does at 0.9).
 
-## Learning, first brain (withdrawn)
+### Learning, first brain (withdrawn)
 
 The first brain had sensors R and B and actuators A (forward) and V (back off and turn), a news wave, a trace and a
 chew delay; all are gone (below: symmetric organs, reward at contact). Its lessons:
@@ -186,7 +233,7 @@ chew delay; all are gone (below: symmetric organs, reward at contact). Its lesso
 - **Two factors.** The balance moved by taste x the cell's recent-input trace; which way it sent its pulse didn't
   enter. Tumbles (now and then a pulse to V) made a creature that saw nothing search.
 
-## Symmetric organs: no purpose in the cells (2026-10-16)
+### Symmetric organs: no purpose in the cells (2026-10-16)
 
 - **The rule knew what the organs were for.** R and B differed only in name, but A and V were different kinds (V was
   the organiser corner as well as an actuator), and the brain preferred A: born b = 0.9 towards A, a good taste
@@ -246,89 +293,13 @@ chew delay; all are gone (below: symmetric organs, reward at contact). Its lesso
   the end, poison 0.09, food 0.91. As good as the trace and news, but only because the body did their work. Ceiling
   with p perfect: 48%, 42%, 47%.
 
-## Vision (`creature.py`)
-
-- **Shorter, and blocks hide what is behind them.** The eyes cast 25 parallel rays across the strip the mouth sweeps;
-  each stops at the first block it meets (a disc of radius 1, its drawn size) within 15 units, and a block counts
-  1 / (1 + (d / 5)^2), less where hidden or partly outside. Before: no hiding, out to half the world, half-weight at 10.
-  The view draws the rays as a fading beam, with shadows behind blocks.
-
-## Scoring per unit of time
-
-- **Score per tick, not per meal** (the user). Two scores: how soon the sensors learn (ticks after moving until both
-  are within 0.2 of right: the rules), and food minus poison per 1,000 ticks (the sheet and the body). Poison's share
-  of meals alone hides the rate: a slow creature can eat well and little.
-- **Slower or sparser raises the ceiling but costs meals.** Ceiling with p perfect, poison's share by thirds (meals
-  per third, 32 lives): thrust 0.5 (now) 48%, 42%, 47% (about 380); 0.25: 43%, 41%, 44% (180); 0.125: 23%, 32%, 30%
-  (80). 9 blocks of each colour instead of 18: 41%, 43%, 46% (135); 5: 34%, 36%, 42% (75). For the same meals, slower
-  is better than sparser: it gives the 53-tick brain time to act. But per tick the slow creature loses (16 lives
-  each, learning on):
-
-  | version | learned (median ticks after moving) | food minus poison per 1,000 ticks, by third |
-  |---|---|---|
-  | thrust 0.5, p moves 1/4 of the way | 16 of 16, 1,331 | -0.03, +0.38, +1.06 |
-  | thrust 0.5, p moves 1/2 of the way (now) | 16 of 16, 997 | -0.20, +2.15, +0.48 |
-  | thrust 0.125, 1/2 of the way | 13 of 16, 2,945 | +0.14, +0.41, +0.68 |
-
-  Once learned the thirds differ by noise; 16 lives are too few to rank the net food finely.
-- **Angling the thrusters doesn't help** (the user's idea: a lone thruster should mostly turn the body, not drive it
-  round a wide circle into the poison). A thruster at angle a from straight back pushes cos a forward and sin a to
-  its own side (so its turn adds up: (cos a + sin a) x today's turn); both at once go straight, at cos a of today's
-  speed. Ceiling with p perfect, poison's share by thirds (meals, 32 lives): 0 degrees (now) 48%, 42%, 47% (about
-  380); 60: 44%, 51%, 39% (about 100); 80: 43%, 45%, 21% (about 23: it hardly reaches a block). Fewer meals, no
-  better share: the poison is eaten while the food's sensor drives straight at food behind or beside it, not
-  while the poison's sensor veers.
-
-## A second brain: the designed circuit (then `brains/mixed_signal.py`, now `brains/designed.py`)
-
-- **Why.** The user, after Sepulchre's work (Ribar and Sepulchre 2021, "Neuromorphic Control"; Huo, Forni and
-  Sepulchre 2025, rebound winner-take-all): one mixed-feedback element (a leaky node; elements that put a current into
-  a node, a sigmoid of a filtered voltage, with a sign and a timescale) builds both discrete and continuous behaviour.
-  A designed circuit for the whole creature, beside the sheet, says what the sheet costs, and is the groundwork
-  for rebuilding a cell as such a circuit.
-- **The split.** The body and world went to `world.py`; `Life` talks to any brain through sensors 0, 1 and motors 0, 1;
-  the sheet became `brains/grown.py` (now `brains/sheet.py`). Four recorded lives matched the old code bit for bit
-  (meals, firings and sensors' p), so the refactor changed nothing. Thrusters must fire in the same order as before:
-  spin is a float sum.
-- **The neuron.** The paper's spiking neuron (fast positive feedback, slow negative; tanh) at the paper's bias was
-  bistable, not excitable: one pulse set off firing that never stopped (bias -1.2 to -1.4, recovery 5-20 ticks). At
-  bias -1.6 it rests: one spike for any pulse above about 1 (a tick long), and noise 0.2 gives about 6.5 spikes per
-  1,000 ticks of its own (the sheet's sensors fire by themselves about 9 per 1,000).
-- **Noise grades a synapse.** A sensor's spike crosses a synapse of weight 0.05 almost never, 0.15 half the time, 0.35
-  almost always: noise makes the choice, so a plastic weight between them is a chance of firing the other motor too,
-  as the sheet's sensor's p is.
-- **A/B, the same 16 lives each:** sheet learned in 16 of 16 (median 1,024 ticks after moving), food minus poison per
-  1,000 ticks by third -0.20, +1.97, +0.37, poison's share 52%, 38%, 47%; designed circuit 16 of 16 (median 1,090),
-  +0.89, +1.13, +1.32, and 40%, 39%, 35%. Learning after moving is about as fast (set by how often it eats); but the
-  circuit moves from the first tick and reacts at once, where a pulse takes about 53 ticks to cross the sheet, so it
-  steers round more poison than the sheet brain could even with perfect p (about 46%), and nets about twice the food
-  in a life.
-
-## Taste: one input, and credit assigned inside the brain (2026-10-16)
-
-- **How the body came to assign credit.** The user had described the sensor cell as having "two inputs (what it
-  senses and food/poison)". I read "a food/poison input on the sensor" as licence to route the reward to the right
-  sensor, and proposed "reward at contact": the body gives food or poison only to the eaten colour's sensor. I
-  presented it as removing four mechanisms (chew delay, flavour stimulus, news wave, trace) and one shared number, and
-  argued "the body is allowed to know what it ate and what colour it was, just as it knows which eye saw it". What I
-  didn't say: those four mechanisms were the brain's credit assignment, which this file had already named the hard
-  part ("the old rule did credit assignment for free"). Deleting them didn't simplify the problem; it moved its
-  hardest part into the body. The user agreed to a "simplification", not to that. The warning signs were all
-  written down and passed over: the README's count of shared numbers said "learning: none (everything a sensor learns
-  from is delivered to it by the body)"; the designed circuit was then built on the same `reward(sensor, value)`,
-  with four reward terminals beside the sensors; and learning got faster and cleaner just as the brain got simpler.
-  The user found it from the schematic, by asking where the reward input was. The lesson: whenever a change lets the
-  brain drop machinery, ask where that machinery's job went, and if the answer is the body, say so plainly or don't
-  propose it (now in `AGENTS.md`).
+### Taste: one input, and credit assigned inside the brain (2026-10-16)
 
 - **Why.** Learning had been `reward(sensor, value)`: the body handed the reward to the eaten colour's sensor, so the
   body did the credit assignment. The user's ruling: for every brain, taste is one input, +1 for food and -1 for
   poison at the tick a block touches the mouth, else 0, saying nothing about which sensor. The body must never be part
   of the solution. The sheet brain gets taste through a fifth organ, T (the marked cells on the y = 1 edge between S1
   and S2), not a broadcast to every cell: a sheet-wide signal would be magic.
-- **Measuring.** 16 lives are too few to rank variants: with perfect p from birth, net food per 1,000 ticks came out
-  +0.38 in one run of 32 and the oracle's (the old body credit) +0.47. Rank by lives learned, median time and p at
-  the end; use 64 lives; and run the oracle as the reference in the same batch.
 - **What a sensor can know.** At each meal (sheet brain), ticks since each sensor's last stimulus: the eaten colour's
   sensor was stimulated within 10 ticks in 85% of meals, the other in 17%. Giving credit only to the sensor stimulated
   last cuts the wrong share to 7% (within 20 ticks: right 89%, wrong 7%). So the one taste carries enough, if the
@@ -354,7 +325,42 @@ chew delay; all are gone (below: symmetric organs, reward at contact). Its lesso
 - **Not fixed: a doubled actuator name.** In one sheet of 32 (Life seed 17) two cells took M1. It happens with or
   without the gap fix, so it is older.
 
-## Telling food from poison: a pointed body and a faster circuit (2026-10-17)
+## The body, and how a creature is scored
+
+### Vision (`world.py`)
+
+- **Shorter, and blocks hide what is behind them.** The eyes cast 25 parallel rays across the strip the mouth sweeps;
+  each stops at the first block it meets (a disc of radius 1, its drawn size) within 15 units, and a block counts
+  1 / (1 + (d / 5)^2), less where hidden or partly outside. Before: no hiding, out to half the world, half-weight at 10.
+  The view draws the rays as a fading beam, with shadows behind blocks.
+
+### Scoring per unit of time
+
+- **Score per tick, not per meal** (the user). Two scores: how soon the sensors learn (ticks after moving until both
+  are within 0.2 of right: the rules), and food minus poison per 1,000 ticks (the sheet and the body). Poison's share
+  of meals alone hides the rate: a slow creature can eat well and little.
+- **Slower or sparser raises the ceiling but costs meals.** Ceiling with p perfect, poison's share by thirds (meals
+  per third, 32 lives): thrust 0.5 (now) 48%, 42%, 47% (about 380); 0.25: 43%, 41%, 44% (180); 0.125: 23%, 32%, 30%
+  (80). 9 blocks of each colour instead of 18: 41%, 43%, 46% (135); 5: 34%, 36%, 42% (75). For the same meals, slower
+  is better than sparser: it gives the 53-tick brain time to act. But per tick the slow creature loses (16 lives
+  each, learning on):
+
+  | version | learned (median ticks after moving) | food minus poison per 1,000 ticks, by third |
+  |---|---|---|
+  | thrust 0.5, p moves 1/4 of the way | 16 of 16, 1,331 | -0.03, +0.38, +1.06 |
+  | thrust 0.5, p moves 1/2 of the way (now) | 16 of 16, 997 | -0.20, +2.15, +0.48 |
+  | thrust 0.125, 1/2 of the way | 13 of 16, 2,945 | +0.14, +0.41, +0.68 |
+
+  Once learned the thirds differ by noise; 16 lives are too few to rank the net food finely.
+- **Angling the thrusters doesn't help** (the user's idea: a lone thruster should mostly turn the body, not drive it
+  round a wide circle into the poison). A thruster at angle a from straight back pushes cos a forward and sin a to
+  its own side (so its turn adds up: (cos a + sin a) x today's turn); both at once go straight, at cos a of today's
+  speed. Ceiling with p perfect, poison's share by thirds (meals, 32 lives): 0 degrees (now) 48%, 42%, 47% (about
+  380); 60: 44%, 51%, 39% (about 100); 80: 43%, 45%, 21% (about 23: it hardly reaches a block). Fewer meals, no
+  better share: the poison is eaten while the food's sensor drives straight at food behind or beside it, not
+  while the poison's sensor veers.
+
+### Telling food from poison: a pointed body and a faster circuit (2026-10-17)
 
 The user's target: at least 2 food for each poison after 10,000 ticks, ideally nearer 10, worked out on the
 designed circuit (quicker to learn and to tune). Measured as food:poison over 24-32 lives, with p held perfect by
@@ -406,7 +412,62 @@ meals per 1,000 ticks.
 - **What would go further.** The eyes can't tell left from right, so a veer is always to one side, sometimes into
   poison lying beside the food: one sensor per side would fix it, but that is more sensors, a ground-rule change.
 
-## Simulating the designed circuit (2026-10-18)
+### The second body: a square with two forward thrusters (withdrawn 2026-10-17)
+
+Its mouth was its whole front edge, and its kicks were big (PUSH 0.5, TURN 0.08, DRAG 0.2): the ceiling with p
+perfect was 1.5 food per poison (about 45-49% poison), whatever the brain. Replaced by the triangle (above).
+
+### The first body (withdrawn)
+
+The first body had a forward thruster at the tail (A) and one at the side that backed and turned it (V), and the
+reward came after a chew delay with eyes shut. Its lessons:
+
+- **The body's ceiling.** With balances fixed perfect from birth, poison was still about a third of meals: the learner
+  was at the body's limit. Backing and turning swept the mouth over the poison it was avoiding, so the mouth eats only
+  what it moves forward into (perfect balances 33%, 29%, 33% by thirds → 31%, 17%, 28%). Longer pulses, body tweaks
+  and a 33 × 33 brain made no clear difference.
+- **Results by version** (poison's share of meals by thirds of life after moving, 16 lives with learning; no
+  learning about 50%):
+
+  | version | learning on |
+  |---|---|
+  | 18 shared numbers, distance fields, V near a far corner | 32%, 21%, 26% |
+  | 20: names that hold, x and y, V halfway down a side | 38%, 23%, 33% |
+  | 16: coordinates as distances (magic knowledge, withdrawn), V at the tail corner, straight paths | 45%, 34%, 34% |
+  | 18: A one cell again, A and V send distance fields (the exp cheat, withdrawn) | 35%, 39%, 34% (no learning 43%, 47%, 51%) |
+  | 27, honest: flags and gradients, -1..1 at 1% noise | 43%, 39%, 42% (no learning 49%, 48%, 54%); balances poison 0.20, food 0.84 |
+
+  V in the far corner (so R's and B's paths are easier to tell apart) doubles the way to V, and the recoil arrives
+  later. The individual-neighbour version before this project had 43%, 27%, 24%.
+
+## Circuits: simulation and noise
+
+### A second brain: the designed circuit (then `brains/mixed_signal.py`, now `brains/designed.py`)
+
+- **Why.** The user, after Sepulchre's work (Ribar and Sepulchre 2021, "Neuromorphic Control"; Huo, Forni and
+  Sepulchre 2025, rebound winner-take-all): one mixed-feedback element (a leaky node; elements that put a current into
+  a node, a sigmoid of a filtered voltage, with a sign and a timescale) builds both discrete and continuous behaviour.
+  A designed circuit for the whole creature, beside the sheet, says what the sheet costs, and is the groundwork
+  for rebuilding a cell as such a circuit.
+- **The split.** The body and world went to `world.py`; `Life` talks to any brain through sensors 0, 1 and motors 0, 1;
+  the sheet became `brains/grown.py` (now `brains/sheet.py`). Four recorded lives matched the old code bit for bit
+  (meals, firings and sensors' p), so the refactor changed nothing. Thrusters must fire in the same order as before:
+  spin is a float sum.
+- **The neuron.** The paper's spiking neuron (fast positive feedback, slow negative; tanh) at the paper's bias was
+  bistable, not excitable: one pulse set off firing that never stopped (bias -1.2 to -1.4, recovery 5-20 ticks). At
+  bias -1.6 it rests: one spike for any pulse above about 1 (a tick long), and noise 0.2 gives about 6.5 spikes per
+  1,000 ticks of its own (the sheet's sensors fire by themselves about 9 per 1,000).
+- **Noise grades a synapse.** A sensor's spike crosses a synapse of weight 0.05 almost never, 0.15 half the time, 0.35
+  almost always: noise makes the choice, so a plastic weight between them is a chance of firing the other motor too,
+  as the sheet's sensor's p is.
+- **A/B, the same 16 lives each:** sheet learned in 16 of 16 (median 1,024 ticks after moving), food minus poison per
+  1,000 ticks by third -0.20, +1.97, +0.37, poison's share 52%, 38%, 47%; designed circuit 16 of 16 (median 1,090),
+  +0.89, +1.13, +1.32, and 40%, 39%, 35%. Learning after moving is about as fast (set by how often it eats); but the
+  circuit moves from the first tick and reacts at once, where a pulse takes about 53 ticks to cross the sheet, so it
+  steers round more poison than the sheet brain could even with perfect p (about 46%), and nets about twice the food
+  in a life.
+
+### Simulating the designed circuit (2026-10-18)
 
 Reviewed with evolving circuit brains in mind (many lives of 10,000 ticks), so it must be fast and must not be
 exploitable.
@@ -420,7 +481,7 @@ exploitable.
   compiled code costs about 25 us a call, so each tick's noise is drawn beforehand in one call (the same stream). A
   life now takes about 0.5 s (from about 15). `test_compiled.py` checks both against plain numpy versions of the same
   equations (random circuits and scenes; it catches a 0.1% error in the circuit and 1e-15 in the eyes). The whole
-  life in one compiled function would save most of the rest, for when evolution needs it.
+  life in one compiled function (`minimal/fastlife.py`) later cut it to about 0.7 s for the minimal search.
 - **An exact check needs the same arithmetic on every machine.** The eyes' check once failed on GitHub (1,006 of
   3,000 scenes differing) though nothing had changed: the plain version used numpy's `d @ f` and `norm`, which go
   to OpenBLAS, and OpenBLAS picks its kernel by CPU; on an AVX-512 machine those round differently in the last bit
@@ -447,10 +508,11 @@ exploitable.
   time constants (at least about 5 DT) and on gain x slope / capacitance, and each generation's best re-run at DT/2;
   fresh seeds for every evaluation, and the result judged on lives never trained on; every parameter a few percent
   off at birth (mismatch, as Sepulchre stresses: no knife-edge tuning or exact cancellation between identical parts);
-  noise on every node, as now. Each motor spike is a full kick, so a fast oscillator gets the most thrust: how the
-  body bounds thrust is a body question for the user.
+  noise on every node, as now. Each motor spike is a full kick, so a fast oscillator gets the most thrust: the
+  minimal search now charges each firing (2026-10-21), and eating will be checked along the path a fast creature
+  moves in a tick.
 
-## Noise as biology makes it (2026-10-20)
+### Noise as biology makes it (2026-10-20)
 
 The user asked how noise was decided, where it goes in, and whether it could be cheated. The answers were: 0.2 per
 node, picked when the first circuit neuron was built; a fixed current on every node; and yes, in three ways. So the
@@ -473,17 +535,13 @@ which subthreshold silicon shares (Sarpeshkar, Delbrueck and Mead 1993), and the
   threshold; the old 0.2 gave the standard neuron about 0.14 V against about 1 V, inside that, so the size was right
   and the scaling wrong. And parts differ: identified neurons of one type by 2-5 times in channel density (Marder and
   Goaillard 2006), held in shape by homeostasis; analogue transistors by 10% or more (Pelgrom 1989).
-- **The model** (`mixed_feedback.py`; the details in its docstring). Shot noise of variance SHOT x |I| per tick on
-  every device current, summed gross over a node (two big opposing currents still flicker), the body's pulses
-  included; membrane noise of variance MEMBRANE x C per tick on every node but a memory; a memory node only its
-  writers' shot noise (still while unwritten, rough by the square root of what is written); 10% mismatch in every
-  part, drawn per part from the seed when the arrays are built (so parts grown or changed in a life get it too);
-  each eye a Poisson process and every pulse at a random moment within its tick, spread over the steps it overlaps.
-  Scaling a node by k now buys sqrt(k) quiet for k times the power. It lives in one integration step (`_step`) that
-  the circuit and `minimal/fastlife.py` both call, so neither can leave it out, with no switch: the noise can only be
-  scaled within half to double. `test_compiled.py` checks it: memory and leaky-node spreads the same at step 0.05
-  and 0.025 (the old model fails: its memory spread fell by 1.4), a node 4 times as big quieter by 2, not 4, every
-  part mismatched by about 10%, a pulse's charge exact wherever it falls.
+- **The model** is specified in `mixed_feedback.py`'s docstring (and the rule against dodging it in `AGENTS.md`).
+  What closed the holes: noise in proportion to each current and capacitance, so scaling a node by k buys only sqrt(k)
+  quiet, for k times the power; a memory rough by the square root of what is written, the same at any step; pulses at
+  random moments; and all of it in the one integration step every simulation calls. `test_compiled.py` checks it:
+  memory and leaky-node spreads the same at step 0.05 and 0.025 (the old model fails: its memory spread fell by 1.4),
+  a node 4 times as big quieter by 2, not 4, every part mismatched by about 10%, a pulse's charge exact wherever it
+  falls.
 - **Calibration.** SHOT (0.005) and MEMBRANE (0.02) share the old variance equally for the standard neuron at rest
   (its two elements carry 1.87 each, cancelling: gross 3.7, net 0). Without mismatch it fires 4.4 times per 1,000
   ticks on its own, as before (4.6; the 6.5 above was with older parameters), one spike per pulse.
@@ -529,50 +587,14 @@ which subthreshold silicon shares (Sarpeshkar, Delbrueck and Mead 1993), and the
   caused from one of the neuron's own, so a dull sensor is woken until noise fills its quota. The minimal search's
   winners escape all of this: their sensors are leaky integrators, not spiking relays, so mismatch only rescales them.
 
-## Stranding, and what a summed score hides (night of 2026-10-20)
+## Recruitment
 
-- **A score summed over lives hides lives that fail.** The minimal search's winners did the job on every measure
-  (food, food:poison, held-out seeds, a finer step), yet the user, watching one life, saw the creature eat 14 meals
-  and then spin on the spot for the remaining 4,500 ticks. A fifth of all their lives did that; summed food was
-  carried by the rest. The search had found a strategy (spin to look, dash only at food it sees) that is optimal on
-  average and fatal in a fifth of worlds. Count a failure where it happens: the score now charges each third of each
-  life for its own shortfall, and the job limits stranded lives (minimal/NOTEBOOK.md, M8). Watching a life live
-  found what no table did (AGENTS: show a working behaviour live before reporting it).
-- **Exploring is a job of its own.** The old winners could only travel towards food they saw. A hunger (a node
-  drained by a good taste, gating the clock into the second thruster) makes them travel when they haven't eaten;
-  with it the winner keeps eating over 100,000-tick lives in every tenth. A first version did nothing, because its
-  drain leaked at rest exactly as fast as it charged: a polish tuned a circuit that was never hungry, and only a
-  trace of the node's voltage showed it. Trace the mechanism, not just the score.
-- **Judged at one noise level, pruning trades mechanism for noise.** Twice in one night pruning reached fewer parts by
-  deleting a clock's feedback or a hunger's drive and letting noise do the job (a damped resonance rung by noise; a
-  gate opened by noise). Both did the job at the nominal noise and failed at half of it. Noise costs no parts, so a
-  search that pays for parts but never varies the noise will buy noise. The old half-and-double check caught exactly
-  this; whether to restore it is the user's call.
-- **A graded memory does quiet work, and a noisy one can't hold it** (2026-10-21, building a circuit of Sepulchre's
-  components). The simplest circuits keep the bit in a perfect integrator (a floating gate). Made leaky, as every
-  mixed-feedback node is, the bit gets the membrane noise every leaky node has and wanders 2.7 V in 1,000 ticks; made a
-  latch, it falls at birth into one guess and, learning only from food, never eats the other colour to correct it.
-  The integrator's middle was an undecided state that let the creature try both colours first. A binary memory needs
-  a way back from a wrong guess (learning from poison), so it costs parts the graded one didn't. Sepulchre is silent
-  on learning and storage, so we allow our floating gates under his rules (MIXED_FEEDBACK.md).
-- **Body efficiency needs a balance, and confidence needs pairing** (2026-10-21). Food per firing alone rewards a
-  creature for dawdling; counting the resting cost (NEED per 1,000 ticks) as well as fuel gives meals eaten per meal
-  spent, which both haste and dawdling lower. And a league ordered by point estimates claimed orders it couldn't back:
-  compare designs paired on the same seeds, with intervals on the difference, and call the rest ties.
-- **Match the brain's speed to the body's (impedance matching)** (2026-10-21, the user's observation live: the best
-  circuit spins, sweeps its narrow gaze past far food and can't react before it has gone). Scripted policies (not
-  brains) that see only the eyes' pulses and are told the bit from birth showed what the body allows: one that reacts
-  to a food pulse for about 2 ticks scores as EF_22p does (efficiency 1.68 against 1.66, then counting no poison); one
-  that holds its course for 4 ticks after a pulse, 2.9; holding and roaming straight for 15 ticks after 80 of
-  scanning, 3.95. A far block gives about one pulse as the gaze sweeps it, and the spin carries on for about 1.5 ticks
-  after a thruster stops: a brain faster than that loses the sighting, so the brain's time constant has to match the
-  body's sweep and momentum, not be as fast as possible. Turning slower barely helps (one thruster always drives the
-  same circle, about 1.2 units' radius, whatever the rate). The search missed it because a hold is a new node with a
-  time constant of a few ticks, and every start came from circuits that react briefly. With poison free in efficiency
-  the best policy drove into whatever lay ahead (a poison per three meals), so efficiency now counts a poison as COST
-  meals lost, as the score does (the user's decision).
+The ideas and plan are in `RECRUITMENT.md`, the full record in `experiments/NOTEBOOK.md` (the E and H series). All
+of it ran under the earlier noise (a fixed noise per node, no mismatch); under biological noise these hand-built brains
+fall to about 1 food for each poison (Noise as biology makes it, above), so their results stand only for that
+simulator. The lessons here are about mechanisms.
 
-## Recruitment, step 0: the baseline (2026-10-18)
+### Recruitment, step 0: the baseline (2026-10-18)
 
 The plan (`RECRUITMENT.md`, agreed with the user): keep the one-bit task, start from a brain with no machinery for
 telling food from poison, and let it discover in its life that it needs more. The control, agreed too: all-food lives
@@ -585,7 +607,7 @@ telling food from poison, and let it discover in its life that it needs more. Th
 
   | | poison lives: food:poison by third | meals per 1,000 ticks | all-food lives: food per 1,000 ticks by third |
   |---|---|---|---|
-  | minimal | 1.0, 1.0, 1.0 | 3.14 (half poison) | 3.09, 3.38, 2.97 |
+  | baseline circuit | 1.0, 1.0, 1.0 | 3.14 (half poison) | 3.09, 3.38, 2.97 |
   | designed circuit, learning | 2.3, 6.4, 5.3 (55 of 64 learned) | 1.66 | 2.17, 2.54, 2.80 |
 
 - **Machinery costs food when there is nothing to learn.** In all-food lives the learner eats a fifth less than the
@@ -600,7 +622,7 @@ telling food from poison, and let it discover in its life that it needs more. Th
   and connections grow toward a signal the disturbed unit sends out (as the sheet's paths grow toward a sink's
   field), under one rule that knows nothing of roles.
 
-## Recruitment: where the pain goes, and what a unit can ask (2026-10-18)
+### Recruitment: where the pain goes, and what a unit can ask (2026-10-18)
 
 - **Flooding every unit with "pain" was a ground-rule question.** It wouldn't move credit assignment into the body
   (every unit gets the same signal, saying nothing about which sensor earned it; each unit's own eligibility does the
@@ -670,82 +692,32 @@ telling food from poison, and let it discover in its life that it needs more. Th
 - **For later:** pain felt by the motors instead of the sensors. Nothing in the mechanism should depend on which end
   feels it; the bridge would then grow from the other end.
 
-## Recruitment, step 0.2: the net, and rung 0 (2026-10-18; the rule layer withdrawn, below)
+### Recruitment, step 0.2: what a unit can sense (2026-10-18)
 
-The engine and rules described here were programs beside the circuit, withdrawn for that reason ("The rules were not
-circuits", below); rung 0 was rebuilt as circuit ("Recruitment, rung 0 rebuilt as circuit"). The findings stand as a
-specification of the local signals a circuit needs.
+First built as compiled rules beside the circuit (`net.py`, `net_rules/`: locality as structure, as `sheet.py` is for
+the sheet), and withdrawn because they were programs, not circuit (Lessons that cut across the project); rung 0 was
+rebuilt as circuit (next). What stands is the specification of the local signals a unit needs:
 
+- **A knob is a memory: its noise comes with writing, not with time.** Noised every tick, a knob clamped at its top
+  walked down; the never-tasted motors ended less excitable and explored less (all-food lives ate 2.27 per 1,000
+  ticks against the baseline circuit's 3.12). With noise only on writes the adjusting circuit eats exactly as the
+  baseline circuit where nothing is learned. Likewise slow averages refreshed only at events need a fade.
+- **Rung 0 helps, but far from enough**: every unit's excitability a knob moved by eligibility x taste cut poison by a
+  third (food:poison 1.5 against the baseline circuit's 1.0; the designed circuit 5.3 in the last third): the case for
+  rung 1.
+- **Confidence**: how reliably a unit's activity predicts pain (+1) or a good taste (-1), counted only with evidence:
+  poison's sensor +0.46 on what it received, food's sensor -0.85, all-food sensors -0.96; the motors never taste, so
+  they have no evidence.
+- **Self-adjustment blinds a unit's own-spike evidence, so judge frustration on what a unit receives.** Lowering its
+  excitability, the poison sensor's own involvement fell into the noise, while what it received still predicted pain;
+  its knob stalled short of its limit (it moves only while the unit fires) and the pain went on.
+- **Decision confidence** (the user's comparator idea): how decisively a unit decides, by *firing consistency* (the
+  share of input events that made it fire: near 0 or 1 decided) and *misses* (how far a peak that didn't fire stayed
+  below threshold). The poison sensor stalls exactly at the edge: firing almost never (consistency 0.03), with near
+  misses (0.03). So frustration, by three local conditions: decided (the knob can't change what I do), what I receive
+  predicts pain, and the pain goes on: the poison sensor, and nothing else.
 
-- **Locality made the structure** (`net.py`, as `sheet.py` is for the sheet). A unit is a circuit node with its
-  elements; connections are elements between units' nodes. Every unit runs the same compiled rule (`net_rules/`) once
-  per world tick, given only its own numbers and spikes, what the body delivered to it, the spikes and messages that
-  came along its own connections, and messages sent back; it writes only its own numbers, its messages, and knobs
-  that set its own node. The engine hands each unit its connections in a fresh random order every tick, so a rule
-  can't learn which is which (the circuit's version of the sheet's means). Messages are clipped to -1..1 and noisy.
-  `test_net_rules.py` checks imports, signature, birth values and knobs, and runs each rule with bounds checked on
-  random nets (an index past a rule's own arrays fails there: tested).
-- **A knob is a memory: its noise comes with writing, not with time.** At first every kept number got noise every
-  tick, knobs included; a knob clamped at its top then walked down from it, the motors (never tasted, so never
-  written) ended less excitable (bias -1.67 against -1.60), fewer spontaneous kicks explored, and all-food lives ate
-  2.27 per 1,000 ticks against the baseline circuit's 3.12. With noise only on writes (10% of the change, as agreed for
-  non-volatile memory) the adjusting circuit eats exactly as the baseline circuit where nothing is learned.
-- **Slow averages refreshed only at events need a fade.** Updated only at tastes but noised every tick, they
-  random-walked in units that never taste; they now fade over 2,000 ticks without evidence.
-- **Rung 0** (`brains/adjusting.py`, `net_rules/adjust.py`): every unit's excitability is a knob, moved by
-  eligibility x taste; only the sensors feel taste. 64 lives of 10,000 ticks (`python recruit_test.py 64`):
-
-  | | poison lives: food, poison per 1,000 ticks (food:poison) | all-food lives: food per 1,000 ticks |
-  |---|---|---|
-  | minimal | 1.57, 1.57 (1.0) | 3.1-3.4 |
-  | adjusting (rung 0) | 1.48, 0.99 (1.5) | 3.12 |
-  | designed circuit, designed learning | about 1.3, 0.3 (5.3 in the last third) | 2.2-2.8 |
-
-  Rung 0 helps (a third less poison) but is far from enough: the case for rung 1.
-- **Confidence (the user's "firing confidence")**, implication over involvement, how reliably a unit's activity
-  predicts pain (+1) or a good taste (-1), counted only with evidence (5 tastes, involvement above the traces' noise):
-  poison's sensor +0.46 on what it received; food's sensor -0.85; in all-food lives the sensors -0.96; the motors
-  never taste, so they have no evidence and no confidence. The pattern step 0.2 looked for.
-- **Self-adjustment blinds a unit's own-spike evidence.** Lowering its excitability, the poison sensor's own
-  involvement fell to 0.04 (within the noise), while its received-input involvement stayed 0.13 with confidence
-  +0.46: it still receives what predicts pain, though it no longer fires. Its knob stalled (moving 0.002 per taste)
-  at -2.57, short of its limit (-3.0), because the knob moves only while the unit fires; and pain continued (0.99 per
-  1,000 ticks). So frustration must be judged on what a unit *receives*, not on what it does, or self-adjustment hides
-  the very problem it failed to fix. Frustrated, by that test: the poison sensor; not the food sensor; nothing in
-  all-food lives.
-- **Decision confidence (the user's comparator idea)**: not what firing leads to, but how decisively the unit decides,
-  its inputs against its own threshold. The engine now gives each rule its own node's highest voltage per tick (the
-  circuit records it; no arithmetic changes). Two measures, since a spike is all-or-none and only misses show how close
-  they came: *firing consistency* (the share of input events that made it fire; near 0 or 1 is decided, near 1/2
-  noise decides) and *misses* (for events that didn't fire, how far the voltage peak stayed below threshold, as a
-  share of the way from rest; the threshold, the edge of the fast positive feedback at -2.82, is set by the unit's own
-  elements, not by the knob, which moves its rest). 64 lives:
-
-  | | fires | decided (\|2 fires - 1\|) | miss | outcome confidence (received) |
-  |---|---|---|---|---|
-  | poison's sensor | 0.03 | 0.93 | 0.03 (near misses) | +0.44 |
-  | food's sensor | 0.69 | 0.37 | 0.26 | -0.83 |
-  | motors | 0.94 | 0.89 | 0.30 | no evidence |
-  | sensors, all-food lives | 0.68 | 0.36 | 0.25 | -0.99 |
-
-- **The poison sensor stalls exactly at the edge.** Its knob moves only while it fires, and it fires only while a
-  stimulus crosses threshold; so it settles where stimuli lift its voltage to just below threshold (rest -4.9, peaks
-  near -2.9): firing almost never (decided, by consistency) but with near misses (by the margin). Consistency is the
-  better test of whether the knob can still change behaviour (firing can fall no further than 0); the margin shows
-  where it sits (a step up would make it fire again). So frustration, by three local conditions: decided (the knob
-  can't change what I do), what I receive predicts pain, and the pain goes on: the poison sensor, and nothing else.
-- **The rules were not circuits (the user's question).** The net's unit rules (`net_rules/adjust.py`) are compiled
-  programs layered on the circuit: per-tick traces, event bookkeeping ("pending", a peak over two ticks, an estimate
-  of rest), a hard-coded threshold, and a knob that writes the circuit's bias from outside it. The locality checks
-  stopped a rule seeing other units, but inside a unit it was free digital computation: functionality beyond the
-  literal circuit, which the mixed-feedback track promises not to have ("everything, learning too, is nodes and
-  elements"). It should have been said when the engine was proposed. What stands: the measurements (watching may
-  compute anything) and the rung-0 findings as a specification of which local signals are needed; what doesn't: rung
-  0's behaviour as a mixed-feedback result. The same kind of mistake as "reward at contact": machinery outside the
-  thing being studied doing its work. Rule of thumb: for every number that affects behaviour, ask "which node holds
-  it, and which elements move it?"; if the answer is "the program", it isn't the circuit.
-
-## Recruitment, rung 0 rebuilt as circuit (2026-10-18)
+### Recruitment, rung 0 rebuilt as circuit (2026-10-18)
 
 - **Decided (the user): in the circuit brains everything is explicit circuit**, so that at any point the whole
   brain can be drawn as a circuit diagram. The rule layer (`net.py`, `net_rules/`) is retired. In a circuit locality
@@ -758,13 +730,13 @@ specification of the local signals a circuit needs.
   own spikes and a memory node (the knob) driving a current of up to 1.4 out of the neuron (an amplifier whose bias
   current the knob sets: a gated element reading the knob, gated by it); for the sensors only, two amplifiers from the
   taste node into the knob, gated by eligibility (bad charges it, good empties it), as the designed circuit's P.
-- **Measurement watches from outside** (`recruit_test.py`): the brain logs what went in and what each neuron did;
+- **Measurement watches from outside** (`measure_recruitment.py`): the brain logs what went in and what each neuron did;
   the observer computes the local quantities (involvement, confidence, firing consistency, misses) over the second
   half of each life. 64 lives of 10,000 ticks:
 
   | | poison lives: food, poison per 1,000 (food:poison) | poison's sensor: excitability, fires, confidence (received), miss | all-food lives: food per 1,000 |
   |---|---|---|---|
-  | minimal | 1.57, 1.57 (1.0) | 1.00, 0.70, +0.73, 0.22 | 3.14 |
+  | baseline circuit | 1.57, 1.57 (1.0) | 1.00, 0.70, +0.73, 0.22 | 3.14 |
   | adjusting (circuit) | 1.46, 1.05 (1.4) | 0.34, 0.18, +0.57, 0.03 | 3.15 |
 
   The rule version's result (1.5) holds in circuit form: rung 0 cuts poison by a third, and the poison sensor again
@@ -783,7 +755,7 @@ specification of the local signals a circuit needs.
   (involvement 1.00) with confidence exactly 0.00: equally before good and bad (exactly, as lives are paired). The
   motors can't know this themselves (they feel no taste); the observer can.
 
-## Recruitment: a starting animal that may know but can't act (2026-10-18)
+### Recruitment: a starting animal that may know but can't act (2026-10-18)
 
 - **A cleaner test (the user's).** In the rung-0 animal each sensor could change its own behaviour (ignore what
   predicts pain), so the starting animal could already learn a little. Instead: the baseline circuit plus a taste
@@ -794,7 +766,7 @@ specification of the local signals a circuit needs.
 - **The knowing circuit** (`brains/knowing.py`), all circuit: T fires innately at a bad taste (an amplifier from the
   taste node), and through a plastic synapse from each sensor whose strength is a memory node, charged by a bad
   taste and emptied by a good one while that sensor was recently active (the designed circuit's P motif, on the
-  sensor-to-T synapses). 64 lives of 10,000 ticks (`python recruit_test.py 64 10000 knowing`):
+  sensor-to-T synapses). 64 lives of 10,000 ticks (`python measure_recruitment.py 64 10000 knowing`):
 
   | | poison lives | all-food lives |
   |---|---|---|
@@ -809,7 +781,7 @@ specification of the local signals a circuit needs.
   a "danger in view" detector, which is arguably the right signal for avoiding. Frustrated by the test (confident,
   pain going on) in poison lives; calm in all-food lives.
 
-## Recruitment, rung 1: growing the link that lets knowledge act (2026-10-18)
+### Recruitment, rung 1: growing the link that lets knowledge act (2026-10-18)
 
 The full record, with methods, tables and working, is `experiments/NOTEBOOK.md` (E0-E6); in brief:
 
@@ -843,13 +815,13 @@ The full record, with methods, tables and working, is `experiments/NOTEBOOK.md` 
   veers only when the poison sensor fires, not at T's false alarms. The growth rule now needs to know only where the
   winning sprout is. Lesson: when a growth or wiring rule names a part ("connect to T"), ask how the circuit itself
   would find it.
-- **Found on the way: the neuron is fragile to mismatch.** 5% random error in every gain and bias costs both R3 and
-  the designed circuit most of what they learn. All of it comes from the neuron's own fast and slow elements and its
+- **Found on the way: the neuron is fragile to mismatch.** 5% random error in every gain and bias costs both the recruiting
+  circuit and the designed circuit most of what they learn. All of it comes from the neuron's own fast and slow elements and its
   bias; mismatch in the whole recruitment machinery costs nothing. The neuron cancels two equal elements at rest and
   sits 0.38 V below threshold, so 5% moves its rest by up to 70% of the margin: a precise-parts design, to be
   redesigned for margin.
 
-## Recruitment: a generic recruit that knows nothing (the healing circuit, 2026-10-19)
+### Recruitment: a generic recruit that knows nothing (the healing circuit, 2026-10-19)
 
 `brains/healing.py`; the H series in `experiments/NOTEBOOK.md`; `experiments/LEADERBOARD.md`. The user's design: a
 frustrated unit grows a recruit that attaches to it and its one-edge neighbours, sees their signals, learns which
@@ -890,9 +862,6 @@ menu (inhibit or excite each attached neuron, turn down a synapse) and a local r
   but while the pain lasts every recruit reaches that point, the last one too, and then no one acts. What standing
   down should mean (may the last recruit? a cap on waves would be a hidden size) is open; a recruit that walks would
   release its old action as it moves (`RECRUITMENT.md`, future work).
-- **Sigmoid tails are constant currents.** Twice: a dozen resting rivals' tails summed past an enable's rise, so none
-  ever won; and a pain input's resting tail, cancelled by the good-taste input's while the steps were equal, charged
-  tiredness once they weren't. Summed over many inputs or a long time constant, "almost zero" isn't.
 - **Power: choosing cost more than acting.** A generic recruit added about 1,200 units of gated static power (the
   guided bridge about 200), most of it the enables' pairwise rivalry: n(n-1) ungated elements, fully biased for ever.
   Gating each latch, rivalry and knock-out element by its own source cut it to about the guided bridge's (gated
@@ -913,34 +882,26 @@ menu (inhibit or excite each attached neuron, turn down a synapse) and a local r
   catalogue and check it still learns, then redraw the block view to match, before a harder test bed makes the
   structural choices real.
 
-## The second body: a square with two forward thrusters (withdrawn 2026-10-17)
+## The minimal circuit search
 
-Its mouth was its whole front edge, and its kicks were big (PUSH 0.5, TURN 0.08, DRAG 0.2): the ceiling with p
-perfect was 1.5 food per poison (about 45-49% poison), whatever the brain. Replaced by the triangle (above).
+The full record is `minimal/NOTEBOOK.md`; here only what generalises.
 
-## The first body (withdrawn)
+### Exploring, memory and efficiency (2026-10-20 to 22)
 
-The first body had a forward thruster at the tail (A) and one at the side that backed and turned it (V), and the
-reward came after a chew delay with eyes shut. Its lessons:
+- **Exploring is a job of its own.** The old winners could only travel towards food they saw. A hunger (a node
+  drained by a good taste, gating the clock into the second thruster) makes them travel when they haven't eaten;
+  with it the winner keeps eating over 100,000-tick lives in every tenth. A first version did nothing, because its
+  drain leaked at rest exactly as fast as it charged: a polish tuned a circuit that was never hungry, and only a
+  trace of the node's voltage showed it.
+- **A graded memory does quiet work, and a noisy one can't hold it** (2026-10-21, building a circuit of Sepulchre's
+  components). The simplest circuits keep the bit in a perfect integrator (a floating gate). Made leaky, as every
+  mixed-feedback node is, the bit gets the membrane noise every leaky node has and wanders 2.7 V in 1,000 ticks; made a
+  latch, it falls at birth into one guess and, learning only from food, never eats the other colour to correct it.
+  The integrator's middle was an undecided state that let the creature try both colours first. A binary memory needs
+  a way back from a wrong guess (learning from poison), so it costs parts the graded one didn't. Sepulchre is silent
+  on learning and storage, so we allow our floating gates under his rules (MIXED_FEEDBACK.md).
+- **Body efficiency needs a balance** (2026-10-21). Food per firing alone rewards a creature for dawdling; counting
+  the resting cost (NEED per 1,000 ticks) as well as moving and thinking gives a measure that both haste and dawdling
+  lower. With poison free in it, the best scripted policy drove into whatever lay ahead (a poison for every three
+  meals), so it counts a poison as COST meals lost, as the score does (2026-10-22).
 
-- **The body's ceiling.** With balances fixed perfect from birth, poison was still about a third of meals: the learner
-  was at the body's limit. Backing and turning swept the mouth over the poison it was avoiding, so the mouth eats only
-  what it moves forward into (perfect balances 33%, 29%, 33% by thirds → 31%, 17%, 28%). Longer pulses, body tweaks
-  and a 33 × 33 brain made no clear difference.
-- **Results by version** (poison's share of meals by thirds of life after moving, 16 lives with learning; no
-  learning about 50%):
-
-  | version | learning on |
-  |---|---|
-  | 18 shared numbers, distance fields, V near a far corner | 32%, 21%, 26% |
-  | 20: names that hold, x and y, V halfway down a side | 38%, 23%, 33% |
-  | 16: coordinates as distances (magic knowledge, withdrawn), V at the tail corner, straight paths | 45%, 34%, 34% |
-  | 18: A one cell again, A and V send distance fields (the exp cheat, withdrawn) | 35%, 39%, 34% (no learning 43%, 47%, 51%) |
-  | 27, honest: flags and gradients, -1..1 at 1% noise | 43%, 39%, 42% (no learning 49%, 48%, 54%); balances poison 0.20, food 0.84 |
-
-  V in the far corner (so R's and B's paths are easier to tell apart) doubles the way to V, and the recoil arrives
-  later. The individual-neighbour version before this project had 43%, 27%, 24%.
-- **Damage, as with the lizard.** A band 7 rows deep across the middle, replaced by new-born ones at tick 4,000, 6
-  lives of 6: x and y back within 1.5 columns in 90-180 ticks, names kept (or retaken where the band took one), every
-  route carrying pulses again. Damaging the organiser's corner is not fatal in principle (no surviving corner can
-  restart the race, but a new-born corner is a pacemaker again); not yet measured.

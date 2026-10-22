@@ -1,7 +1,7 @@
 """Measures the wiring rule on the 49 sheet: send pulses from S1 and S2 down each channel; how many arrive, how soon,
 and how many arrive more than once (a fork in a path doubles a pulse).
 
-    python wiring_test.py [LIVES] [WARMUP]
+    python measure_wiring.py [LIVES] [WARMUP]
 """
 import sys, time, numpy as np
 import sheet

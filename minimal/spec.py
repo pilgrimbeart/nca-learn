@@ -229,9 +229,10 @@ def pool():
     return _POOL
 
 
-JUDGED = (1.0,)     # the noise levels a circuit is judged at, as shares of the usual: the nominal alone (the user's
-                    # decision, 2026-10-20), unless an experiment judges across the range (search.py, prune.py,
-                    # evolve.py --noises 0.5 1 2: pruning judged at one level trades mechanism for noise)
+JUDGED = (0.5, 1.0, 2.0)  # the noise levels a circuit is judged at, as shares of the usual, the worst counting and the
+                    # job required at each: half, nominal and double, in every polish, pruning, open search and final
+                    # judgement (the user's decision, 2026-10-22: judged at one level, pruning traded mechanism for
+                    # noise, which costs no parts); --noises judges at others
 
 
 def score(specs, seeds=range(8), ticks=10000, learning=True, all_food=False, noise=None):
@@ -346,8 +347,20 @@ def objective(lives, by: str = "score") -> float:
         return net(lives)
     if not does_job(lives):
         return net(lives) - FAIL
-    levels = sorted({getattr(l, "noise", 1.0) for l in lives})
-    return min(OBJECTIVES[by]([l for l in lives if getattr(l, "noise", 1.0) == k]) for k in levels)
+    return worst(lives, OBJECTIVES[by])
+
+
+def by_level(lives) -> dict:
+    """The lives at each noise level, in order (score lives them level by level, each seed's pair together)."""
+    out = {}
+    for l in lives:
+        out.setdefault(getattr(l, "noise", 1.0), []).append(l)
+    return dict(sorted(out.items()))
+
+
+def worst(lives, f) -> float:
+    """A measure (higher is better) at the worst noise level."""
+    return min(f(v) for v in by_level(lives).values())
 
 
 BOOT = 2000         # bootstrap resamples, over seeds, each seed's pair of lives kept together (the user's question,
@@ -382,16 +395,19 @@ def resampled(pp: dict, idx: np.ndarray) -> dict:
                 np.inf), "stranded": s["stranded"] / (2 * idx.shape[1])}
 
 
+LOWER_IS_WORSE = ("food", "gain", "efficiency", "thrift", "last")     # (and "stranded" higher is worse)
+
+
+def worst_resampled(levels: dict, idx: np.ndarray) -> dict:
+    """resampled at each noise level (levels: each level's per_pair) with the same resamples (a seed drawn at one level
+    is drawn at every level), and the worst level's value in each resample: the statistic the judging uses."""
+    rs = [resampled(pp, idx) for pp in levels.values()]
+    return {k: (np.min if k in LOWER_IS_WORSE else np.max)(np.stack([r[k] for r in rs]), axis=0) for k in rs[0]}
+
+
 def interval(x) -> list:
     """The bootstrap 95% interval."""
     return [float(np.nanpercentile(x, 2.5)), float(np.nanpercentile(x, 97.5))]
-
-
-def _as(l, noise):
-    """A copy of a life, marked as lived at the given noise (to pool lives over levels)."""
-    c = Lived(l)
-    c.power, c.firings, c.over, c.noise = l.power, l.firings, l.over, noise
-    return c
 
 
 def summary(lives) -> dict:
@@ -399,14 +415,25 @@ def summary(lives) -> dict:
     (food - poison), food and poison per 1,000 ticks of life, food:poison over the last third, the share of lives
     stranded (no food in the last third), firings per 1,000 ticks, gain rate (food less COST a poison per 1,000
     ticks), efficiency (meals gained per meal spent), thrift (food per 1,000 firings), whether it does the job (JOB),
-    and 95% intervals (ci) for food, gain, efficiency, thrift, food:poison and stranded. Lives at several noise levels: the score is the worst level's, the job must be
+    and 95% intervals (ci) for food, gain, efficiency, thrift, food:poison and stranded. Lives at several noise levels:
+    every measure is the worst level's (its interval resampled with the same seeds at every level), the job must be
     done at every one, and by_noise holds each level's summary."""
-    levels = sorted({getattr(l, "noise", 1.0) for l in lives})
-    if len(levels) > 1:
-        by = {k: summary([l for l in lives if getattr(l, "noise", 1.0) == k]) for k in levels}
-        whole = summary([_as(l, 1.0) for l in lives])
-        whole.update(net=net(lives), job=all(v["job"] for v in by.values()), by_noise={str(k): v for k, v in by.items()})
-        return whole
+    levels = by_level(lives)
+    if len(levels) > 1:                                 # every measure the worst level's, its interval resampled jointly
+        by = {k: summary(v) for k, v in levels.items()}
+        n = len(next(iter(levels.values()))) // 2
+        idx = boot_index(n)
+        rs = worst_resampled({k: per_pair(v) for k, v in levels.items()}, idx)
+        boot = np.min([[net([l for i in row for l in v[2 * i:2 * i + 2]]) for row in idx] for v in levels.values()], axis=0)
+        w = lambda key, f=min: f(s[key] for s in by.values())
+        sw = max(by.values(), key=lambda s: s["stranded"])
+        return {"net": net(lives), "plain": w("plain"), "power": float(np.mean([s["power"] for s in by.values()])),
+                "over": w("over", max), "lo": float(np.nanpercentile(boot, 2.5)), "hi": float(np.nanpercentile(boot, 97.5)),
+                "food": w("food"), "poison": w("poison", max), "gain": w("gain"), "last": w("last"),
+                "stranded": sw["stranded"], "firings": float(np.mean([s["firings"] for s in by.values()])),
+                "efficiency": w("efficiency"), "thrift": w("thrift"), "job": all(s["job"] for s in by.values()),
+                "ci": {**{k: interval(v) for k, v in rs.items() if k != "stranded"}, "stranded": sw["ci"]["stranded"]},
+                "by_noise": {str(k): s for k, s in by.items()}}
     pairs = [lives[i:i + 2] for i in range(0, len(lives), 2)]
     idx = boot_index(len(pairs))
     boot = [net([l for i in row for l in pairs[i]]) for row in idx]

@@ -1,6 +1,8 @@
 # Lab notebook: rung 1 of recruitment
 
-*Names (2026-10-18): the "grown brain" is now the **sheet brain**, and the "mixed-signal brain" the **designed circuit**; the minimal, adjusting, knowing and recruiting brains are the **…-circuit** brains. Earlier entries keep the names they were written with. (2026-10-21: the minimal circuit is now the **baseline circuit**, `baseline-circuit`, so that "minimal" means only the minimal circuit search; the printed results in `results/` keep the old label.)*
+*Run under the simulator before 2026-10-20 (a fixed noise per node, no mismatch): the results stand only for it
+(`LESSONS.md`, Noise as biology makes it). Older entries keep the names they were written with (`LESSONS.md`, the
+opening); the printed results in `results/` call the baseline circuit "minimal".*
 
 Rung 1 (RECRUITMENT.md): the knowing circuit (brains/knowing.py) learns what predicts pain in its taste neuron T, but T
 has no outputs. Can it grow, in its life and by local means only, the link that lets that knowledge change behaviour?
@@ -205,7 +207,7 @@ and 0.6, to be confirmed on held-out lives (the choice was made on the evaluatio
 *(c) Mismatch* (every gain and bias off by a random 5% or 10%, normal, fixed at birth; paired with the same brain
 unperturbed). First run: some lives scored "never moved". Traced: a bug, `start = moving or ticks`, counted a creature
 that moved at tick 0 (moving = 0, false in Python) as one that never moved; with mismatch a motor can fire from the
-first tick. Fixed in experiments/common.py, creature.py and recruit_test.py; it had affected no earlier result (no
+first tick. Fixed in experiments/common.py, creature.py and measure_recruitment.py; it had affected no earlier result (no
 unperturbed life of any of these brains moved at tick 0: checked, 0 of 64 or 128 each). After the fix:
 
 | brain | 5% mismatch: net food change | 10% |

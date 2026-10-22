@@ -207,8 +207,9 @@ learns by local rules, and circuits shaped by evolution, which needs no gradient
 - **Bursting and plasticity.** Drion's group finds that switching a network from tonic firing to bursting pulls
   synaptic weights into an attractor set by the plasticity rule, a controllable consolidation stage [28].
 - **What I could not find**: a mixed-feedback circuit that learns a task from reward within its lifetime, or any
-  evolution or automatic design of Ribar-Sepulchre circuits. This project's designed circuit (a three-factor rule
-  built from the same elements, learning from one taste signal) sits in that gap.
+  evolution or automatic design of Ribar-Sepulchre circuits. This project works in that gap: the designed circuit (a
+  three-factor rule built from the same elements, learning from one taste signal, though fragile to mismatch) and the
+  minimal circuit search's circuits, found by optimisation, which learn under biological noise and mismatch.
 
 ## Related work from evolutionary robotics
 
@@ -229,114 +230,52 @@ Closest in spirit to evolving such circuits:
 
 ## What it suggests for this project
 
+Written before the circuit work; what has come of each, as of 2026-10-22:
+
 - **Our element is theirs, with three additions.** `mixed_feedback.py` has their node and element (tanh or sigmoid
   of a filtered voltage) and adds a **gate** (a third node scaling the current, so modulation is a signal inside the
   circuit rather than a parameter set from outside), **clamps** and **perfect integrators** (no leak). The gate is how
   learning lives in our circuit; clamps and integrators are idealisations their framework avoids: every node has a
-  passive, monotone resistive element. That is the same rule as "every node must leak" proposed for evolution.
+  passive, monotone resistive element. *Done*: an experiment may declare Sepulchre's rules (every node leaky but
+  memory nodes, no clamps; below).
 - **Coordinates for evolution.** Describe elements by sign and timescale band (fast, slow, ultra-slow, separated by
   a factor of several) and by voltage window, not as free parameters; behaviour changes kind at known boundaries of
-  balance, so the search space has meaningful axes.
+  balance, so the search space has meaningful axes. *Not tried*: the search tunes raw values.
 - **Cheap analysis before simulation.** The I-V curves at each timescale are static and quick to compute: a circuit
-  whose motor nodes have no N-shaped fast curve can't spike, and need not be simulated.
+  whose motor nodes have no N-shaped fast curve can't spike, and need not be simulated. *Not tried.*
 - **Learning as modulation.** The designed circuit learns a synaptic gain (P gates a synapse). The literature suggests
   learning could equally shift a node's intrinsic balance, for example a slow negative conductance switching a neuron
-  between relaying and ignoring its input: a lever an evolved circuit might find.
+  between relaying and ignoring its input: a lever an evolved circuit might find. *Not seen yet*: the searched circuits
+  gate their reads by the bit.
 - **Robustness as a test.** Their central claim is robustness to mismatch through balance. An evolved circuit should
   keep working with every parameter a few percent off at birth; that is both a defence against overfitting the
-  simulator and a check that it has found a mixed-feedback solution rather than a fine-tuned one.
+  simulator and a check that it has found a mixed-feedback solution rather than a fine-tuned one. *Done*, and harder
+  than proposed: 10% mismatch in every part, built into the simulator; the hand-built neurons failed it, the searched
+  circuits pass.
 - **Our behaviour is events driving kicks**, like the 1991 neuron servo: each motor spike is a fixed kick, so the body
   is driven by event timing and rate, the regime this literature is about.
-- **Not yet used here**: slow positive feedback (bursting), rebound, winner-take-all, resistive couplings. The hush
+- **Not yet used here**: slow positive feedback (bursting), rebound, winner-take-all, resistive couplings; and the
+  simplest circuits found use no positive feedback at all (below). The hush
   between our sensors is a crude winner-take-all; a rebound winner-take-all [19, 20] is its principled form.
 
-## How the simplest circuits found map onto it (2026-10-21)
+## What the minimal circuit search found, against it (2026-10-21)
 
-The user's question: had we started from Sepulchre's components alone, would we have reached circuits as simple and as
-effective as the minimal circuit search's (`minimal/`)? The simplest that do the job, or nearly, are HFT_E1_23p_pruned
-(22 parts, does the job at the nominal noise) and three of 21 parts that strand (N_E1_32p_pruned, EV_21p,
-NP_E1_32p); all four are the same circuit, give or take one element. Piece by piece (HFT_E1_23p_pruned):
+The details are `minimal/NOTEBOOK.md`, M10. In brief: the simplest circuits that learn the bit (about 22 parts) contain
+**no positive-feedback loop at all**. Everything Sepulchre gets from positive feedback they get elsewhere: their
+**events** from the body's spike counter (a comparator with hysteresis, the only positive feedback in the system, in
+the interface every brain shares), their **memory** from a perfect integrator (a floating gate), their **rhythm** from
+noise. They got that way by pruning, judged at one noise level, a circuit with a true mixed-feedback clock, whose rate
+didn't hang on the noise: so a mixed-feedback clock costs 2 parts and buys robustness, which only judging across the
+noise range values. A circuit of Sepulchre's components alone was estimated at about 26 parts with gates: not as simple,
+but robust where the simplest is not. A memory of his components fails in instructive ways: a leaky node holding the
+bit is swamped by its own membrane noise, and a latch sticks on its first guess unless poison can flip it.
 
-| piece | what it is | one of Sepulchre's components? |
-|---|---|---|
-| S0, S1, T | passive leaky nodes (time constants about 9, 12 and 0.6 ticks): the eyes' pulses low-pass filtered into a voltage, the taste a brief pulse | yes: a node with its monotone backbone and no elements |
-| M0 (a motor) | a passive leaky node, pushed up by currents; counted as spiking when it rises through 0 having been below -1 | the node, yes; but its events are made by the body's spike counter, not by fast positive feedback |
-| M1 (the clock, the other motor) | no leak; one slow negative self-feedback (filtered over 204 ticks) holds it near -0.37 V, and noise carries it across 0 and back below -1 | partly: slow negative feedback is theirs (I+s), but no leak breaks the monotone backbone, and with no fast positive feedback it has no spike of its own: its rate is the noise's (133, 225 and 252 spikes per 1,000 ticks, seeing nothing, at half, the usual and double noise) |
-| m (the bit) | a memory node: a capacitor with no leak | no: their memory is bistability, from positive feedback; a perfect integrator is the idealisation they avoid |
-| m <- S0, S1, gated by T | the write: a three-factor rule (what was seen, times the taste) | no: a gate (one node's voltage scaling an element's current) is this project's addition; they modulate gains from outside the circuit |
-| M0 <- m, gated by S0, S1 | the read: the bit sets each eye's effect on the motor | no, as above |
-| M0 <- M1 | a synapse: now and then a forward run when nothing is in view | yes |
-
-**There is not one positive-feedback loop in it.** Everything Sepulchre gets from positive feedback, the simplest
-circuit gets elsewhere: its **events** from the body's spike counter (rising through 0, re-armed below -1: a comparator
-with hysteresis, a Schmitt trigger, the only positive feedback in the system, and it sits in the interface, the same
-for every brain); its **memory** from a perfect integrator; its **rhythm** from noise.
-
-**It got that way by pruning a mixed-feedback circuit.** The circuits it was pruned from have a true relaxation
-oscillator in M1: a leak, fast positive feedback and slow negative feedback (filtered over 200-290 ticks). Seeing
-nothing, their clocks don't care about the noise:
-
-| clock | half noise | usual | double (M1 spikes per 1,000 ticks, 4 lives x 3,000 ticks) |
-|---|---|---|---|
-| N_E1_23p (23 parts), mixed feedback | 183 | 183 | 181 |
-| HFT_E1_23p (28 parts), mixed feedback | 269 | 269 | 268 |
-| N_E1_32p_pruned (21 parts), noise | 23 | 158 | 229 |
-| HFT_E1_23p_pruned (22 parts), noise | 133 | 225 | 252 |
-
-Pruning, judged at the nominal noise alone, took the leak and the fast positive feedback (2 parts), because there noise
-did the same job (LESSONS.md, "Judged at one noise level, pruning trades mechanism for noise"). So a mixed-feedback
-clock costs 2 parts and buys a rate that doesn't hang on the noise; the judging decides which wins, and at one noise
-level noise is free. The pruned circuit pays where the noise differs: at half noise it strands 23% of lives.
-
-**A first test, unpolished.** SEP_24p is HFT_E1_23p without its hunger node: the clock kept, the run path ungated (24
-parts). Held out (64 seeds x 2):
-
-| | half noise | usual | double |
-|---|---|---|---|
-| SEP_24p, clock kept: food, last third food:poison, stranded | 1.55, 3.29, 0%: does the job | 1.59, 2.54, 5% | 1.97, 2.16, 0% |
-| HFT_E1_23p_pruned, noise clock | 0.91, 3.90, 23% | 2.16, 3.64, 5%: does the job | 3.13, 2.74, 0% |
-
-Neither does the job at all three. SEP_24p's run path was tuned to be gated by hunger, and ungated it runs on every
-clock cycle, eating less selectively; it needs polishing (and pruning judged across the noise range) before it says
-anything about what a mixed-feedback circuit of its size can do.
-
-**An estimate for a circuit of their components only.** Against HFT_E1_23p_pruned's 22 parts:
-
-- a clock that makes its own events: +2 (a leak and fast positive feedback);
-- the bit as a latch, not an integrator: +2 (a leak and positive self-feedback). A latch flips rather than adds up
-  evidence: a closer fit to a task of one bit, and with poison writing too, the reversal (which every circuit fails)
-  might work;
-- gates: if a gate counts as theirs (in hardware it is Mead's transconductance amplifier, whose gain a bias voltage
-  sets, that voltage taken from a node), nothing more. If not: either the bit shifts each sensor node's level so that
-  its synapse to the motor passes or not (about the same parts, but several thresholds stacked in one voltage, under
-  10% mismatch), or coincidence neurons (about 5 parts for each of the four gated paths).
-
-So roughly 26 parts with gates, and 26 to 40 without, against 22: **not as simple, but robust where the simplest is
-not.** The 4 parts more are what the 22-part circuit borrows from the noise and the integrator. Effectiveness is open
-until the same search runs under their rules and judged across the noise range.
-
-**Sepulchre's rules, as we enforce them** (the user's decision, 2026-10-21). Sepulchre's framework is silent on
-learning and on non-volatile storage: its gains are set from outside the circuit, and its memory is what dynamics
-give, slow variables (graded, but they fade, and noise wanders them) and positive feedback (a latch: robust, but
-binary, and like any node voltage lost when the power goes). Real neuromorphic chips pair such neurons with
-non-volatile weights (floating gates), as brains pair activity-held working memory with structure-held long-term
-memory. So under "Sepulchre's rules" (`rules: "mixed"` in a spec, refused otherwise by `minimal/spec.py`'s `check`)
-the dynamics must be his, every node leaky but memory nodes and no clamps, while our own components for learning and
-storage stay allowed: gates, and memory nodes (a floating gate: graded, no leak, no membrane noise, only its writes'
-shot noise).
-
-**What building a stricter circuit showed** (no memory nodes at all, from HFT_E1_23p): a leaky node holding the bit
-fails, because a leaky node is membrane and gets membrane noise, which random-walks a slow bit by about 2.7 V in
-1,000 ticks (food:poison about 1.2); a latch fails differently, settling at birth into "approach colour 1, avoid colour
-0" and, learning only from food, never eating colour 0 to find out. The integrator's graded middle had been doing
-quiet work: an undecided state at birth, so that the creature tries both colours until meals commit it. A latch works
-only with a way back from a wrong guess: learning from poison (a poison node, and a write that flips the latch on
-tasting poison while seeing colour 1), 33 parts unpolished, against 28 for the circuit it came from. Which, with the
-reversal (where every circuit so far fails, learning only from food), may be worth having anyway.
-
-**The experiment** (queued 2026-10-21): three arms from HFT_E1_23p, each polished and pruned judged at half, usual and
-double noise, the worst level counting: free; Sepulchre's rules with a floating-gate memory (MX_fg); and strict, the
-bit a latch corrected by poison (MX_latchP).
+**Sepulchre's rules, as we enforce them** (the user's decision, 2026-10-21): his framework is silent on learning and on
+non-volatile storage (its gains are set from outside the circuit; its memory is slow variables, which fade, and
+latches, which are binary), and real neuromorphic chips pair such neurons with non-volatile weights (floating gates).
+So under "Sepulchre's rules" (`rules: "mixed"` in a spec, `AGENTS.md`) the dynamics must be his, every node leaky but
+memory nodes and no clamps, while our gates and memory nodes stay allowed. A three-arm experiment (free, his rules
+with a floating gate, strict with a latch) is running.
 
 ## References
 

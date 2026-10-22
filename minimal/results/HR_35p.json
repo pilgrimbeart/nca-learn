@@ -214,7 +214,7 @@
   "nodes": 8,
   "elements": 11
  },
- "from": "hand design (scratchpad hold.py): EF_22p's senses and memory, a scan oscillator, a hold node, a roam timer",
+ "from": "hand design: minimal.designs.hold_roam(EF_22p's spec) (minimal/NOTEBOOK.md, M11)",
  "held_out": {
   "net": 1.7564766575392259,
   "plain": 2.701634375,

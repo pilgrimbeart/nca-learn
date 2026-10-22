@@ -229,6 +229,45 @@ def hungry(spec: dict, tau: float = 8700.0, C: float = 8.7, rest: float = 1.0) -
     return s
 
 
+HOLD_ROAM = dict(ma_bias=0.0, ma_tau=20.0, ma_slow=-4.0, mb_bias=-2.6, syn=3.0, g_C=4.0, g_tau=200.0, g_rest=-1.5,
+                 g_gain=4.0, r_C=8.0, r_tau=300.0, r_rest=2.5, r_th=1.0, r_gain=2.0, r_drain=-8.0)
+
+
+def hold_roam(senses: dict, p: dict = HOLD_ROAM) -> dict:
+    """The hold-and-roam circuit (minimal/NOTEBOOK.md, M11; HR_35p): the senses and memory of a spinning circuit
+    (`senses`, EF_22p's: sensors S0, S1, taste T, the bit m, its two writes and two reads), its motor stage replaced.
+    MA, an oscillator on one motor (fast positive feedback and a strong slow negative one, so its rate barely depends
+    on mismatch), scans; G, a hold node (time constant g_tau circuit ticks), is charged by a sighting of the colour
+    the bit calls food and drained by the other's, through the reads; MB, an excitable node on the other motor,
+    copies MA's spikes while G is open, so both thrusters fire together and the creature goes straight; and Rt, a
+    roam timer, fills while G is shut and, when full, opens G (a sharp drain: a sigmoid's tail at rest would match
+    its charging current)."""
+    import copy
+    S0, S1, _, _, T, m = copy.deepcopy(senses["nodes"])
+    e = senses["elements"]
+    gR, rR = p["g_tau"] / p["g_C"], p["r_tau"] / p["r_C"]
+    nodes = [S0, S1, T, m,
+             ["G", p["g_rest"] / gR, gR, p["g_C"], None, None, None, False],
+             ["MA", p["ma_bias"], 2.0, 1.0, None, None, None, False],
+             ["MB", p["mb_bias"], 2.0, 1.0, None, None, None, False],
+             ["Rt", p["r_rest"] / rR, rR, p["r_C"], None, None, None, False]]
+    iS0, iS1, iT, im, iG, iA, iB, iR = range(8)
+    elements = [
+        [im, iS0, iT, *e[3][3:]],                                   # the writes
+        [im, iS1, iT, *e[4][3:]],
+        [iG, im, iS0, p["g_gain"], e[1][4], e[1][5], 0.0, False],   # the reads: approach if food, retreat if poison
+        [iG, im, iS1, p["g_gain"] * e[2][3] / e[1][3], e[2][4], e[2][5], 0.0, False],
+        [iA, iA, -1, 2.0, -1.5, 1.0, 0.0, False],                   # MA: the scan
+        [iA, iA, -1, p["ma_slow"], -1.5, 1.0, p["ma_tau"], False],
+        [iB, iB, -1, 2.0, -1.5, 1.0, 0.0, False],                   # MB: excitable, silent alone
+        [iB, iB, -1, -2.0, -1.5, 1.0, 10.0, False],
+        [iB, iA, iG, p["syn"], 0.0, 5.0, 0.0, True],                # ... copying MA's spikes while G is open
+        [iG, iR, -1, p["r_gain"], p["r_th"], 4.0, 0.0, True],       # the timer full: open G
+        [iR, iG, -1, p["r_drain"], 1.0, 8.0, 0.0, True],            # G open: empty the timer
+    ]
+    return {"nodes": nodes, "elements": elements, "sensors": [iS0, iS1], "motors": [iA, iB], "taste": iT}
+
+
 def raw(spec: dict):
     """(design, params) for a raw spec: its numbers as parameters, each searched within a factor of 4 of where it is
     (offsets and rests +-1.5 V), inside the bounds of the open search."""

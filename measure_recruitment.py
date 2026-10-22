@@ -16,7 +16,7 @@ poison (half red, half blue) and all-food lives, where nothing should stir. Over
   answer to the taste doesn't count); false alarms: the same for food meals; and its confidence: when it fired before a
   meal, how often the meal was poison.
 
-    python recruit_test.py [LIVES] [TICKS] [BRAIN]
+    python measure_recruitment.py [LIVES] [TICKS] [BRAIN]
 """
 
 import multiprocessing

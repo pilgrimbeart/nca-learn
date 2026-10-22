@@ -156,4 +156,19 @@ if __name__ == "__main__":
     hi[0] = hi[1] = hi[2] = (0, 0, 1000)
     report(f"judged across noise levels, the worst level's score counts ({net([lo, lo]):+.2f} and {net([hi, hi]):+.2f}:"
            f" {net([lo, lo, hi, hi]):+.2f})", abs(net([lo, lo, hi, hi]) - min(net([lo, lo]), net([hi, hi]))) < 1e-9)
+    from minimal.spec import JUDGED, summary
+    a_lo, a_hi = [Lived(l) for l in a_l], [Lived(l) for l in a_l]  # the 64 lives above at two levels, eating less at
+    for l, m in zip(a_lo + a_hi, a_l + a_l):                      # double noise
+        l.firings = m.firings
+    for l in a_lo:
+        l.noise = 0.5
+    for l in a_hi:
+        l.noise = 2.0
+        l[0] = l[1] = l[2] = (max(0, l[0][0] - 2), 0, l[0][2])
+    v, lv, hv = summary(a_lo + a_hi), summary(a_lo), summary(a_hi)
+    report(f"judged at {', '.join(f'{k:g}' for k in JUDGED)} x the nominal noise by default, every measure the worst"
+           f" level's (efficiency {v['efficiency']:.2f}, of {lv['efficiency']:.2f} and {hv['efficiency']:.2f}), its"
+           f" interval resampled jointly ({v['ci']['efficiency'][0]:.2f} to {v['ci']['efficiency'][1]:.2f})",
+           JUDGED == (0.5, 1.0, 2.0) and abs(v["efficiency"] - min(lv["efficiency"], hv["efficiency"])) < 1e-9
+           and abs(v["food"] - hv["food"]) < 1e-9 and v["ci"]["efficiency"][0] <= v["efficiency"] <= v["ci"]["efficiency"][1])
     sys.exit(1 if failed else 0)
