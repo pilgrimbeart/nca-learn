@@ -306,11 +306,48 @@ def spent(l) -> float:
 
 
 def efficiency(lives) -> float:
-    """Meals eaten per meal spent (spent: resting, moving, thinking), over the lives: the body's efficiency, the
-    dimension ranked against parts in the league and the open search. Above 1 a creature gains; going too fast wastes
-    fuel and too slowly the resting cost, so it has a best speed between (the user's balance, 2026-10-21: a careful
-    creature thinks before it moves, but eats less in a given time)."""
-    return sum(a for l in lives for a, _, _ in l) / sum(spent(l) for l in lives)
+    """Meals gained per meal spent (gained: food less COST a poison; spent: resting, moving, thinking), over the
+    lives: the body's efficiency, the dimension ranked against parts in the league and the open search. Above 1 a
+    creature gains; going too fast wastes fuel and too slowly the resting cost, so it has a best speed between (the
+    user's balance, 2026-10-21: a careful creature thinks before it moves, but eats less in a given time). Poison
+    counts as in the score (the user's decision, 2026-10-21): with poison free, the most efficient scripted policy
+    ate a poison for every three meals, driving into whatever lay ahead."""
+    return (sum(a - COST * b for l in lives for a, b, _ in l)) / sum(spent(l) for l in lives)
+
+
+def gain(lives) -> float:
+    """Meals gained (food less COST a poison) per 1,000 ticks of life: speed and accuracy, energy free."""
+    return 1000 * sum(a - COST * b for l in lives for a, b, _ in l) / sum(t for l in lives for _, _, t in l)
+
+
+def does_job(lives) -> bool:
+    """The job (JOB): enough food, food:poison in the last third, few lives stranded; at every noise level judged."""
+    levels = sorted({getattr(l, "noise", 1.0) for l in lives})
+    if len(levels) > 1:
+        return all(does_job([l for l in lives if getattr(l, "noise", 1.0) == k]) for k in levels)
+    t = sum(t for l in lives for _, _, t in l)
+    lf, lp = sum(l[2][0] for l in lives), sum(l[2][1] for l in lives)
+    return bool(t and 1000 * sum(a for l in lives for a, _, _ in l) / t >= JOB[0]
+                and (lf / lp if lp else math.inf) >= JOB[1] and sum(l[2][0] == 0 for l in lives) / len(lives) <= JOB[2])
+
+
+OBJECTIVES = {"score": net, "efficiency": efficiency, "gain": gain}
+                    # what a polish or pruning maximises (the user's three objectives, 2026-10-22: the simplest brain
+                    # doing the job, parts, is the open search's and the league's; the best driver for energy,
+                    # efficiency; and for speed and accuracy, gain), the score the default
+FAIL = 10.0         # a circuit not doing the job, judged by efficiency or gain: its score less this, so that any
+                    # circuit doing the job ranks above it and among failures the score still leads towards the job
+
+
+def objective(lives, by: str = "score") -> float:
+    """The lives judged by one of OBJECTIVES; for efficiency or gain, only a circuit doing the job counts (FAIL), and
+    across noise levels the worst level's."""
+    if by == "score":
+        return net(lives)
+    if not does_job(lives):
+        return net(lives) - FAIL
+    levels = sorted({getattr(l, "noise", 1.0) for l in lives})
+    return min(OBJECTIVES[by]([l for l in lives if getattr(l, "noise", 1.0) == k]) for k in levels)
 
 
 BOOT = 2000         # bootstrap resamples, over seeds, each seed's pair of lives kept together (the user's question,
@@ -334,11 +371,13 @@ def per_pair(lives) -> dict:
 
 
 def resampled(pp: dict, idx: np.ndarray) -> dict:
-    """Per resample: food per 1,000 ticks (speed), efficiency, thrift (food per 1,000 firings), last third's
-    food:poison, share stranded."""
+    """Per resample: food per 1,000 ticks, gain rate (food less COST a poison, per 1,000 ticks: speed and accuracy,
+    energy free), efficiency (poison counted), thrift (food per 1,000 firings), last third's food:poison, share
+    stranded."""
     s = {k: v[idx].sum(axis=1) for k, v in pp.items()}
     with np.errstate(divide="ignore", invalid="ignore"):
-        return {"food": 1000 * s["food"] / s["ticks"], "efficiency": s["food"] / s["spent"],
+        return {"food": 1000 * s["food"] / s["ticks"], "gain": 1000 * (s["food"] - COST * s["poison"]) / s["ticks"],
+                "efficiency": (s["food"] - COST * s["poison"]) / s["spent"],
                 "thrift": np.where(s["fired"] > 0, 1000 * s["food"] / np.maximum(s["fired"], 1e-9), 0.0), "last": np.where(s["lp"] > 0, s["lf"] / np.maximum(s["lp"], 1e-9),
                 np.inf), "stranded": s["stranded"] / (2 * idx.shape[1])}
 
@@ -358,9 +397,9 @@ def _as(l, noise):
 def summary(lives) -> dict:
     """The score (net, above; with a bootstrap 95% interval over seeds, each seed's pair kept together), plain net
     (food - poison), food and poison per 1,000 ticks of life, food:poison over the last third, the share of lives
-    stranded (no food in the last third), firings per 1,000 ticks, efficiency (meals eaten per meal spent), thrift
-    (food per 1,000 firings), whether it does the job (JOB), and 95% intervals (ci) for food, efficiency,
-    thrift, food:poison and stranded. Lives at several noise levels: the score is the worst level's, the job must be
+    stranded (no food in the last third), firings per 1,000 ticks, gain rate (food less COST a poison per 1,000
+    ticks), efficiency (meals gained per meal spent), thrift (food per 1,000 firings), whether it does the job (JOB),
+    and 95% intervals (ci) for food, gain, efficiency, thrift, food:poison and stranded. Lives at several noise levels: the score is the worst level's, the job must be
     done at every one, and by_noise holds each level's summary."""
     levels = sorted({getattr(l, "noise", 1.0) for l in lives})
     if len(levels) > 1:
@@ -383,11 +422,11 @@ def summary(lives) -> dict:
     return {"net": net(lives), "plain": net(lives, 1.0, 0.0, 0.0), "power": float(np.mean([l.power for l in lives])),
             "over": max(l.over for l in lives), "lo": float(np.nanpercentile(boot, 2.5)), "hi": float(np.nanpercentile(boot, 97.5)),
             "food": 1000 * f / t if t else 0.0, "poison": 1000 * p / t if t else 0.0,
+            "gain": 1000 * (f - COST * p) / t if t else 0.0,
             "last": lf / lp if lp else math.inf, "stranded": stranded,
             "firings": float(np.mean([l.firings for l in lives])), "efficiency": efficiency(lives),
             "thrift": float(rs_all["thrift"][0]),
-            "job": bool(1000 * f / t >= JOB[0] and (lf / lp if lp else math.inf) >= JOB[1] and stranded <= JOB[2])
-            if t else False, "ci": {**{k: interval(v) for k, v in rs.items() if k != "stranded"},
+            "job": does_job(lives), "ci": {**{k: interval(v) for k, v in rs.items() if k != "stranded"},
                                     "stranded": wilson(int(round(stranded * len(lives))), len(lives))}}
 
 

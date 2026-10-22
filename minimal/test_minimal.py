@@ -115,10 +115,16 @@ if __name__ == "__main__":
         l.firings = 300.0 * k
     from minimal.spec import NEED
     report(f"moving costs (a firing {THRUST:g} of a meal: {net(even):+.2f} against {net(busy):+.2f} firing twice as"
-           f" often), and efficiency is meals eaten per meal spent ({efficiency(even):.2f}, {efficiency(busy):.2f})",
+           f" often), and efficiency is meals gained per meal spent ({efficiency(even):.2f}, {efficiency(busy):.2f})",
            THRUST > 0 and abs(net(even) - net(busy) - THRUST * 300) < 1e-9
            and abs(efficiency(even) - 2 / (NEED + THRUST * 300)) < 1e-9
            and abs(efficiency(busy) - 2 / (NEED + THRUST * 600)) < 1e-9)
+    from minimal.spec import COST
+    sick = [Lived([(2, 0.5, 1000)] * 3 + [(0, 0, 0)]) for _ in range(2)]     # as even, but a poison every 4 meals
+    for l in sick:
+        l.firings = 300.0
+    report(f"efficiency counts a poison as {COST:g} meals lost ({efficiency(even):.2f} without, {efficiency(sick):.2f}"
+           f" with one every four meals)", abs(efficiency(sick) - (2 - COST * 0.5) / (NEED + THRUST * 300)) < 1e-9)
     from minimal.spec import boot_index, per_pair, resampled, wilson
     rng = np.random.default_rng(0)                      # 32 seeds' pairs: b fires half as much again as a on the same
     a_l, b_l = [], []                                   # lives (efficiency about 15% lower)

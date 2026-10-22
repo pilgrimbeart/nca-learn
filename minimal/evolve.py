@@ -1,11 +1,14 @@
 """The open search for the minimal circuit (minimal/NOTEBOOK.md, method step 4): evolution over topologies and
 parameters at once, from random circuits, none of the hand designs among them, so it may find what reasoning missed.
 
-Three objectives: the score (minimal/spec.py), up; parts, down; and the body's efficiency (meals eaten per meal spent
-resting, moving and thinking: minimal/spec.py), up (each its own dimension, as the user asked: "the minimum circuit achieves body efficiency X; allowing
-any complexity, the best found is Y"; the circuit's power is in the score, at a hundredth of moving's); selection by non-dominated rank (NSGA-II, crowding replaced by
-preferring the higher score within a front). Every generation scores parents and children together on
-fresh seeds, with the simulator's own noise and mismatch, so nothing survives on one lucky evaluation.
+The user's three objectives (2026-10-22), each its own dimension, never traded: parts, down (the simplest brain that
+does the job); efficiency (meals gained per meal spent resting, moving and thinking: the best driver for energy), up;
+and gain rate (meals gained per 1,000 ticks: the best for speed and accuracy, energy free), up. Doing the job
+(minimal/spec.py, JOB) is a constraint: a circuit doing it beats every one that doesn't, and among those that don't
+the score (minimal/spec.py) leads towards it. Selection by non-dominated rank (NSGA-II, crowding replaced by
+preferring the higher score within a front), so the first front answers all three questions at every complexity.
+Every generation scores parents and children together on fresh seeds, with the simulator's own noise and mismatch,
+so nothing survives on one lucky evaluation.
 
     python -m minimal.evolve [GENERATIONS] [--pop 48] [--seed 0] [--name evolve0]
 """
@@ -24,7 +27,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from minimal.spec import efficiency, interface, net, parts, remove_node, score, tidy  # noqa: E402
+from minimal.spec import does_job, efficiency, gain, interface, net, parts, remove_node, score, tidy  # noqa: E402
 
 RESULTS = os.path.join(os.path.dirname(__file__), "results")
 BOUNDS = {"C": (0.05, 100.0), "R": (0.1, 1000.0), "gain": 20.0, "slope": (0.5, 30.0), "tau": (0.5, 200.0),
@@ -133,12 +136,17 @@ def mutate(spec, rng) -> dict:
 
 
 def dominates(a, b) -> bool:
-    """a at least as good as b on every objective (score up, parts down, efficiency up), and not the same."""
-    return a[0] >= b[0] and a[1] <= b[1] and a[2] >= b[2] and a != b
+    """a, b: (job, score, parts, efficiency, gain). Doing the job beats not doing it; between two that do, at least
+    as good on parts (down), efficiency and gain (up), and not the same; between two that don't, a higher score."""
+    if a[0] != b[0]:
+        return a[0]
+    if not a[0]:
+        return a[1] > b[1]
+    return a[2] <= b[2] and a[3] >= b[3] and a[4] >= b[4] and a[2:] != b[2:]
 
 
 def fronts(objs):
-    """Non-dominated fronts of (score up, parts down, efficiency up)."""
+    """Non-dominated fronts (dominates)."""
     left, out = list(range(len(objs))), []
     while left:
         f = [i for i in left if not any(dominates(objs[j], objs[i]) for j in left)]
@@ -155,6 +163,7 @@ def evolve(gens=200, pop=48, seed=0, seeds=8, ticks=10000, name="evolve0", log=p
     else:
         P = [tidy(born(rng)) for _ in range(pop)]
     archive = {}                                        # parts -> (best score in one generation, spec)
+    best_by = {"efficiency": {}, "gain": {}}            # parts -> (best in one generation, spec), doing the job
     path = os.path.join(RESULTS, f"{name}.json")
     for g in range(gens):
         kids = []
@@ -165,24 +174,29 @@ def evolve(gens=200, pop=48, seed=0, seeds=8, ticks=10000, name="evolve0", log=p
         lives = score(everyone, seeds=range(20000 + seed * 100000 + g * seeds,
                                             20000 + seed * 100000 + (g + 1) * seeds),
                       ticks=ticks)
-        objs = [(round(net(l), 3), parts(s)["total"], round(efficiency(l), 2)) for s, l in zip(everyone, lives)]
-        for (sc, pt, _), s in zip(objs, everyone):
+        objs = [(does_job(l), round(net(l), 3), parts(s)["total"], round(efficiency(l), 2), round(gain(l), 2))
+                for s, l in zip(everyone, lives)]
+        for (job, sc, pt, ef, gn), s in zip(objs, everyone):
             if pt not in archive or sc > archive[pt][0]:
                 archive[pt] = (sc, s)
+            for key, v in (("efficiency", ef), ("gain", gn)):
+                if job and (pt not in best_by[key] or v > best_by[key][pt][0]):
+                    best_by[key][pt] = (v, s)
         nxt = []
         for f in fronts(objs):
-            f = sorted(f, key=lambda i: -objs[i][0])
+            f = sorted(f, key=lambda i: -objs[i][1])
             nxt += f[: pop - len(nxt)]
             if len(nxt) >= pop:
                 break
         P = [everyone[i] for i in nxt]
-        best = max(objs)
-        front = sorted({objs[i] for i in fronts(objs)[0] if objs[i][0] > 0}, key=lambda o: o[1])
-        log(f"gen {g:3d}  best {best[0]:+.2f} ({best[1]} parts, efficiency {best[2]})  front (score > 0): " +
-            " ".join(f"{p}p/{e}e:{s:+.2f}" for s, p, e in front))
+        best = max(objs, key=lambda o: o[1])
+        front = sorted({objs[i] for i in fronts(objs)[0] if objs[i][0]}, key=lambda o: o[2])
+        log(f"gen {g:3d}  best score {best[1]:+.2f} ({best[2]} parts)  front (doing the job), parts/efficiency/gain: " +
+            " ".join(f"{p}p/{e}e/{gn}g" for _, _, p, e, gn in front))
         if g % 10 == 9 or g == gens - 1:
             os.makedirs(RESULTS, exist_ok=True)
-            json.dump({"gen": g, "population": P, "archive": {str(k): v for k, v in sorted(archive.items())}},
+            json.dump({"gen": g, "population": P, "archive": {str(k): v for k, v in sorted(archive.items())},
+                       **{f"best_{key}": {str(k): v for k, v in sorted(b.items())} for key, b in best_by.items()}},
                       open(path, "w"))
     return P, archive
 

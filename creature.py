@@ -446,7 +446,7 @@ def rules() -> list:
         (1, f"Area, by analogy with analogue chips, in unit transistors: an element {spec.AREA['element']}, a gate"
             f" {spec.AREA['gate']} more, a leak {spec.AREA['leak']}, a capacitor {spec.AREA['capacitor']} per unit;"
             " shown, not ranked on."),
-        (1, "Efficiency: meals eaten per meal spent (resting, moving, thinking). Thrift: food per 1,000 firings."
+        (1, f"Efficiency: meals gained (food, less {spec.COST:g} a poison) per meal spent (resting, moving, thinking). Thrift: food per 1,000 firings."
             " Speed: food per 1,000 ticks."),
         (1, "Simplicity and efficiency are kept apart, never traded."),
         (1, "Confidence: every measure with its 95% interval; two designs compared paired, on the same seeds, and"

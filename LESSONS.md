@@ -559,6 +559,18 @@ which subthreshold silicon shares (Sarpeshkar, Delbrueck and Mead 1993), and the
   creature for dawdling; counting the resting cost (NEED per 1,000 ticks) as well as fuel gives meals eaten per meal
   spent, which both haste and dawdling lower. And a league ordered by point estimates claimed orders it couldn't back:
   compare designs paired on the same seeds, with intervals on the difference, and call the rest ties.
+- **Match the brain's speed to the body's (impedance matching)** (2026-10-21, the user's observation live: the best
+  circuit spins, sweeps its narrow gaze past far food and can't react before it has gone). Scripted policies (not
+  brains) that see only the eyes' pulses and are told the bit from birth showed what the body allows: one that reacts
+  to a food pulse for about 2 ticks scores as EF_22p does (efficiency 1.68 against 1.66, then counting no poison); one
+  that holds its course for 4 ticks after a pulse, 2.9; holding and roaming straight for 15 ticks after 80 of
+  scanning, 3.95. A far block gives about one pulse as the gaze sweeps it, and the spin carries on for about 1.5 ticks
+  after a thruster stops: a brain faster than that loses the sighting, so the brain's time constant has to match the
+  body's sweep and momentum, not be as fast as possible. Turning slower barely helps (one thruster always drives the
+  same circle, about 1.2 units' radius, whatever the rate). The search missed it because a hold is a new node with a
+  time constant of a few ticks, and every start came from circuits that react briefly. With poison free in efficiency
+  the best policy drove into whatever lay ahead (a poison per three meals), so efficiency now counts a poison as COST
+  meals lost, as the score does (the user's decision).
 
 ## Recruitment, step 0: the baseline (2026-10-18)
 

@@ -396,7 +396,8 @@ recruits) and the lessons are in `LESSONS.md`.
   is near; the score counts starving life by life and third by third so that this can't hide among other lives.
 - **Pruning**: trying every single simplification of a circuit (an element, a filter, a gate, a leak, a clamp taken
   away) and keeping the best that costs no more than a little score, until none does (`minimal/prune.py`).
-- **Body efficiency**: meals eaten per meal's worth of energy spent, counting resting (the 1 meal per 1,000 ticks
+- **Body efficiency**: meals gained (food, less 2 for each poison, as in the score) per meal's worth of energy spent,
+  counting resting (the 1 meal per 1,000 ticks
   every creature needs, whatever it does), moving (0.002 of a meal a thruster firing) and thinking (the circuit's
   power, for today's circuits a hundredth of moving). Above 1 a creature gains. Haste wastes fuel and dawdling the
   resting cost, so a careful creature, thinking before it moves, has a best speed. In the minimal search it is ranked
@@ -404,9 +405,15 @@ recruits) and the lessons are in `LESSONS.md`.
 - **Area**: what a circuit would take on a chip, by analogy with subthreshold analogue CMOS, in unit transistors: an
   element 5 (a transconductance amplifier), a gate 3 more, a leak 2, a clamp 1, a memory node's floating gate 5, and
   each capacitor 10 per unit of its value. Capacitors dominate, as on real neuromorphic chips; their price is a guess.
-- **Thrift** and **speed**: food per 1,000 thruster firings (fuel alone, time no object) and food per 1,000 ticks.
-  With efficiency, the three answers to "best at what?" that a survival situation might ask; the league names the
-  best circuit doing the job at each, and says whether it is surely best or tied within noise.
+- **Gain rate**: meals gained (food, less 2 for each poison) per 1,000 ticks, energy free: speed and accuracy.
+- **The three objectives** (of the minimal search): the simplest brain doing the job (fewest parts), the best driver
+  for energy (body efficiency) and the best for speed and accuracy (gain rate), each its own dimension, never traded;
+  the league names the best circuit doing the job at each, and says whether it is surely best or tied within noise.
+- **Thrift**: food per 1,000 thruster firings (fuel alone, time no object); shown, not ranked.
+- **Hold**, **roam** (the hold-and-roam circuit, HR): after a sighting of the food colour, a slow node keeps both
+  thrusters firing together for some ticks, so the creature goes straight on to the food instead of reacting for a
+  moment and sweeping past it; after a long spell of scanning with nothing seen, a timer sends it straight off to
+  look elsewhere. Matching the brain's speed to the body's sweep and momentum (impedance matching).
 - Names: in prose "the sheet brain", "the designed circuit", "the knowing circuit"; on the command line `sheet`,
   `designed-circuit`, `knowing-circuit` and so on. The recruitment series' baseline, the **baseline circuit**, was
   called the minimal circuit until 2026-10-21; "minimal" now means only the minimal circuit search (`minimal/`).

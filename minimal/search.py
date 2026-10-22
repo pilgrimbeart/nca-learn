@@ -1,11 +1,13 @@
 """Tuning a circuit's parameters for the minimal circuit search (minimal/NOTEBOOK.md): CMA-ES (Hansen's covariance
-matrix adaptation evolution strategy, in its plain form) on net food per 1,000 ticks. Each parameter is searched in
+matrix adaptation evolution strategy, in its plain form) on the score (net food per 1,000 ticks), or with --by on
+efficiency or gain rate, a circuit counting only if it does the job (minimal/spec.py, objective). Each parameter is searched in
 [0, 1], mapped onto its bounds (on a log scale when they are both positive). Every generation scores its candidates
 on fresh seeds, the same seeds for all of them (paired), so that no candidate is tuned to particular lives. Noise and
 mismatch are the simulator's own (mixed_feedback), at the nominal noise (the user's decision, 2026-10-20). Every
 polish ends with pruning (minimal/prune.py), saved beside it as NAME_pruned if anything could go.
 
     python -m minimal.search DESIGN|RESULTS.json [GENERATIONS] [--ticks 10000] [--seeds 8] [--lam 16] [--name NAME]
+                             [--by score|efficiency|gain]
 """
 
 from __future__ import annotations
@@ -21,7 +23,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from minimal.spec import net, parts, score, summary  # noqa: E402
+from minimal.spec import OBJECTIVES, objective, parts, score, summary  # noqa: E402
 
 RESULTS = os.path.join(os.path.dirname(__file__), "results")
 
@@ -43,8 +45,8 @@ def encode(p: dict, params: dict):
 
 
 def cmaes(design, params: dict, gens: int = 60, lam: int = 16, seeds: int = 8, ticks: int = 10000,
-          sigma: float = 0.15, start: dict | None = None, log=print, first_seed: int = 10000):
-    """Maximise net food. Returns (best parameters by their generation's mean, history)."""
+          sigma: float = 0.15, start: dict | None = None, log=print, first_seed: int = 10000, by: str = "score"):
+    """Maximise the objective (by: minimal/spec.py, OBJECTIVES). Returns (best parameters by their generation's mean, history)."""
     n = len(params)
     mean = encode(start or {k: v[0] for k, v in params.items()}, params)
     mu = lam // 2
@@ -68,11 +70,11 @@ def cmaes(design, params: dict, gens: int = 60, lam: int = 16, seeds: int = 8, t
         x[-1] = mean                                            # (the mean itself, scored on the same lives)
         specs = [design(decode(xi, params)) for xi in x]
         lives = score(specs, seeds=range(first_seed + g * seeds, first_seed + (g + 1) * seeds), ticks=ticks)
-        f = np.array([net(l) for l in lives])
+        f = np.array([objective(l, by) for l in lives])
         order = np.argsort(-f[:-1])
         if f[-1] > best[0]:
             best = (f[-1], decode(mean, params))
-        history.append({"gen": g, "mean_net": float(f[-1]), "best_net": float(f[:-1].max()), "sigma": sigma})
+        history.append({"gen": g, "by": by, "mean": float(f[-1]), "best": float(f[:-1].max()), "sigma": sigma})
         log(f"gen {g:3d}  mean {f[-1]:+.3f}  best {f[:-1].max():+.3f}  sigma {sigma:.3f}")
         sel = order[:mu]
         old = mean
@@ -103,7 +105,7 @@ def report(name, spec, v: dict) -> str:
             f"  net {v['net']:+.2f} [{v['lo']:+.2f}, {v['hi']:+.2f}] (food - poison {v['plain']:+.2f}), food"
             f" {v['food']:.2f}, poison {v['poison']:.2f}, last third {v['last']:.2f}, stranded {v['stranded']:.0%},"
             f" power {v['power']:.2f}, thruster firings {v['firings']:.0f} per 1,000, efficiency"
-            f" {v['efficiency']:.2f} meals eaten per meal spent\n"
+            f" {v['efficiency']:.2f} meals gained per meal spent\n"
             + "".join(f"  at x{k} noise: net {w['net']:+.2f}, food {w['food']:.2f}, last third {w['last']:.2f},"
                       f" stranded {w['stranded']:.0%}, efficiency {w['efficiency']:.2f}, job {w['job']}\n"
                       for k, w in v.get("by_noise", {}).items())
@@ -120,6 +122,8 @@ if __name__ == "__main__":
     ap.add_argument("--lam", type=int, default=16)
     ap.add_argument("--start", help="a results file to start from")
     ap.add_argument("--name", help="the results file's name (default: the design's)")
+    ap.add_argument("--by", choices=tuple(OBJECTIVES), default="score",
+                    help="what to maximise: the score, or efficiency or gain rate for a circuit doing the job")
     ap.add_argument("--thrust", type=float, help="an experiment: the score's cost per thruster firing, in meals"
                                                  " (default spec.THRUST)")
     ap.add_argument("--noises", type=float, nargs="+", help="an experiment: judge at these noise levels (shares of"
@@ -141,7 +145,7 @@ if __name__ == "__main__":
         design, params = DESIGNS[a.design]
         start = json.load(open(a.start))["params"] if a.start else None
     t0 = time.time()
-    final, best, hist = cmaes(design, params, a.gens, a.lam, a.seeds, a.ticks, start=start)
+    final, best, hist = cmaes(design, params, a.gens, a.lam, a.seeds, a.ticks, start=start, by=a.by)
     spec = design(final)
     v = validate(spec, ticks=a.ticks)
     print(report(a.name or a.design, spec, v) + f"\n  ({time.time() - t0:.0f} s)")
@@ -149,7 +153,7 @@ if __name__ == "__main__":
     json.dump({"design": a.design, "params": final, "spec": spec, "held_out": v, "parts": parts(spec),
                "history": hist, "args": vars(a)}, open(os.path.join(RESULTS, f"{a.name or a.design}.json"), "w"), indent=1)
     from minimal.prune import prune                     # then pruned, as standard (minimal/prune.py)
-    pruned, steps = prune(spec)
+    pruned, steps = prune(spec, by=a.by)
     if steps:
         name = f"{a.name or a.design}_pruned"
         v = validate(pruned, ticks=a.ticks)

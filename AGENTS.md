@@ -90,10 +90,17 @@ The task, body and interface stay as for every brain. The rules, each enforced i
   not tied to any circuit). Both are guesses, to adjust; `search.py --thrust` tries another price.
 - **Counted plainly**: parts are capacitors, resistors, diodes and transistors (a gated element two, a filtered input
   a resistor and capacitor more); power is what each device dissipates, its current times the voltage across it.
-  Simplicity and the body's efficiency (meals eaten per meal spent: resting, `spec.NEED` per 1,000 ticks, moving and
-  thinking, so that both haste and dawdling cost) are separate dimensions, never traded: the
-  league (`minimal/LEAGUE.md`) says what the simplest circuit doing the job achieves and the best efficiency found at
-  any complexity, and the open search keeps both (with the score) as objectives.
+- **Three objectives, never traded** (the user's, 2026-10-22), each among circuits doing the job: the simplest
+  brain (parts); the best driver for energy (efficiency: meals gained, food less `spec.COST` a poison, per meal
+  spent resting, `spec.NEED` per 1,000 ticks, moving and thinking, so that both haste and dawdling cost); and the
+  best for speed and accuracy (gain rate: meals gained per 1,000 ticks, energy free). The league
+  (`minimal/LEAGUE.md`) names the best at each; the open search keeps all three as objectives, doing the job a
+  constraint (the score leads circuits that don't towards it); `search.py` and `prune.py --by efficiency|gain`
+  polish and prune for one (default the score), so a part kept for speed isn't pruned for its cost. Thrift (food
+  per firing) is shown, not ranked.
+- **Match the brain's speed to the body's**: a far block gives about one eye pulse as the gaze sweeps it, so a
+  brain must hold its course for some ticks after a sighting (`LESSONS.md`). Starts for a search should include
+  designs that do (the hold-and-roam circuit, HR), or it stays among circuits that react too briefly.
 - **Sure, or within noise**: the league shows every measure with its 95% interval (a bootstrap over seeds, each
   seed's pair of lives together; stranding a Wilson interval) and compares designs paired on the same seeds: one is
   above another only if the interval of the difference excludes 0, else they are tied, and a design does the job
