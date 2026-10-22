@@ -1,7 +1,7 @@
 """The H series' runner (experiments/NOTEBOOK.md): any named rules for recruiting, in lives of any length, against the
 knowing circuit (no recruitment) on the same lives; each result goes on the leaderboard (LEADERBOARD.md).
 
-    python -m experiments.h_run LIVES TICKS name [name ...]      (a name may be a fragment: every match runs)
+    python -m experiments.h_run LIVES SECONDS name [name ...]      (a name may be a fragment: every match runs)
 """
 
 import functools
@@ -73,27 +73,27 @@ RULES = {
                                                                                       judge="share", tire=0.05,
                                                                                       starve=True),
     "root, 30k: inputs: cascade": functools.partial(H, menu="inputs", listen="all", sign="inh", cascade=True,
-                                                    trigger="root", persist=30000.0, judge="share", tire=0.05),
+                                                    trigger="root", persist=300.0, judge="share", tire=0.05),
     "root, 30k: inputs: cascade, retire": functools.partial(H, menu="inputs", listen="all", sign="inh", cascade=True,
-                                                            trigger="root", persist=30000.0, judge="share", tire=0.05,
+                                                            trigger="root", persist=300.0, judge="share", tire=0.05,
                                                             retire=True),
     "root, 30k: inputs: cascade, retire, starve 20k": functools.partial(H, menu="inputs", listen="all", sign="inh",
-                                                                        cascade=True, trigger="root", persist=30000.0,
+                                                                        cascade=True, trigger="root", persist=300.0,
                                                                         judge="share", tire=0.05, retire=True,
-                                                                        starve=20000.0),
+                                                                        starve=200.0),
     "root: inputs: cascade": functools.partial(H, menu="inputs", listen="all", sign="inh", cascade=True,
                                                trigger="root", judge="share", tire=0.05),
     "root: inputs: cascade, retire": functools.partial(H, menu="inputs", listen="all", sign="inh", cascade=True,
                                                        trigger="root", judge="share", tire=0.05, retire=True),
     "root: inputs: cascade, retire, starve 20k": functools.partial(H, menu="inputs", listen="all", sign="inh",
                                                                    cascade=True, trigger="root", judge="share",
-                                                                   tire=0.05, retire=True, starve=20000.0),
+                                                                   tire=0.05, retire=True, starve=200.0),
     "root: inputs: cascade, starve 20k": functools.partial(H, menu="inputs", listen="all", sign="inh", cascade=True,
-                                                           trigger="root", judge="share", tire=0.05, starve=20000.0),
+                                                           trigger="root", judge="share", tire=0.05, starve=200.0),
     "root: inputs: cascade, inherit, retire, starve 20k": functools.partial(H, menu="inputs", listen="inherit",
                                                                             sign="inh", cascade=True, trigger="root",
                                                                             judge="share", tire=0.05, retire=True,
-                                                                            starve=20000.0),
+                                                                            starve=200.0),
     "share: wsls, neurons only, cascade": functools.partial(H, menu="neurons", cascade=True, judge="share", tire=0.05),
     "share: wsls, neurons only, inherit, inhibit only, cascade": functools.partial(H, menu="neurons", listen="inherit",
                                                                                    sign="inh", cascade=True,
@@ -106,14 +106,15 @@ RULES = {
 }
 
 
-def knowing(lives, ticks, first_seed=0):
+def knowing(lives, seconds, first_seed=0):
     """The baseline, run once per life length and seed set, and kept."""
     import os
-    path = f"experiments/results/knowing_{lives}_{ticks}" + (f"_from{first_seed}" if first_seed else "") + ".pkl"
+    path = f"experiments/results/knowing_{lives}_{seconds:g}s" + (f"_from{first_seed}" if first_seed else "") + ".pkl"
     if os.path.exists(path):
         return pickle.load(open(path, "rb"))
     make = functools.partial(H, grow=False)
-    base = (run(make, lives, ticks, first_seed=first_seed), run(make, lives, ticks, all_food=True, first_seed=first_seed))
+    base = (run(make, lives, seconds, first_seed=first_seed), run(make, lives, seconds, all_food=True,
+                                                                 first_seed=first_seed))
     pickle.dump(base, open(path, "wb"))
     return base
 
@@ -122,13 +123,14 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     first_seed = int(args.pop(args.index("--seed") + 1)) if "--seed" in args else 0   # held-out lives: --seed 100
     args = [a for a in args if a != "--seed"]
-    lives, ticks, wanted = int(args[0]), int(args[1]), args[2:]
-    base = knowing(lives, ticks, first_seed)
+    lives, seconds, wanted = int(args[0]), float(args[1]), args[2:]
+    base = knowing(lives, seconds, first_seed)
     tag = f" (held out, seeds from {first_seed})" if first_seed else ""
     for name, make in RULES.items():
         if not any(w == name or (w.endswith("*") and name.startswith(w[:-1])) for w in wanted):
             continue
-        p, f = run(make, lives, ticks, first_seed=first_seed), run(make, lives, ticks, all_food=True, first_seed=first_seed)
+        p, f = run(make, lives, seconds, first_seed=first_seed), run(make, lives, seconds, all_food=True,
+                                                                    first_seed=first_seed)
         d, lo, hi = paired(base[0], p)
         waves = {}
         for r in p:
@@ -138,10 +140,10 @@ if __name__ == "__main__":
         switches = [sw for r in p for _, wv, what, _, sw, since in r.get("recruits", []) if wv == 1]
         print(summary(name + tag, p), flush=True)
         if settle:
-            print(f"{'':35s}wave-1 recruits: median last switch at tick {int(np.median(settle))}, median switches"
+            print(f"{'':35s}wave-1 recruits: median last switch at {np.median(settle):.1f} s, median switches"
                   f" {int(np.median(switches))}", flush=True)
         print(f"{'':35s}net vs knowing {d:+.2f} [{lo:+.2f}, {hi:+.2f}]; deepest wave {dict(sorted(waves.items()))};"
               f" choices {choices(p)}; all-food recruits {sum(len(r.get('recruits', [])) for r in f)}", flush=True)
-        board(name + tag, ticks, p, f, base[0], base[1])
-        pickle.dump((p, f), open(f"experiments/results/h_{name.replace(' ', '_').replace('/', '-')}_{ticks}"
+        board(name + tag, seconds, p, f, base[0], base[1])
+        pickle.dump((p, f), open(f"experiments/results/h_{name.replace(' ', '_').replace('/', '-')}_{seconds:g}s"
                                  + (f"_from{first_seed}" if first_seed else "") + ".pkl", "wb"))

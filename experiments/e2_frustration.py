@@ -12,10 +12,11 @@ import numpy as np
 
 from brains.recruiting import RecruitingBrain
 from experiments.common import E3, SAMPLE, run
+from units import T_TYP
 
-FIRST = [("A guard, learning", dict(guard=3.0, frustrate=0.1)),
+FIRST = [("A guard, learning", dict(guard=3 * T_TYP, frustrate=0.1)),
          ("B no guard, learning", dict(guard=0.0, frustrate=0.1)),
-         ("C guard, no learning", dict(guard=3.0, frustrate=0.1, learn=False)),
+         ("C guard, no learning", dict(guard=3 * T_TYP, frustrate=0.1, learn=False)),
          ("D no guard, no learning", dict(guard=0.0, frustrate=0.1, learn=False))]
 SECOND = [("E recalibrated, learning", dict()), ("F recalibrated, no learning", dict(learn=False))]   # (E2b)
 CONDITIONS = SECOND if "--second" in sys.argv else FIRST
@@ -23,7 +24,7 @@ CONDITIONS = SECOND if "--second" in sys.argv else FIRST
 
 def describe(records):
     F = np.array([r["F"] for r in records])                     # lives x samples
-    at = lambda tick: F[:, tick // SAMPLE - 1].mean()
+    at = lambda seconds: F[:, int(round(seconds / SAMPLE)) - 1].mean()
     over = [next((i + 1) * SAMPLE for i, f in enumerate(r["F"]) if f > 0.5) if max(r["F"]) > 0.5 else None
             for r in records]
     hit = [t for t in over if t is not None]
@@ -36,11 +37,11 @@ def describe(records):
           for r in records]
     hf = [np.mean([h.get("food", h.get("blue", 0)) for h, f in zip(r["help"], r["F"]) if f > 0.5] or [np.nan])
           for r in records]
-    return (f"F at 1,000 / 3,000 / 10,000 ticks {at(1000):.2f} / {at(3000):.2f} / {at(10000):.2f}; F > 0.5 in "
-            f"{len(hit)} of {len(records)} lives" + (f" (median first at {int(np.median(hit))})" if hit else "") +
+    return (f"F at 10 / 30 / 100 s {at(10):.2f} / {at(30):.2f} / {at(100):.2f}; F > 0.5 in "
+            f"{len(hit)} of {len(records)} lives" + (f" (median first at {np.median(hit):.0f} s)" if hit else "") +
             f"; help while F > 0.5: poison's sensor {np.nanmean(hp):.2f}, food's {np.nanmean(hf):.2f}" +
             f"; first sprout to reach growth: {who or 'none'}" +
-            (f" at median tick {int(np.median([f[0] for f in first if f]))}" if any(first) else ""))
+            (f" at median {np.median([f[0] for f in first if f]):.1f} s" if any(first) else ""))
 
 
 if __name__ == "__main__":

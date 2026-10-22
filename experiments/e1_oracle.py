@@ -8,9 +8,10 @@ import functools
 import pickle
 import sys
 
-from brains.circuit import INHIBIT, SPEED
+from brains.circuit import INHIBIT
 from brains.recruiting import HOLD, RecruitingBrain
 from experiments.common import paired, run, summary
+from units import C_TYP, I_TYP
 
 KNOWING = functools.partial(RecruitingBrain, grow=False, hold="T")       # the recruiting circuit, growth switched off
 
@@ -49,8 +50,8 @@ def o4(life):                       # bridges on all four synapses
 def o5(life):                       # T's hold inhibits one motor directly: danger -> one thruster down
     b, c = life.brain, life.brain.circuit
     m = one_motor(life)
-    hold = c.node("Hm", R=HOLD * SPEED / 10.0, C=10.0, lo=0.0, hi=1.0)
-    c.element(hold, b.T, 10.0, 0.0, slope=5.0, sigmoid=True)
+    hold = c.node("Hm", R=HOLD / (10 * C_TYP), C=10 * C_TYP, lo=0.0, hi=1.0)
+    c.element(hold, b.T, 10 * I_TYP, 0.0, slope=5.0, sigmoid=True)
     c.element(m, hold, -INHIBIT, 0.5, slope=10.0, sigmoid=True)
     c.grow()
 
@@ -70,7 +71,7 @@ if __name__ == "__main__":
         print(summary(name, poison), flush=True)
         print(summary("", food, all_food=True), flush=True)
     base = results["none (knowing)"]
-    print("\nnet food per 1,000 ticks, paired with the knowing circuit (same lives, same noise): mean difference [95%]")
+    print("\nnet food per 10 s, paired with the knowing circuit (same lives, same noise): mean difference [95%]")
     for name, (poison, food) in results.items():
         d, lo, hi = paired(base[0], poison)
         e, elo, ehi = paired(base[1], food)

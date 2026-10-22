@@ -275,7 +275,9 @@ non-volatile storage (its gains are set from outside the circuit; its memory is 
 latches, which are binary), and real neuromorphic chips pair such neurons with non-volatile weights (floating gates).
 So under "Sepulchre's rules" (`rules: "mixed"` in a spec, `AGENTS.md`) the dynamics must be his, every node leaky but
 memory nodes and no clamps, while our gates and memory nodes stay allowed. A three-arm experiment (free, his rules
-with a floating gate, strict with a latch) is running.
+with a floating gate, strict with a latch; `minimal/NOTEBOOK.md`, M12) settled nothing about his discipline: the
+circuit both first arms started from already obeyed his rules, so they polished alike, and the strict arm never
+learned. A fair test needs a start built of his components, events from positive feedback.
 
 ## References
 

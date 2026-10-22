@@ -3,7 +3,7 @@ parameters at once, from random circuits, none of the hand designs among them, s
 
 The user's three objectives (2026-10-22), each its own dimension, never traded: parts, down (the simplest brain that
 does the job); efficiency (meals gained per meal spent resting, moving and thinking: the best driver for energy), up;
-and gain rate (meals gained per 1,000 ticks: the best for speed and accuracy, energy free), up. Doing the job
+and gain rate (meals gained per 10 s: the best for speed and accuracy, energy free), up. Doing the job
 (minimal/spec.py, JOB) is a constraint: a circuit doing it beats every one that doesn't, and among those that don't
 the score (minimal/spec.py) leads towards it. Selection by non-dominated rank (NSGA-II, crowding replaced by
 preferring the higher score within a front), so the first front answers all three questions at every complexity.
@@ -27,11 +27,12 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from minimal.spec import does_job, efficiency, gain, interface, net, parts, remove_node, score, tidy, worst  # noqa: E402
+from minimal.designs import BOUNDS  # noqa: E402
+from minimal.spec import (LIFE, does_job, efficiency, gain, interface, net, parts, remove_node, score, tidy,  # noqa: E402
+                          worst)
+from units import C_TYP, I_TYP, R_TYP, T_TYP  # noqa: E402
 
 RESULTS = os.path.join(os.path.dirname(__file__), "results")
-BOUNDS = {"C": (0.05, 100.0), "R": (0.1, 1000.0), "gain": 20.0, "slope": (0.5, 30.0), "tau": (0.5, 200.0),
-          "bias": 5.0, "offset": 3.0}
 
 
 def clip(v, lo, hi):
@@ -41,18 +42,18 @@ def clip(v, lo, hi):
 def random_element(rng, n, taste):
     """A new element between random nodes: input and gate any node, into any node but the taste node."""
     to = int(rng.choice([i for i in range(n) if i != taste]))
-    tau = float(math.exp(rng.uniform(math.log(0.5), math.log(50.0)))) if rng.random() < 0.3 else 0.0
+    tau = T_TYP * float(math.exp(rng.uniform(math.log(0.5), math.log(50.0)))) if rng.random() < 0.3 else 0.0
     return [to, int(rng.integers(n)), int(rng.integers(n)) if rng.random() < 0.5 else -1,
-            float(rng.choice((-1, 1)) * rng.uniform(0.5, 5.0)), float(rng.uniform(-1.5, 1.5)),
+            I_TYP * float(rng.choice((-1, 1)) * rng.uniform(0.5, 5.0)), float(rng.uniform(-1.5, 1.5)),
             float(rng.uniform(1.0, 20.0)), tau, bool(rng.random() < 0.7)]
 
 
 def random_node(rng, name):
     if rng.random() < 0.4:                              # a memory
-        return [name, 0.0, None, float(rng.uniform(0.5, 5.0)), 0.0, 1.0, float(rng.uniform(0.0, 1.0)), True]
-    R = float(math.exp(rng.uniform(math.log(0.5), math.log(20.0))))
-    return [name, float(rng.uniform(-1.5, 0.5)) / R, R, float(math.exp(rng.uniform(math.log(0.2), math.log(5.0)))),
-            None, None, None, False]
+        return [name, 0.0, None, C_TYP * float(rng.uniform(0.5, 5.0)), 0.0, 1.0, float(rng.uniform(0.0, 1.0)), True]
+    R = R_TYP * float(math.exp(rng.uniform(math.log(0.5), math.log(20.0))))
+    return [name, float(rng.uniform(-1.5, 0.5)) / R, R,
+            C_TYP * float(math.exp(rng.uniform(math.log(0.2), math.log(5.0)))), None, None, None, False]
 
 
 def born(rng) -> dict:
@@ -60,9 +61,9 @@ def born(rng) -> dict:
     nodes = [random_node(rng, k) for k in ("S0", "S1", "M0", "M1", "T")]
     for i in range(5):                                  # the interface nodes leak (a sensor or taste must recover)
         if nodes[i][7]:
-            nodes[i] = [nodes[i][0], -0.5, 1.0, 1.0, None, None, None, False]
+            nodes[i] = [nodes[i][0], -0.5 * I_TYP, R_TYP, C_TYP, None, None, None, False]
     nodes.append(random_node(rng, "m"))
-    spec = {"nodes": nodes, "elements": [], "sensors": [0, 1], "motors": [2, 3], "taste": 4}
+    spec = {"nodes": nodes, "elements": [], "sensors": [0, 1], "motors": [2, 3], "taste": 4, "units": "SI"}
     for _ in range(int(rng.integers(2, 7))):
         spec["elements"].append(random_element(rng, len(nodes), 4))
     return spec
@@ -80,7 +81,7 @@ def mutate(spec, rng) -> dict:
                     if nd[2] is not None:
                         rest = nd[1] * nd[2]
                         nd[2] = clip(nd[2] * math.exp(0.3 * rng.normal()), *BOUNDS["R"])
-                        nd[1] = clip((rest + 0.2 * rng.normal()) / nd[2], -BOUNDS["bias"], BOUNDS["bias"])
+                        nd[1] = clip(rest + 0.2 * rng.normal(), -BOUNDS["rest"], BOUNDS["rest"]) / nd[2]
                     nd[3] = clip(nd[3] * math.exp(0.3 * rng.normal()), *BOUNDS["C"])
                     if nd[7]:
                         nd[6] = clip((nd[6] or 0.0) + 0.1 * rng.normal(), 0.0, 1.0)
@@ -115,7 +116,7 @@ def mutate(spec, rng) -> dict:
                 e[0] = int(rng.choice([i for i in range(n) if i != T]))
         elif k < 0.88 and s["elements"]:                # filter an element's input, or stop filtering it
             e = s["elements"][int(rng.integers(len(s["elements"])))]
-            e[6] = 0.0 if e[6] > 0 else float(math.exp(rng.uniform(math.log(0.5), math.log(50.0))))
+            e[6] = 0.0 if e[6] > 0 else T_TYP * float(math.exp(rng.uniform(math.log(0.5), math.log(50.0))))
         elif k < 0.92:                                  # clamp a node, or unclamp it
             nd = s["nodes"][int(rng.integers(n))]
             if nd[4] is None:
@@ -155,7 +156,7 @@ def fronts(objs):
     return out
 
 
-def evolve(gens=200, pop=48, seed=0, seeds=8, ticks=10000, name="evolve0", log=print, start=None):
+def evolve(gens=200, pop=48, seed=0, seeds=8, seconds=LIFE, name="evolve0", log=print, start=None):
     """start: specs to begin from (the population their copies and mutants), else random circuits."""
     rng = np.random.default_rng(seed)
     if start:
@@ -173,7 +174,7 @@ def evolve(gens=200, pop=48, seed=0, seeds=8, ticks=10000, name="evolve0", log=p
         everyone = P + kids
         lives = score(everyone, seeds=range(20000 + seed * 100000 + g * seeds,
                                             20000 + seed * 100000 + (g + 1) * seeds),
-                      ticks=ticks)
+                      seconds=seconds)
         objs = [(does_job(l), round(net(l), 3), parts(s)["total"], round(worst(l, efficiency), 2), round(worst(l, gain), 2))
                 for s, l in zip(everyone, lives)]
         for (job, sc, pt, ef, gn), s in zip(objs, everyone):
@@ -208,20 +209,13 @@ if __name__ == "__main__":
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--name", default="evolve0")
     ap.add_argument("--start", nargs="*", help="tuned designs' results files to begin from")
-    ap.add_argument("--noises", type=float, nargs="+", help="an experiment: judge at these noise levels (shares of"
-                                                                 " the usual), the worst counting (default spec.JUDGED)")
+    ap.add_argument("--substrates", nargs="+", help="an experiment: judge with these substrates' noise"
+                                                    " (mixed_feedback.SUBSTRATES), the worst counting (default spec.JUDGED)")
     a = ap.parse_args()
-    if a.noises:
+    if a.substrates:
         import minimal.spec
-        minimal.spec.JUDGED = tuple(a.noises)           # (lives are scored in this process, at these levels)
-
-    start = None
-    if a.start:
-        from minimal.designs import DESIGNS
-        start = []
-        for path in a.start:
-            r = json.load(open(path))
-            start.append(r["spec"] if "spec" in r else DESIGNS[r["design"]][0](r["params"]))
+        minimal.spec.JUDGED = tuple(a.substrates)       # (lives are scored in this process, with these)
+    start = [json.load(open(path))["spec"] for path in a.start] if a.start else None
     t0 = time.time()
     evolve(a.gens, a.pop, a.seed, name=a.name, start=start)
     print(f"({time.time() - t0:.0f} s)")

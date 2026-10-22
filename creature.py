@@ -12,6 +12,7 @@ import time
 
 import numpy as np
 
+from units import TICK
 from world import COLOURS, SENSE, THRUSTERS, WORLD, Body
 
 
@@ -40,11 +41,13 @@ BRAINS = Brains({
     "healing-circuit": ("brains.healing", "HealingBrain", dict(listen="all", sign="inh", judge="share", tire=0.05)),
     "healing-cascade": ("brains.healing", "HealingBrain", dict(menu="inputs", listen="all", sign="inh", cascade=True,
                                                                trigger="root", judge="share", tire=0.05,
-                                                               starve=20000.0))})
-FAST, SLOW = 10, 1  # watching: ticks per frame, slow while the brain wires itself and first drives the body
+                                                               starve=200.0))})
+FPS = 30            # watching: frames a second, at most
+FAST, SLOW = 10, 1  # watching: ticks per frame (at 10 ms a tick, 3 x and a third of real time), slow while the brain
+                    # wires itself and first drives the body
 SLOWEST = 1 / 32    # watching: down halves the speed to this, a tick every 32 frames (about 1 a second)
 SCHEMATIC = "media/designed_circuit.png"    # watching: the designed circuit (drawn by schematic.py)
-SETTLE = 200        # watching: ticks after the creature starts moving before speeding up again
+SETTLE = 2.0        # watching: seconds after the creature starts moving before speeding up again
 BLOCKS = 300        # watching: the height of the block view below (blocks.py), in the window as it opens
 TEXT = 108          # watching: the height of the lines and buttons between the panels and the block view
 BLOCK_RGB = {"red": (205, 40, 40), "blue": (40, 100, 225)}   # watching: the blocks in their own colours, each also
@@ -53,8 +56,8 @@ LEARNED = 0.2       # measuring: a sensor has learned once its chance of firing 
 
 
 class Life:
-    """A body and a brain in a world. step() runs one tick. poison: the poison colour, or None (all food). brain: a
-    name in BRAINS, or (for experiments) a function from the seed to a brain."""
+    """A body and a brain in a world. step() runs one tick (units.TICK); t counts them. poison: the poison colour, or
+    None (all food). brain: a name in BRAINS, or (for experiments) a function from the seed to a brain."""
 
     def __init__(self, seed: int = 0, poison: str | None = "red", learning: bool = True, brain: str = "sheet"):
         self.rng = np.random.default_rng(seed)                  # the world's: the same for every brain
@@ -71,8 +74,8 @@ class Life:
 
     def step(self) -> None:
         for c, seen in self.body.sees().items():                # each eye fires at random moments (Poisson), at
-            for _ in range(self.rng.poisson(SENSE * seen)):     # a rate set by what it sees
-                self.brain.stimulate(self.sensor[c], self.rng.random())
+            for _ in range(self.rng.poisson(SENSE * seen * TICK)):  # a rate set by what it sees
+                self.brain.stimulate(self.sensor[c], self.rng.random() * TICK)
         motors = self.brain.step()
         fired = [f for f in THRUSTERS for _ in range(motors.count(self.motor[f]))]
         if fired and self.moving is None:
@@ -87,7 +90,7 @@ class Life:
             if c == self.poison:
                 self.yuck = self.t
         if taste != 0.0:
-            at = self.rng.random()                              # (drawn with learning off too: the same lives)
+            at = self.rng.random() * TICK                       # (drawn with learning off too: the same lives)
             if self.learning:                                   # one pulse, however many meals at once, at a moment
                 self.brain.taste(min(max(taste, -1.0), 1.0), at)   # within the next tick
         self.t += 1
@@ -98,56 +101,57 @@ class Life:
 
 
 def one_life(job):
-    """(brain, seed, poison, learning, ticks) -> per third of life after moving began, (poison eaten, food eaten,
-    ticks); each sensor's chance of firing both at the end (poison's, food's; in an all-food life, red's, blue's); and
-    how many ticks after moving began both sensors had learned (None: not in this life, or nothing to learn)."""
-    brain, seed, poison, learning, ticks = job
+    """(brain, seed, poison, learning, seconds) -> per third of life after moving began, (poison eaten, food eaten,
+    seconds); each sensor's chance of firing both at the end (poison's, food's; in an all-food life, red's, blue's);
+    and how many seconds after moving began both sensors had learned (None: not in this life, or nothing to learn)."""
+    brain, seed, poison, learning, seconds = job
+    ticks = int(round(seconds / TICK))
     food = "blue" if poison == "red" else "red"
     life, learned = Life(seed, poison, learning, brain), None
     while life.t < ticks:
         life.step()
         if poison and learned is None and life.moving is not None and life.t % 50 == 0:
             if life.drive(poison) <= LEARNED and life.drive(food) >= 1 - LEARNED:
-                learned = life.t - life.moving
+                learned = (life.t - life.moving) * TICK
     start = life.moving if life.moving is not None else ticks
     out = []
     for i in range(3):
         a, b = start + i * (ticks - start) / 3, start + (i + 1) * (ticks - start) / 3
         part = [c for m, c in life.meals if a <= m < b]
-        out.append((sum(c == poison for c in part), sum(c != poison for c in part), b - a))
+        out.append((sum(c == poison for c in part), sum(c != poison for c in part), (b - a) * TICK))
     return out, life.drive(poison or "red"), life.drive(food), learned
 
 
-def measure(lives: int, ticks: int = 10000, brains=tuple(BRAINS), all_food: bool = False) -> None:
+def measure(lives: int, seconds: float = 100.0, brains=tuple(BRAINS), all_food: bool = False) -> None:
     """Each brain on the same lives (the same worlds and wirings): half with red as poison, half blue; with learning
-    and without. Three scores: how soon the sensors learn, food minus poison eaten per 1,000 ticks, and food eaten
-    for each poison. all_food: lives where both colours are food instead (food eaten per 1,000 ticks)."""
+    and without. Three scores: how soon the sensors learn, food minus poison eaten per 10 s, and food eaten for each
+    poison. all_food: lives where both colours are food instead (food eaten per 10 s)."""
     import multiprocessing
     from concurrent.futures import ProcessPoolExecutor
     for brain in brains:
         for learning in ((True,) if all_food else (True, False)):
-            jobs = [(brain, i // 2, None if all_food else COLOURS[i % 2], learning, ticks) for i in range(lives)]
+            jobs = [(brain, i // 2, None if all_food else COLOURS[i % 2], learning, seconds) for i in range(lives)]
             with ProcessPoolExecutor(mp_context=multiprocessing.get_context("spawn")) as pool:
                 results = list(pool.map(one_life, jobs))
             thirds = [[sum(r[0][i][k] for r in results) for k in range(3)] for i in range(3)]
             if all_food:
-                eaten = "  ".join(f"{1000 * f / max(1, t):5.2f}" for _, f, t in thirds)
-                print(f"{brain}, all food: food per 1,000 ticks in each third of life: {eaten};  firing both at the"
+                eaten = "  ".join(f"{10 * f / max(1e-9, t):5.2f}" for _, f, t in thirds)
+                print(f"{brain}, all food: food per 10 s in each third of life: {eaten};  firing both at the"
                       f" end: red {np.mean([r[1] for r in results]):.2f}, blue {np.mean([r[2] for r in results]):.2f}")
                 continue
-            net = "  ".join(f"{1000 * (f - p) / max(1, t):+5.2f}" for p, f, t in thirds)
+            net = "  ".join(f"{10 * (f - p) / max(1e-9, t):+5.2f}" for p, f, t in thirds)
             ratio = "  ".join(f"{f / p:4.1f}" if p else f"{f}:0" for p, f, _ in thirds)
             done = sorted(r[3] for r in results if r[3] is not None)
-            when = (f"{len(done)} of {len(results)} lives, median {done[len(done) // 2]} ticks after moving"
+            when = (f"{len(done)} of {len(results)} lives, median {done[len(done) // 2]:.1f} s after moving"
                     if done else f"0 of {len(results)} lives")
-            meals = 1000 * sum(p + f for p, f, _ in thirds) / max(1, sum(t for _, _, t in thirds))
-            print(f"{brain}, learning {'on ' if learning else 'off'}: net food per 1,000 ticks in each third of life:"
-                  f" {net} (food:poison {ratio});  meals per 1,000 ticks {meals:.2f};  learned in {when};"
+            meals = 10 * sum(p + f for p, f, _ in thirds) / max(1e-9, sum(t for _, _, t in thirds))
+            print(f"{brain}, learning {'on ' if learning else 'off'}: net food per 10 s in each third of life:"
+                  f" {net} (food:poison {ratio});  meals per 10 s {meals:.2f};  learned in {when};"
                   f"  firing both at the end: poison"
                   f" {np.mean([r[1] for r in results]):.2f}, food {np.mean([r[2] for r in results]):.2f}")
 
 
-def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until: int = 10000,
+def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until: float = 100.0,
           all_food: bool = False) -> None:
     """A life, live. Left, the brain's own panel, in greys. Right, the world: red and blue blocks, lettered R and B,
     the creature a triangle with its point marked, and what its eyes see. It runs FAST ticks a frame, but SLOW while the
@@ -155,7 +159,7 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
     a tick a frame, waits 2, 4 ... 32 frames between ticks, so single spikes can be followed). The window can be
     resized (or maximised): the panels stay square, centred, in the proportions it opens with. Buttons
     below: switch brain (a new world, the same seed), the rules the simulation enforces (i), and with the designed
-    circuit, its schematic (the life waits while either is open). With record, no window: every frame is saved there as a PNG, until the given tick. all_food:
+    circuit, its schematic (the life waits while either is open). With record, no window: every frame is saved there as a PNG, until `until` seconds. all_food:
     both colours are food."""
     import os
     import pathlib
@@ -199,10 +203,12 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
     viewer = None                                                   # the schematic, while it is open
 
     def speed():
-        """The speed, as shown."""
+        """The speed, as shown: ticks per frame, and against real time (a tick is units.TICK; FPS frames a second)."""
+        real = per_frame * TICK * FPS
+        times = f"{real:.2g} x real time" if real >= 0.1 else f"1/{1 / real:.0f} of real time"
         if per_frame >= 1:
-            return f"{per_frame:g} tick{'s' if per_frame > 1 else ''} per frame"
-        return f"{round(1 / per_frame)} frames per tick"
+            return f"{per_frame:g} tick{'s' if per_frame > 1 else ''} per frame ({times})"
+        return f"{round(1 / per_frame)} frames per tick ({times})"
 
     def buttons():
         """The buttons below, as (key, label, rect)."""
@@ -267,12 +273,12 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
                     inside = 0 <= mx < side and 0 <= my < side
                     life.brain.damage_at(mx / side if inside else 0.5, my / side if inside else 0.5)
         if auto:
-            settling = life.moving is None or life.t - life.moving < SETTLE
+            settling = life.moving is None or (life.t - life.moving) * TICK < SETTLE
             per_frame = SLOW if life.brain.built() and settling else FAST
         if viewer is not None:
             viewer.draw()
             pygame.display.flip()
-            clock.tick(30)
+            clock.tick(FPS)
             continue
         if not paused:
             started = time.time()
@@ -347,11 +353,11 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
         pygame.display.flip()
         if record:
             pygame.image.save(screen, os.path.join(record, f"{life.t:06d}.png"))
-            if life.t >= until:
+            if life.t * TICK >= until:
                 pygame.quit()
                 return
             continue
-        clock.tick(30)
+        clock.tick(FPS)
 
 
 def rules() -> list:
@@ -359,19 +365,23 @@ def rules() -> list:
     numbers are read from the code, so the list can't drift from what is enforced."""
     import mixed_feedback as mf
     import sheet
+    import units as u
     import world
-    from brains import circuit
     from minimal import spec
-    noisy = f"{mf.NOISY[0]:g} to {mf.NOISY[1]:g}"
-    sb = _constants("brains/sheet.py", ("SIZE", "SPEED", "UPDATE"))   # (read, not imported: importing compiles the rules)
+    sb = _constants("brains/sheet.py", ("SIZE", "RATE", "UPDATE"))   # (read, not imported: importing compiles the rules)
     return [
+        (0, "Units"),
+        (1, f"Everything in SI units, every number derived from a few axioms (units.py): a tick of the body is"
+            f" {u.si(u.TICK, 's')}, the circuit integrated in steps of {u.si(u.DT, 's')}; lengths in mm (the body"
+            f" {u.si(world.BODY, 'm')} long, the world {u.si(world.WORLD, 'm')} across); a typical circuit current"
+            f" {u.si(u.I_TYP, 'A')}, capacitor {u.si(u.C_TYP, 'F')}, resistor {u.si(u.R_TYP, 'Ω')}."),
         (0, "The body and the brain"),
         (1, "A brain meets the body only through two sensors, two motors and one taste: nothing else passes either way."),
-        (1, f"Each eye fires at random moments (a Poisson process), up to {world.SENSE:g} times a tick for its colour"
-            f" seen close up, half as often at {world.REACH:g} units, nothing beyond {world.RANGE:g}; it says how much"
-            " of its colour is ahead, never where."),
-        (1, "The taste is +1 (food) or -1 (poison) for one tick when a block touches the mouth, else 0, and never says"
-            " which sensor it is about."),
+        (1, f"Each eye fires at random moments (a Poisson process), up to {world.SENSE:g} times a second for its"
+            f" colour seen close up, half as often at {u.si(world.REACH, 'm')}, nothing beyond"
+            f" {u.si(world.RANGE, 'm')}; it says how much of its colour is ahead, never where."),
+        (1, "The taste is +1 (food) or -1 (poison) for one tick when a block touches the mouth (anywhere along the"
+            " path its point moved that tick), else 0, and never says which sensor it is about."),
         (1, "Which colour feeds which sensor, and which motor drives which thruster, is drawn at random for each life:"
             " no brain can be built knowing it."),
         (1, "A thruster fires once for each spike of its motor; a motor spikes when its voltage rises through"
@@ -384,8 +394,8 @@ def rules() -> list:
             " has; never its position, the sheet's size, a clock or any one neighbour."),
         (1, f"Shared numbers are clipped to -1..1 and shown with noise {sheet.SHOW:g}; kept numbers get noise"
             f" {sheet.NOISE:g} at every update, whole numbers re-rounded."),
-        (1, f"The sheet updates {sb['SPEED']} times a tick, each cell with chance {sb['UPDATE']:g}: at random, never all"
-            " at once."),
+        (1, f"The sheet takes {sb['RATE']:g} steps a second, each cell updating with chance {sb['UPDATE']:g} in a"
+            " step: at random, never all at once."),
         (1, "The body reaches only cells by the names they gave themselves: stimuli to S1 and S2, taste to T, thrusts"
             " counted from M1 and M2."),
         (1, "No hidden size or fixed waits, no magic knowledge: a path finds its target by a signal the target itself"
@@ -393,19 +403,21 @@ def rules() -> list:
         (0, "The circuit simulator (every circuit brain)"),
         (1, "Everything that affects behaviour is explicit circuit: nodes (capacitors, with any leak) and elements (a"
             " current from a node's voltage, possibly filtered and gated); no program beside it."),
-        (1, f"Continuous time, integrated in steps of {mf.DT:g} tick; the body's pulses arrive anywhere within a tick,"
-            " never on tick boundaries, so nothing can lock to the clock."),
-        (1, f"Shot noise on every device's current (variance {mf.SHOT:g} x its current per tick), summed gross, not"
-            " net: two currents that cancel still flicker."),
-        (1, f"Membrane noise on every node in proportion to its capacitance (variance {mf.MEMBRANE:g} x C per tick); none on a"
-            " memory node, whose only noise is its writes'."),
+        (1, f"Continuous time, integrated in steps of {u.si(mf.DT, 's')}; the body's pulses arrive anywhere within a"
+            " tick, never on tick boundaries, so nothing can lock to the clock."),
+        (1, f"Noise is a substrate's, never turned off or dodged: {', '.join(mf.SUBSTRATES)}. Shot noise on every"
+            f" device's current, in events of {u.si(u.Q_BIO, 'C')} in biology and of one electron in silicon, summed"
+            " gross, not net: two currents that cancel still flicker."),
+        (1, f"Resting noise: in biology, membrane noise in proportion to a node's capacitance (a resting current of"
+            f" {u.J_REST:g} A per farad); in silicon, a leak's thermal noise (kT/C); none on a memory node, whose only"
+            " noise is its writes'."),
         (1, f"Mismatch: every part off by about {mf.MISMATCH:.0%} of itself at birth, drawn once per circuit."),
-        (1, f"The noise can be scaled only within {noisy} of its usual level, never turned off or dodged."),
         (1, "A result must hold at a finer step and on fresh seeds."),
         (0, "The minimal circuit search: what a circuit may be"),
-        (1, f"Within the supply: every node within +-{mf.RAIL:g} V; a clamp inside the rails is a part."),
-        (1, f"Not faster than the step: nothing may move a node more than {spec.SLEW:g} V per circuit tick, and a"
-            f" device fed back to itself acts no faster than {spec.LOOP:g} per circuit tick."),
+        (1, f"Within the supply: every node within +-{u.RAIL:g} V; a clamp inside the rails is a part."),
+        (1, f"Not faster than the step: nothing may move a node faster than {u.si(u.SLEW, 'V/s')}"
+            f" ({u.STEP_MOVE:g} V a step), and a device fed back to itself acts no faster than a time constant of"
+            f" {u.si(u.TAU_LOOP, 's')} (10 steps)."),
         (1, "An illegal circuit can't be built or lived (minimal/spec.py, check)."),
         (1, "Sepulchre's rules, when a circuit declares them: every node leaks except memory nodes, no clamps; gates"
             " and memory nodes (floating gates) allowed, as Sepulchre is silent on learning and storage."),
@@ -417,26 +429,27 @@ def rules() -> list:
             " 15,000-15,031, the open search from 20,000."),
         (1, "Held out: seeds 100-163 judge what a search produced and are never used to choose."),
         (1, "Headline claims are confirmed once on seeds 500-563, never used before, then retired."),
-        (1, f"Judged at {', '.join(f'{k:g}' for k in spec.JUDGED)} x the usual noise, the worst level counting, the job"
-            " required at every level (polish, pruning, open search and held-out judging alike)."),
+        (1, f"Judged with the noise of {', '.join(spec.JUDGED)}, the worst counting, the job required with each"
+            " (polish, pruning, open search and held-out judging alike): a design must work as built in silicon too."),
         (0, "Judging: the job and the score"),
-        (1, f"The job: at least {spec.JOB[0]:g} food per 1,000 ticks; food:poison at least {spec.JOB[1]:g} over the"
-            f" last third of a 10,000-tick life; at most {spec.JOB[2]:.0%} of lives stranded (no food in their last"
-            " third)."),
-        (1, f"The score, per 1,000 ticks: food, less {spec.COST:g} x poison, less {spec.COST:g} x the food each third"
-            f" of each life falls short of {spec.NEED:g}, less moving and thinking."),
-        (2, f"Moving: a thruster firing costs {spec.THRUST:g} of a meal."),
-        (2, f"Thinking: {spec.ENERGY:g} of a meal per unit of the circuit's power per 1,000 ticks (about a hundredth"
-            " of moving)."),
-        (2, f"Resting: the {spec.NEED:g} meal per 1,000 ticks every creature needs, counted in efficiency."),
+        (1, f"The job: at least {spec.JOB[0]:g} food per {spec.SPAN:g} s; food:poison at least {spec.JOB[1]:g} over"
+            f" the last third of a {spec.LIFE:g} s life; at most {spec.JOB[2]:.0%} of lives stranded (no food in their"
+            " last third)."),
+        (1, f"The score, per {spec.SPAN:g} s: food, less {spec.COST:g} x poison, less {spec.COST:g} x the food each"
+            f" third of each life falls short of {spec.NEED:g}, less moving and thinking, a meal worth"
+            f" {u.si(spec.MEAL, 'J')}."),
+        (2, f"Moving: a thruster firing costs {u.si(spec.FIRING, 'J')} ({spec.THRUST:g} of a meal)."),
+        (2, "Thinking: the energy the circuit's devices dissipate (a few nW: about a hundredth of moving)."),
+        (2, f"Resting: {u.si(spec.METABOLISM, 'W')} ({spec.NEED:g} meal per {spec.SPAN:g} s), whatever a creature"
+            " does, counted in efficiency."),
         (0, "Judging: what is measured"),
         (1, "Parts: capacitors, resistors, diodes and transistors."),
-        (1, f"Area, by analogy with analogue chips, in unit transistors: an element {spec.AREA['element']}, a gate"
-            f" {spec.AREA['gate']} more, a leak {spec.AREA['leak']}, a capacitor {spec.AREA['capacitor']} per unit;"
-            " shown, not ranked on."),
+        (1, f"Area, by analogy with analogue chips, in unit transistors ({u.UNIT_AREA / u.MICRO ** 2:g} um² each)"
+            f": an element {spec.AREA['element']}, a gate {spec.AREA['gate']} more, a leak {spec.AREA['leak']},"
+            f" a capacitor its own area ({u.CAP_DENSITY * 1e3:g} fF per um²); shown, not ranked on."),
         (1, f"Three objectives, never traded, each among circuits doing the job: the simplest (parts); the best for"
             f" energy (efficiency: meals gained, food less {spec.COST:g} a poison, per meal spent resting, moving and"
-            " thinking); the best for speed and accuracy (gain rate: meals gained per 1,000 ticks). Thrift (food per"
+            f" thinking); the best for speed and accuracy (gain rate: meals gained per {spec.SPAN:g} s). Thrift (food per"
             " 1,000 firings) shown, not ranked."),
         (1, "Confidence: every measure with its 95% interval; two designs compared paired, on the same seeds, and"
             " one is above the other only if the interval of the difference excludes 0. Otherwise: tied."),
@@ -677,7 +690,7 @@ if __name__ == "__main__":
                         help="also offer these circuits of the minimal search (minimal/results/*.json), named by file")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--measure", type=int, metavar="LIVES", help="measure every brain over this many lives (headless)")
-    parser.add_argument("--ticks", type=int, default=10000, help="ticks per life when measuring or recording")
+    parser.add_argument("--seconds", type=float, default=100.0, help="seconds per life when measuring or recording")
     parser.add_argument("--record", metavar="DIR", help="save a life's frames to DIR as PNGs, headless")
     parser.add_argument("--brains", nargs="+", default=None,
                         help="the brains to measure")
@@ -697,6 +710,6 @@ if __name__ == "__main__":
         if b not in BRAINS:
             parser.error(f"{b}: not a brain (one of {', '.join(BRAINS)})")
     if args.measure:
-        measure(args.measure, args.ticks, args.brains, args.all_food)
+        measure(args.measure, args.seconds, args.brains, args.all_food)
     else:
-        watch(args.seed, args.brain, args.record, args.ticks, args.all_food)
+        watch(args.seed, args.brain, args.record, args.seconds, args.all_food)

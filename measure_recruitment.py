@@ -3,20 +3,20 @@ went in and what each neuron did, the quantities a neuron could know locally, by
 sensor, food's sensor, the motors). Watching may compute anything; nothing here feeds back into the brain. Lives with
 poison (half red, half blue) and all-food lives, where nothing should stir. Over the second half of each life.
 
-  involvement: how active the neuron was (its own spikes, fading over ELIGIBLE ticks) before tastes, good or bad;
+  involvement: how active the neuron was (its own spikes, fading over ELIGIBLE seconds) before tastes, good or bad;
   implication: how much more before bad tastes than good; confidence: implication over involvement (+1: my activity
   predicts pain; -1: a good taste); the same for what it received (stimuli, spikes along incoming synapses). Only the
   sensors feel taste; for the motors these are the observer's view, which they can't have.
-  fires: the share of its input events after which it fired (that tick or the next); decided: |2 fires - 1| (1: its
+  fires: the share of its input events after which it fired (that tick or the next: units.TICK); decided: |2 fires - 1| (1: its
   firing is certain, given its inputs); miss: for events that didn't make it fire, how far its highest voltage stayed
   below its threshold, as a share of the way from rest (0: a near miss).
   excitability: its knob, from 1 (empty) to 0 (full).
-  For a brain with a taste neuron T (brains/knowing.py): each sensor's synapse onto T (0..1); T's spikes per 1,000
-  ticks; anticipation: the share of poison meals T fired before (within WINDOW ticks before the taste, so its innate
+  For a brain with a taste neuron T (brains/knowing.py): each sensor's synapse onto T (0..1); T's spikes per 10 s;
+  anticipation: the share of poison meals T fired before (within WINDOW seconds before the taste, so its innate
   answer to the taste doesn't count); false alarms: the same for food meals; and its confidence: when it fired before a
   meal, how often the meal was poison.
 
-    python measure_recruitment.py [LIVES] [TICKS] [BRAIN]
+    python measure_recruitment.py [LIVES] [SECONDS] [BRAIN]
 """
 
 import multiprocessing
@@ -26,11 +26,12 @@ from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 
 from creature import COLOURS, Life
+from units import TICK
 
-ELIGIBLE = 10.0     # ticks over which a neuron's activity traces fade
+ELIGIBLE = 0.1      # s over which a neuron's activity traces fade
 THRESHOLD = -2.82   # the edge of a circuit neuron's fast positive feedback: where 0.5 - 2 sech^2(V + 1.5) = 0
 TASTES, EVIDENCE = 5, 0.05  # with fewer tastes, or less involvement, no evidence: no confidence
-WINDOW = 10         # ticks before a meal in which a spike of T counts as anticipating it
+WINDOW = 0.1        # s before a meal in which a spike of T counts as anticipating it
 
 
 def watch(lf, units, ticks):
@@ -41,7 +42,7 @@ def watch(lf, units, ticks):
         lf.step()
     c = b.circuit
     pre = {u: [f for (_, (t, f, _)) in c.elements if t == u and f in units and f != u] for u in units}
-    fade = np.exp(-1.0 / ELIGIBLE)
+    fade = np.exp(-TICK / ELIGIBLE)
     e, g = {u: 0.0 for u in units}, {u: 0.0 for u in units}
     at = {u: {"inv": [], "imp": [], "inv_got": [], "imp_got": []} for u in units}
     fired, miss, rest = ({u: [] for u in units} for _ in range(3))
@@ -84,12 +85,12 @@ def taste_neuron(lf, poison, ticks):
     """The taste neuron, watched over the second half of the life: what it learned, and whether it anticipates."""
     b, half = lf.brain, ticks // 2
     spiked = [t for t, (_, spikes, _, _) in enumerate(b.log) if t >= half and spikes[b.T] > 0]
-    before = lambda m: any(m - WINDOW < t <= m for t in spiked)
+    before = lambda m: any(m - WINDOW / TICK < t <= m for t in spiked)
     meals = [(t, c) for t, c in lf.meals if t >= half]
     bad = [before(t) for t, c in meals if c == poison]
     good = [before(t) for t, c in meals if c != poison]
     synapse = lambda colour: float(b.circuit.V[b.W[b.sensors[lf.sensor[colour]]]])
-    out = {"T": {"spikes per 1,000": 1000 * len(spiked) / (ticks - half),
+    out = {"T": {"spikes per 10 s": 10 * len(spiked) / ((ticks - half) * TICK),
                  "anticipates poison": np.mean(bad) if bad else np.nan,
                  "false alarms": np.mean(good) if good else np.nan,
                  "confidence": sum(bad) / (sum(bad) + sum(good)) if sum(bad) + sum(good) else np.nan}}
@@ -102,7 +103,8 @@ def taste_neuron(lf, poison, ticks):
 
 
 def life(job):
-    brain, seed, poison, ticks = job
+    brain, seed, poison, seconds = job
+    ticks = int(round(seconds / TICK))
     lf = Life(seed, poison, brain=brain)
     b = lf.brain
     units = b.sensors + b.motors
@@ -122,21 +124,21 @@ def life(job):
     start = lf.moving if lf.moving is not None else ticks
     food = sum(1 for t, c in lf.meals if t >= start and c != poison)
     bad = sum(1 for t, c in lf.meals if t >= start and c == poison)
-    return traces, food, bad, ticks - start
+    return traces, food, bad, (ticks - start) * TICK
 
 
 if __name__ == "__main__":
     lives = int(sys.argv[1]) if len(sys.argv) > 1 else 32
-    ticks = int(sys.argv[2]) if len(sys.argv) > 2 else 10000
+    seconds = float(sys.argv[2]) if len(sys.argv) > 2 else 100.0
     brain = sys.argv[3] if len(sys.argv) > 3 else "adjusting-circuit"
     for world in ("poison", "all food"):
-        jobs = [(brain, i // 2, COLOURS[i % 2] if world == "poison" else None, ticks) for i in range(lives)]
+        jobs = [(brain, i // 2, COLOURS[i % 2] if world == "poison" else None, seconds) for i in range(lives)]
         with ProcessPoolExecutor(mp_context=multiprocessing.get_context("spawn")) as pool:
             results = list(pool.map(life, jobs))
         food, bad, t = (sum(r[k] for r in results) for k in (1, 2, 3))
         ratio = f"{food / bad:.1f}" if bad else f"{food}:0"
-        print(f"{brain}, {world} lives ({lives}): food {1000 * food / t:.2f} and poison {1000 * bad / t:.2f} per"
-              f" 1,000 ticks (food:poison {ratio})")
+        print(f"{brain}, {world} lives ({lives}): food {10 * food / t:.2f} and poison {10 * bad / t:.2f} per"
+              f" 10 s (food:poison {ratio})")
         for role in results[0][0]:
             vals = []
             for k in results[0][0][role]:

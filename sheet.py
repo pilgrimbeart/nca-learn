@@ -16,10 +16,11 @@ A rule is a module that declares its cell's numbers and one compiled function:
         # count: how many neighbours it has (3 at a corner, 5 on an edge, 8 inside); inp: what the body delivered
         # since it last updated; out: write its new numbers here (out starts as a copy of me).
 
-Each tick, every cell, with chance UPDATE, updates (never all in lockstep); the others keep their numbers, and
+Each step of the sheet (a count: in a life, brains/sheet.py runs RATE a second), every cell, with chance UPDATE,
+updates (never all in lockstep); the others keep their numbers, and
 what the body delivered to them waits for their next update. After an update every number it keeps gets a little
 noise (NOISE). What a cell shows its neighbours is cruder: each shared number is clipped to -1..1 and gets noise of SHOW
-(0.01), drawn afresh every tick. A neighbour moves a cell's mean by at most 2 / its count, so a shared number carries
+(0.01), drawn afresh every step. A neighbour moves a cell's mean by at most 2 / its count, so a shared number carries
 little: a flag (+1 or -1) is read exactly, a smooth value shared by many neighbours (a gradient) closely, a value
 squeezed small or spread over orders of magnitude not at all. The rule is given nothing else: not the grid, not its position, not the size,
 not a clock, not its neighbours one by one.
@@ -38,9 +39,9 @@ from numba import njit, types
 
 from rules.interface import RULE    # a rule's update, declared (so the sheet, taking one, can be cached)
 
-UPDATE = 0.5        # the chance that a cell updates in a tick
+UPDATE = 0.5        # the chance that a cell updates in a step
 NOISE = 1e-3        # noise added to every number a cell keeps, at every update
-SHOW = 0.01         # noise on what a cell shows its neighbours (each shared number clipped to -1..1), every tick
+SHOW = 0.01         # noise on what a cell shows its neighbours (each shared number clipped to -1..1), every step
 _SHEET = types.float64[:, :, ::1]
 
 
@@ -51,12 +52,12 @@ def _seed(seed):
 
 @njit(types.void(_SHEET, _SHEET, _SHEET, types.float64[:, ::1], _SHEET, types.int64[::1], types.FunctionType(RULE),
                   types.int64, types.float64, types.float64, types.float64), cache=True)
-def _ticks(s, s2, mean, count, inp, shared, update, ticks, p, noise, show):
+def _steps(s, s2, mean, count, inp, shared, update, steps, p, noise, show):
     n = s.shape[0]
     nv, ns, ni = s.shape[2], shared.shape[0], inp.shape[2]
     me, out, avg, got = np.empty(nv), np.empty(nv), np.empty(mean.shape[2]), np.empty(ni)   # the rule's own arrays:
     shown = np.empty((n, n, ns))                            # what each cell shows: a shared number, clipped, noisy
-    for _ in range(ticks):                                  # (the rule never holds a view into the sheet)
+    for _ in range(steps):                                  # (the rule never holds a view into the sheet)
         for y in range(n):
             for x in range(n):
                 for k in range(ns):
@@ -109,10 +110,10 @@ class Sheet:
         self.t = 0
         _seed(seed)
 
-    def step(self, ticks: int = 1) -> None:
-        _ticks(self._s, self._s2, self._mean, self._count, self._inp, self._shared, self.rule.update, ticks, self.p,
+    def step(self, steps: int = 1) -> None:
+        _steps(self._s, self._s2, self._mean, self._count, self._inp, self._shared, self.rule.update, steps, self.p,
                self.noise, self.show)
-        self.t += ticks
+        self.t += steps
 
     # The body's only ways in and out.
     def cells(self, var: str, value: float) -> np.ndarray:

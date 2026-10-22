@@ -3,7 +3,7 @@ lost afterwards, how far each ends up from where it belongs (in cells: M1 and M2
 the middle of the organiser's y = -1 edge, S1 and S2 likewise on the y = 1 edge), and how near x and y are to straight
 lines.
 
-    python measure_organs.py [LIVES] [SIZE] [TICKS]
+    python measure_organs.py [LIVES] [SIZE] [STEPS]   (steps of the sheet: sheet.py)
 """
 import sys
 import time
@@ -29,10 +29,10 @@ def truth(n, corner, at):
     return -1 + 2 * along / (n - 1), -1 + 2 * up / (n - 1)
 
 
-def life(n, seed, ticks):
+def life(n, seed, steps):
     s = sheet.Sheet(organs, n, seed, update=0.9)
     first, moves, last = None, 0, None
-    for t in range(0, ticks, 10):
+    for t in range(0, steps, 10):
         s.step(10)
         at = names(s)
         if first is None and len(at) == 4:
@@ -55,12 +55,12 @@ def life(n, seed, ticks):
 if __name__ == "__main__":
     lives = int(sys.argv[1]) if len(sys.argv) > 1 else 6
     n = int(sys.argv[2]) if len(sys.argv) > 2 else 49
-    ticks = int(sys.argv[3]) if len(sys.argv) > 3 else 4000
+    steps = int(sys.argv[3]) if len(sys.argv) > 3 else 4000
     letters = {organs.S1: "S1", organs.S2: "S2", organs.M1: "M1", organs.M2: "M2"}
     for seed in range(lives):
         t0 = time.time()
-        first, moves, off, err = life(n, seed, ticks)
+        first, moves, off, err = life(n, seed, steps)
         where = " ".join(f"{letters[k]} {dx:+.1f}" + (f"/{dy:+.1f}" if abs(dy) > 0.01 else "") for k, (dx, dy) in off.items()) if off else "-"
         e = f"{err:.2f}" if err is not None else "-"
-        print(f"n {n} seed {seed}: all named from tick {first}, then {moves} changes; cells off: {where}; "
+        print(f"n {n} seed {seed}: all named from step {first}, then {moves} changes; cells off: {where}; "
               f"x, y within {e} columns  ({time.time() - t0:.1f}s)", flush=True)

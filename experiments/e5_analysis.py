@@ -1,5 +1,5 @@
 """E5 (experiments/NOTEBOOK.md): (a) is R3's remaining shortfall against the oracle only the time before growth? A
-time-matched oracle places O1 by hand at the very tick R3 grew its bridge in the same life. (b) How sensitive is R3 to
+time-matched oracle places O1 by hand at the very moment R3 grew its bridge in the same life. (b) How sensitive is R3 to
 its two main settings? (c) Does it survive mismatch (every gain and bias a few percent off at birth), as robustness
 through balance predicts, and how does the designed circuit fare? (d) What does the recruiting circuit cost?
 
@@ -17,6 +17,7 @@ from brains.recruiting import RecruitingBrain
 from creature import COLOURS, Life
 from experiments.common import E3, paired, run, summary
 from experiments.e3_growth import growth
+from units import TICK
 
 R3 = functools.partial(RecruitingBrain, **{**E3, "sharp": True, "once": True})
 KNOWING = functools.partial(RecruitingBrain, grow=False, hold="T")
@@ -28,10 +29,10 @@ def insert_named(life, motor):
 
 
 def time_matched(table, life):
-    """Schedule O1 at the tick R3 grew its (poison-sensor) bridge in this same life; none if it grew none."""
+    """Schedule O1 at the moment (s) R3 grew its (poison-sensor) bridge in this same life; none if it grew none."""
     when = table.get((life.brain.seed, life.poison))
     if when:
-        life.schedule = (when[0], functools.partial(insert_named, motor=when[1]))
+        life.schedule = (int(round(when[0] / TICK)), functools.partial(insert_named, motor=when[1]))
 
 
 def mismatch(size, life, which="all"):
@@ -48,11 +49,11 @@ def mismatch(size, life, which="all"):
         c.nodes = [(bias * (1 + size * rng.standard_normal()),) + tuple(rest) for bias, *rest in c.nodes]
 
 
-def cost(make, seed=0, poison="red", ticks=10000):
+def cost(make, seed=0, poison="red", seconds=100.0):
     """Size and a static-energy proxy of the brain at the end of a life: nodes, elements, and the sum of every
     element's gain (each a transconductance amplifier drawing about its gain as bias current from the supply)."""
     lf = Life(seed, poison, brain=make)
-    while lf.t < ticks:
+    while lf.t * TICK < seconds:
         lf.step()
     c = lf.brain.circuit
     return len(c.names), len(c.elements), sum(abs(g) for (g, *_), _ in c.elements)
@@ -70,7 +71,7 @@ if __name__ == "__main__":
             if mine:
                 table[(i // 2, COLOURS[i % 2])] = mine[0]
         tm = run(KNOWING, lives, setup=functools.partial(time_matched, table))
-        o1 = run(KNOWING, lives, setup=functools.partial(time_matched, {k: (1, v[1]) for k, v in table.items()}))
+        o1 = run(KNOWING, lives, setup=functools.partial(time_matched, {k: (TICK, v[1]) for k, v in table.items()}))
         print(summary("R3", r3)); print(summary("time-matched oracle", tm)); print(summary("oracle from tick 1", o1))
         for name, x, y in (("R3 vs time-matched oracle", tm, r3), ("time-matched vs from-birth oracle", o1, tm),
                            ("R3 vs from-birth oracle", o1, r3)):

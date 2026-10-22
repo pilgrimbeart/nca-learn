@@ -18,7 +18,9 @@ from __future__ import annotations
 
 import numpy as np
 
-SPIKE_FLASH = 3     # ticks a spike keeps a neuron white
+from units import I_TYP
+
+SPIKE_FLASH = 3     # ticks (units.TICK) a spike keeps a neuron white, so it can be seen (watching, not time)
 TASTE_SHOW = 30     # ticks a taste stays marked
 NEW = 300           # ticks a grown unit stays outlined
 SMOOTH = 0.8        # how much of an arrow's drawn current carries over from one frame to the next
@@ -317,7 +319,7 @@ class NodeView(BlockView):
             out = 1.0 / (1.0 + np.exp(-x)) if sig[e] > 0.5 else np.tanh(x)
             if g >= 0:
                 out *= min(max(c.V[g], 0.0), 1.0)
-            self.current[e] = SMOOTH * self.current.get(e, 0.0) + (1 - SMOOTH) * abs(gain[e] * out)
+            self.current[e] = SMOOTH * self.current.get(e, 0.0) + (1 - SMOOTH) * abs(gain[e] * out) / I_TYP   # nA
             width = 1 + int(6 * min(self.current[e] / 3, 1.0))
             colour = LIGHT if self.current[e] > 0.05 else MID
             if t == f:                                  # its own node: a loop above it, marked + or -

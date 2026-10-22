@@ -15,18 +15,20 @@ import math
 import numpy as np
 from numba import njit
 
-BODY = 4.0          # the triangle's side, in world units
-WORLD = 60.0        # the world's side (a torus)
+from units import MILLI, TICK
+
+BODY = 4 * MILLI    # m: the triangle's side (an insect's size, matching a 10 ms tick: units.py)
+WORLD = 60 * MILLI  # m: the world's side (a torus)
 BLOCKS = 18         # blocks of each colour
-EAT = 1.0           # a block this near the point (the mouth) is eaten; the eyes' corridor is twice this wide
-SENSE = 0.5         # stimuli per tick to an eye that sees its colour at full strength
-REACH = 5.0         # a block this far off counts half as much as one at the eyes
-RANGE = 15.0        # how far the eyes see
+EAT = 1 * MILLI     # m: a block this near the point (the mouth) is eaten; the eyes' corridor is twice this wide
+SENSE = 50.0        # per s: the stimuli to an eye that sees its colour at full strength
+REACH = 5 * MILLI   # m: a block this far off counts half as much as one at the eyes
+RANGE = 15 * MILLI  # m: how far the eyes see
 RAYS = 25           # the eyes' rays, side by side across the corridor ahead: each stops at the first block it meets
-BLOCK = 1.0         # a block's radius (what it hides behind it)
-PUSH = 0.2          # a thruster firing adds this much forward speed ...
-TURN = 0.16         # ... and this much turning speed, away from its side (radians per tick): both at once go straight
-DRAG = 0.5          # speed and turning fade at this rate
+BLOCK = 1 * MILLI   # m: a block's radius (what it hides behind it)
+PUSH = 20 * MILLI   # m/s: a thruster firing adds this much forward speed ...
+TURN = 16.0         # rad/s: ... and this much turning speed, away from its side: both at once go straight
+DRAG = 50.0         # per s: speed and turning fade at this rate
 COLOURS = ("red", "blue")
 THRUSTERS = ("left", "right")                           # at the tail's two corners, both pushing forward
 ACROSS = -EAT + (np.arange(RAYS) + 0.5) * 2 * EAT / RAYS   # each ray's offset across the corridor
@@ -66,12 +68,18 @@ def _sees(far, hit_kind, kinds):
 
 
 @njit(cache=True)
-def _touching(xy, h):
-    """The blocks within EAT of the point, in order."""
+def _touching(xy, h0, h1):
+    """The blocks within EAT of the path the point moved along in a tick, from h0 to h1 (a straight line: it turns
+    little in a tick), in order. Checked along the path, not only where it ends, so that a fast creature can't jump
+    over a block (the user's decision, 2026-10-22)."""
+    sx, sy = _wrap(h1[0] - h0[0]), _wrap(h1[1] - h0[1])
+    ss = sx * sx + sy * sy
     out = []
     for b in range(xy.shape[0]):
-        dx, dy = _wrap(xy[b, 0] - h[0]), _wrap(xy[b, 1] - h[1])
-        if np.sqrt(dx * dx + dy * dy) < EAT:
+        dx, dy = _wrap(xy[b, 0] - h0[0]), _wrap(xy[b, 1] - h0[1])
+        u = min(max((dx * sx + dy * sy) / ss, 0.0), 1.0) if ss > 0.0 else 0.0
+        ex, ey = dx - u * sx, dy - u * sy
+        if np.sqrt(ex * ex + ey * ey) < EAT:
             out.append(b)
     return out
 
@@ -128,14 +136,16 @@ class Body:
         self.spin += TURN if thruster == "right" else -TURN    # the left one turns it right, and the right one left
 
     def move(self) -> list:
-        """Moves on a tick; returns the colours of blocks eaten (each reappears elsewhere)."""
-        self.pos = (self.pos + self.speed) % WORLD
-        self.heading += self.spin
-        self.speed *= math.exp(-DRAG)
-        self.spin *= math.exp(-DRAG)
+        """Moves on a tick (units.TICK); returns the colours of blocks eaten (each reappears elsewhere): those its point
+        passed within EAT of, moving forward."""
+        h0 = self.head()
+        self.pos = (self.pos + self.speed * TICK) % WORLD
+        self.heading += self.spin * TICK
+        self.speed *= math.exp(-DRAG * TICK)
+        self.spin *= math.exp(-DRAG * TICK)
         if self.speed @ self.forward() <= 0:                # it only eats what it moves forward into
             return []
-        eaten = _touching(self.xy, self.head())
+        eaten = _touching(self.xy, h0, self.head())
         for b in eaten:
             self.xy[b] = self.somewhere()
         return [COLOURS[self.kind[b]] for b in eaten]

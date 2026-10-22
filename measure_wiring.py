@@ -48,5 +48,5 @@ if __name__ == "__main__":
         paths, got, late, each, extra = life(seed, warmup)
         parts = [f"{NAMES[src]}->{NAMES[3 + ch]} {got.get((src, ch), 0)}/{each} in {np.mean(late.get((src, ch), [np.nan])):.0f}"
                  for src in (1, 2) for ch in (0, 1)]
-        print(f"seed {seed}: path cells to M1 {paths[0]}, to M2 {paths[1]};  arrived, mean ticks: {'  '.join(parts)}"
+        print(f"seed {seed}: path cells to M1 {paths[0]}, to M2 {paths[1]};  arrived, mean steps: {'  '.join(parts)}"
               f";  extra arrivals {extra}  ({time.time() - t0:.0f}s)", flush=True)

@@ -1,0 +1,82 @@
+gen   0  mean -3.009  best -2.009  sigma 0.150
+gen   1  mean -2.344  best -2.008  sigma 0.141
+gen   2  mean -2.201  best -2.001  sigma 0.137
+gen   3  mean -2.006  best -2.001  sigma 0.135
+gen   4  mean -2.008  best -2.003  sigma 0.132
+gen   5  mean -2.004  best -1.937  sigma 0.131
+gen   6  mean -2.007  best -2.003  sigma 0.131
+gen   7  mean -2.004  best -2.002  sigma 0.130
+gen   8  mean -2.009  best -2.003  sigma 0.131
+gen   9  mean -2.003  best -2.000  sigma 0.130
+gen  10  mean -2.003  best -2.003  sigma 0.129
+gen  11  mean -2.004  best -2.002  sigma 0.130
+gen  12  mean -2.004  best -2.002  sigma 0.132
+gen  13  mean -2.002  best -2.002  sigma 0.134
+gen  14  mean -2.002  best -2.002  sigma 0.137
+gen  15  mean -2.002  best -2.000  sigma 0.142
+gen  16  mean -2.002  best -2.002  sigma 0.145
+gen  17  mean -2.002  best -2.002  sigma 0.147
+gen  18  mean -2.002  best -1.993  sigma 0.147
+gen  19  mean -2.002  best -1.916  sigma 0.146
+gen  20  mean -2.002  best -1.911  sigma 0.146
+gen  21  mean -2.002  best -1.936  sigma 0.144
+gen  22  mean -2.002  best -1.920  sigma 0.145
+gen  23  mean -2.003  best -1.890  sigma 0.144
+gen  24  mean -1.998  best -1.933  sigma 0.145
+gen  25  mean -2.009  best -1.864  sigma 0.144
+gen  26  mean -1.992  best -1.874  sigma 0.143
+gen  27  mean -1.825  best -1.903  sigma 0.141
+gen  28  mean -1.984  best -1.769  sigma 0.139
+gen  29  mean -2.057  best -1.762  sigma 0.137
+gen  30  mean -1.797  best -1.695  sigma 0.135
+gen  31  mean -1.891  best -1.870  sigma 0.133
+gen  32  mean -1.845  best -1.730  sigma 0.132
+gen  33  mean -1.958  best -1.783  sigma 0.132
+gen  34  mean -1.924  best -1.798  sigma 0.132
+gen  35  mean -1.873  best -1.766  sigma 0.131
+gen  36  mean -1.782  best -1.774  sigma 0.131
+gen  37  mean -1.748  best -1.822  sigma 0.130
+gen  38  mean -1.798  best -1.731  sigma 0.130
+gen  39  mean -1.881  best -1.775  sigma 0.128
+gen  40  mean -1.837  best -1.780  sigma 0.128
+gen  41  mean -1.824  best -1.657  sigma 0.129
+gen  42  mean -1.912  best -1.703  sigma 0.129
+gen  43  mean -1.767  best -1.734  sigma 0.128
+gen  44  mean -1.802  best -1.738  sigma 0.127
+gen  45  mean -1.762  best -1.743  sigma 0.127
+gen  46  mean -1.784  best -1.732  sigma 0.127
+gen  47  mean -1.776  best -1.721  sigma 0.129
+gen  48  mean -1.742  best -1.732  sigma 0.131
+gen  49  mean -1.720  best -1.747  sigma 0.132
+gen  50  mean -1.830  best -1.721  sigma 0.132
+gen  51  mean -1.764  best -1.755  sigma 0.131
+gen  52  mean -1.731  best -1.717  sigma 0.130
+gen  53  mean -1.785  best -1.710  sigma 0.130
+gen  54  mean -1.751  best -1.731  sigma 0.130
+gen  55  mean -1.744  best -1.706  sigma 0.130
+gen  56  mean -1.770  best -1.745  sigma 0.133
+gen  57  mean -1.718  best -1.713  sigma 0.135
+gen  58  mean -1.750  best -1.708  sigma 0.137
+gen  59  mean -1.694  best -1.719  sigma 0.139
+MX_latchP: parts {'C': 9, 'R': 9, 'D': 0, 'T': 15, 'total': 33, 'nodes': 8, 'elements': 10}; fastest slew 5.5 per circuit tick (limit 10)
+  net -1.73 [-1.76, -1.71] (food - poison -0.21), food 0.57, poison 0.70, last third 1.00, stranded 13%, power 13.32, thruster firings 100 per 1,000, efficiency -0.57 meals gained per meal spent
+  at x0.5 noise: net -1.73, food 0.57, last third 1.00, stranded 13%, efficiency -0.47, job False
+  at x1.0 noise: net -1.70, food 0.68, last third 1.00, stranded 10%, efficiency -0.56, job False
+  at x2.0 noise: net -1.70, food 0.70, last third 1.00, stranded 12%, efficiency -0.57, job False
+  does not do the job
+  (7023 s)
+start: 33 parts, score -1.725 (keeping within 0.1 of it)
+  delete m<-S1|P: 28 parts, score -1.720 (best of 15)
+  delete m<-m: 27 parts, score -1.718 (best of 12)
+  delete m<-S0|T: 25 parts, score -1.720 (best of 11)
+  delete M0<-m|S0: 23 parts, score -1.719 (best of 9)
+  delete H<-T: 22 parts, score -1.714 (best of 7)
+  delete M0<-m|S1: 18 parts, score -1.773 (best of 6)
+  ungate M0<-M1|H: 15 parts, score -1.764 (best of 4)
+  nothing more can go
+MX_latchP_pruned: parts {'C': 6, 'R': 6, 'D': 0, 'T': 3, 'total': 15, 'nodes': 5, 'elements': 3}; fastest slew 5.5 per circuit tick (limit 10)
+  net -1.77 [-1.81, -1.73] (food - poison -0.26), food 0.76, poison 0.80, last third 1.00, stranded 12%, power 16.12, thruster firings 127 per 1,000, efficiency -0.63 meals gained per meal spent
+  at x0.5 noise: net -1.76, food 0.76, last third 1.00, stranded 12%, efficiency -0.60, job False
+  at x1.0 noise: net -1.77, food 0.79, last third 1.00, stranded 12%, efficiency -0.62, job False
+  at x2.0 noise: net -1.76, food 0.80, last third 1.00, stranded 11%, efficiency -0.63, job False
+  does not do the job

@@ -67,7 +67,7 @@ def check_rule(path: pathlib.Path) -> list:
 
 def check_body(path: pathlib.Path) -> list:
     text = path.read_text()
-    return [f"reaches into the sheet ({word})" for word in ("._s", "._inp", "._mean", "_ticks") if word in text]
+    return [f"reaches into the sheet ({word})" for word in ("._s", "._inp", "._mean", "_steps") if word in text]
 
 
 if __name__ == "__main__":

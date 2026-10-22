@@ -12,7 +12,7 @@ growth rule knows what any neuron is or does. All circuit, except growth itself 
   Growth (the primitive): a unit whose F is past 1/2, with no recruit yet, gets one. A wave-1 recruit attaches to its
   parent and to every neuron within one edge of it; a recruit of a recruit attaches to its parent and to every neuron
   within one edge of anything its parent was attached to, so inflammation spreads one edge per failed wave.
-  The recruit: a neuron R; a hold node (R's spikes keep its action on for about HOLD ticks); listening synapses, one
+  The recruit: a neuron R; a hold node (R's spikes keep its action on for about HOLD seconds); listening synapses, one
   from each attached neuron, their strengths memory nodes; and a menu of acting options, each enabled by a node of its
   own: inhibit or excite an attached neuron, or turn down one of its ungated output synapses (a gate node that rests
   open and that R's hold closes).
@@ -35,10 +35,10 @@ growth rule knows what any neuron is or does. All circuit, except growth itself 
   (listen="inherit"): where the parent already holds a learned memory on its synapse from an attached neuron (T's
   learned strengths from the eyes), the recruit's listening synapse from that neuron is gated by the same memory: it
   starts out knowing what its parent knows; other inputs learn as under "pain".
-  Judge (judge): "rate", tiredness fades over REST_TIRED ticks, so it follows the rate of pains (less good tastes) after
+  Judge (judge): "rate", tiredness fades over REST_TIRED seconds, so it follows the rate of pains (less good tastes) after
   acting, and an option that stops the creature looks like a cure; "share", while the option is on it hardly fades and a
   good taste eases it by GOOD_STEP of a pain's step, so it follows the share of bad tastes after acting; while off it
-  fades over about REST_TIRED ticks (an off node, held down by the enable, gates its rest).
+  fades over about REST_TIRED seconds (an off node, held down by the enable, gates its rest).
   Menu "inputs": as "synapses", but the ungated synapses arriving at attached neurons (a recruit turns down its
   neighbours' inputs): wave 1, on T and the eyes, finds none (T's are learned memories, the eyes have no inputs);
   only a wave that reaches the motors can turn down an eye's synapse to a motor.
@@ -49,7 +49,7 @@ growth rule knows what any neuron is or does. All circuit, except growth itself 
   Power: the latch, rivalry and knock-out elements are gated by their own source, so they draw current only while it
   is up (ungated, pairwise rivalry was most of a recruit's power).
   Cascade (cascade): a recruit that hasn't helped is frustrated itself, and so may recruit in turn: by default
-  (trigger="persist") when its parent is still frustrated about PERSIST ticks after it came (a slow node filling while
+  (trigger="persist") when its parent is still frustrated about PERSIST seconds after it came (a slow node filling while
   the parent's F is past 1/2, fading when it isn't): "if it can't reduce frustration, it emits frustration";
   trigger="root": the same, but filled while the first frustrated unit's flag is on (T's), for every wave, so a cure
   anywhere stops every wave's frustration at once (a parent's own frustration fades slowly and outlasts a cure);
@@ -61,40 +61,41 @@ from __future__ import annotations
 
 import numpy as np
 
-from brains.circuit import INHIBIT, SPEED, STRONG
+from brains.circuit import INHIBIT, STRONG
 from brains.knowing import KnowingBrain
 from brains.recruiting import PAINFUL, QUIET, RecruitingBrain
 from mixed_feedback import Circuit
+from units import C_TYP, I_TYP, R_TYP, T_TYP
 
-FRUSTRATION = 3000.0    # ticks over which frustration fades
+FRUSTRATION = 30.0  # s over which frustration fades
 FRUSTRATE = 0.5     # how far one anticipated pain raises F, with the unit fully eligible
-OUCH = 1.0          # ticks over which an ouch pulse fades (above half for about 3 circuit ticks)
-OUCH_ABOVE = 4.5    # circuit ticks an ouch pulse stays above half (measured), to scale what it drives
-ELIGIBLE = 10.0     # ticks over which an eligibility fades
-HOLD = 10.0         # ticks a recruit's action lasts after it fires
+OUCH = 0.01         # s over which an ouch pulse fades (above half for about 3 T_TYP)
+OUCH_ABOVE = 4.5 * T_TYP    # s an ouch pulse stays above half (measured), to scale what it drives
+ELIGIBLE = 0.1      # s over which an eligibility fades
+HOLD = 0.1          # s a recruit's action lasts after it fires
 LISTEN_STEP = 0.2   # how far an ouch raises (a yum lowers) a listening strength while its neuron is fully eligible
-LISTEN_DECAY = 0.00005  # and how fast it sinks while its neuron is eligible, per circuit tick: an input as often before
-                        # good tastes as bad would otherwise wander between its bounds; with this it goes to 0
-EXCITE = 1.5        # an exciting action's current
+LISTEN_DECAY = 0.02     # V/s: and how fast it sinks while its neuron is eligible: an input as often before good tastes
+                        # as bad would otherwise wander between its bounds; with this it goes to 0
+EXCITE = 1.5 * I_TYP    # A: an exciting action's current
 TIRE = 0.15         # how far a pain after acting tires the option that's on (and a good taste after acting rests it)
-REST_TIRED = 10000.0    # ticks over which tiredness fades: an option is knocked out if pains follow its action at more
-                        # than about TIRED / (TIRE x REST_TIRED) per tick of acting (about 1 in 3,000), between the
-                        # untreated rate and a good option's
+REST_TIRED = 100.0  # s over which tiredness fades: an option is knocked out if pains follow its action at more than
+                    # about TIRED / (TIRE x REST_TIRED) per second of acting (about 1 in 30 s), between the untreated
+                    # rate and a good option's
 TIRED = 0.5         # an option this tired is knocked out
-STARVE = 40000.0    # starve: an option on this long with no good tastes at all is knocked out (eased by good tastes, so
-                    # one followed by fewer than about 1 good taste per STARVE x GOOD_STEP x TIRE / TIRED ticks tires)
-REST_SHARE = 100000.0   # judge="share": while its option is on, tiredness hardly fades, so it is moved by tastes, not
+STARVE = 400.0      # s: starve, an option on this long with no good tastes at all is knocked out (eased by good tastes,
+                    # so one followed by fewer than about 1 good taste per STARVE x GOOD_STEP x TIRE / TIRED tires)
+REST_SHARE = 1000.0     # s: judge="share", while its option is on, tiredness hardly fades, so it is moved by tastes, not
 GOOD_STEP = 0.5         # time, and follows the share of bad tastes after acting: a good taste eases it by half a pain's
                         # step, so an option followed by more than 1 bad taste in 3 tires, one followed by fewer rests
-                        # (doing less changes nothing); while off, it fades over about REST_TIRED ticks
+                        # (doing less changes nothing); while off, it fades over about REST_TIRED
 GROW_F = 0.5        # frustration past this grows a recruit
-PERSIST = 10000.0   # cascade: ticks of its parent staying frustrated before a recruit is frustrated itself
-IDLE_RISE = 500.0   # ticks over which a recruit's idleness builds while no option is on (trigger="idle")
+PERSIST = 100.0     # s: cascade, its parent staying frustrated this long before a recruit is frustrated itself
+IDLE_RISE = 5.0     # s over which a recruit's idleness builds while no option is on (trigger="idle")
 EXHAUSTED = 0.15    # how far a pain while idle raises a recruit's own frustration (sustained exhaustion, not one pain)
 REINFORCE_START = 0.2   # select="reinforce": each option's strength at birth ...
 REINFORCE_RATE = 0.3    # ... how far an outcome moves it, at full jitter ...
-JITTER_TAU, JITTER_C = 10.0, 3.0   # ... and its jitter: noise nodes fading over this many ticks, capacitance chosen so
-                                   # they wander by about 0.3 (0.2 x sqrt(tau / 2) / C)
+JITTER_TAU, JITTER_C = 0.1, 3 * C_TYP  # ... and its jitter: noise nodes fading over this many seconds, capacitance
+                                       # chosen so they wandered by about 0.3 V under the old noise
 
 
 class HealingBrain(KnowingBrain):
@@ -116,16 +117,16 @@ class HealingBrain(KnowingBrain):
         super().build(c)
         # T's frustration motif: its eligibility, F (anticipated pain), O (every pain), recruited flag
         E_T, C = self.slow(c, "E_T", ELIGIBLE)
-        c.element(E_T, self.T, 1.0 * C, 0.0, slope=5.0, sigmoid=True)
+        c.element(E_T, self.T, C / T_TYP, 0.0, slope=5.0, sigmoid=True)
         F, C = self.slow(c, "F_T", FRUSTRATION)
-        c.element(F, self.taste_node, FRUSTRATE * C / 1.3, PAINFUL, slope=-20.0, sigmoid=True, gate=E_T)
+        c.element(F, self.taste_node, FRUSTRATE * C / (1.3 * T_TYP), PAINFUL, slope=-20.0, sigmoid=True, gate=E_T)
         O, C = self.slow(c, "O_T", OUCH)
-        c.element(O, self.taste_node, 2.0 * C / 1.3, PAINFUL, slope=-20.0, sigmoid=True,
+        c.element(O, self.taste_node, 2.0 * C / (1.3 * T_TYP), PAINFUL, slope=-20.0, sigmoid=True,
                   gate=E_T if self.ouch_kind == "anticipated" else -1)
         Y, C = self.slow(c, "Y_T", OUCH)                # yum: a pulse at every good taste
-        c.element(Y, self.taste_node, 2.0 * C / 1.3, -PAINFUL, slope=20.0, sigmoid=True)
-        flag, C = self.slow(c, "frustrated_T", 2.0)     # a flag: F past 1/2
-        c.element(flag, F, 1.0 * C, GROW_F, slope=20.0, sigmoid=True)
+        c.element(Y, self.taste_node, 2.0 * C / (1.3 * T_TYP), -PAINFUL, slope=20.0, sigmoid=True)
+        flag, C = self.slow(c, "frustrated_T", 0.02)    # a flag: F past 1/2
+        c.element(flag, F, C / T_TYP, GROW_F, slope=20.0, sigmoid=True)
         self.frust = {self.T: {"F": F, "O": O, "Y": Y, "flag": flag, "att": [self.T], "wave": 0}}
         self.done = set()                               # units that have recruited
 
@@ -174,22 +175,22 @@ class HealingBrain(KnowingBrain):
         R = c.neuron(f"R{i}")
         act = -1                                        # shadow: act (and count as having acted) only once frustrated
         if self.retire:                                 # retire: act only while working, until the recruit has failed
-            act = c.node(f"working{i}", bias=1.0, R=1.0, C=1.0, lo=0.0, hi=1.0, start=1.0)
+            act = c.node(f"working{i}", bias=I_TYP, R=R_TYP, C=C_TYP, lo=0.0, hi=1.0, start=1.0)
             retired = c.node(f"retired{i}", R=None, lo=0.0, hi=1.0, start=0.0, memory=True)
-            c.element(act, retired, -3.0, 0.5, slope=12.0, sigmoid=True)
+            c.element(act, retired, -3 * I_TYP, 0.5, slope=12.0, sigmoid=True)
         if self.shadow == "flag":                       # while the parent's flag is on
             act = fr.get("flag", -1)
         elif self.shadow == "latch":                    # from the first time the flag comes on: commissioned for good
             act = c.node(f"commissioned{i}", R=None, lo=0.0, hi=1.0, start=0.0, memory=True)
-            c.element(act, fr["flag"], 0.05, 0.5, slope=20.0, sigmoid=True)
+            c.element(act, fr["flag"], 0.05 * I_TYP, 0.5, slope=20.0, sigmoid=True)
         E_R, C_E = self.slow(c, f"E_R{i}", ELIGIBLE)
-        c.element(E_R, R, 1.0 * C_E, 0.0, slope=5.0, sigmoid=True, gate=act)
-        H = c.node(f"H_R{i}", R=self.hold * SPEED / 10.0, C=10.0, lo=0.0, hi=1.0)
-        c.element(H, R, 10.0, 0.0, slope=5.0, sigmoid=True, gate=act)
+        c.element(E_R, R, C_E / T_TYP, 0.0, slope=5.0, sigmoid=True, gate=act)
+        H = c.node(f"H_R{i}", R=self.hold / (10 * C_TYP), C=10 * C_TYP, lo=0.0, hi=1.0)
+        c.element(H, R, 10 * I_TYP, 0.0, slope=5.0, sigmoid=True, gate=act)
         pain_after, C_P = self.slow(c, f"P_R{i}", OUCH)          # pain that follows my action
-        c.element(pain_after, fr["O"], 2.0 * C_P, 0.5, slope=10.0, sigmoid=True, gate=E_R)
+        c.element(pain_after, fr["O"], 2.0 * C_P / T_TYP, 0.5, slope=10.0, sigmoid=True, gate=E_R)
         good_after, C_G = self.slow(c, f"G_R{i}", OUCH)          # a good taste that follows my action
-        c.element(good_after, fr["Y"], 2.0 * C_G, 0.5, slope=10.0, sigmoid=True, gate=E_R)
+        c.element(good_after, fr["Y"], 2.0 * C_G / T_TYP, 0.5, slope=10.0, sigmoid=True, gate=E_R)
         # listening
         listen = {}
         learned = {f: g for _, (to, f, g) in c.elements if to == u and g >= 0 and c.nodes[g][5] > 0}  # parent's memories
@@ -197,18 +198,19 @@ class HealingBrain(KnowingBrain):
             for x in att:
                 if self.listen == "inherit" and x in learned:   # what the parent learned of x, shared
                     w = learned[x]
-                    c.element(R, x, STRONG, 0.0, tau=0.5, slope=5.0, sigmoid=True, gate=w)
+                    c.element(R, x, STRONG, 0.0, tau=0.5 * T_TYP, slope=5.0, sigmoid=True, gate=w)
                     listen[x] = w
                     continue
                 w = c.node(f"w{i}_{c.names[x]}", R=None, lo=0.0, hi=1.0,
                            start=1.0 if self.listen == "all" else 0.0, memory=True)
-                c.element(R, x, STRONG, 0.0, tau=0.5, slope=5.0, sigmoid=True, gate=w)     # x -> R, its strength w
+                c.element(R, x, STRONG, 0.0, tau=0.5 * T_TYP, slope=5.0, sigmoid=True, gate=w)  # x -> R, its strength w
                 if self.listen in ("pain", "inherit"):
                     e, C = self.slow(c, f"e{i}_{c.names[x]}", ELIGIBLE)
-                    c.element(e, x, 1.0 * C, 0.0, slope=5.0, sigmoid=True)
-                    c.element(w, fr["O"], LISTEN_STEP / OUCH_ABOVE, 0.5, slope=10.0, sigmoid=True, gate=e)  # ouch
-                    c.element(w, fr["Y"], -LISTEN_STEP / OUCH_ABOVE, 0.5, slope=10.0, sigmoid=True, gate=e)  # yum
-                    c.element(w, e, -LISTEN_DECAY, 0.5, slope=10.0, sigmoid=True)                    # slight decay
+                    c.element(e, x, C / T_TYP, 0.0, slope=5.0, sigmoid=True)
+                    g = LISTEN_STEP * C_TYP / OUCH_ABOVE
+                    c.element(w, fr["O"], g, 0.5, slope=10.0, sigmoid=True, gate=e)                  # ouch
+                    c.element(w, fr["Y"], -g, 0.5, slope=10.0, sigmoid=True, gate=e)                 # yum
+                    c.element(w, e, -LISTEN_DECAY * C_TYP, 0.5, slope=10.0, sigmoid=True)            # slight decay
                 listen[x] = w
         # the menu of actions
         options = []
@@ -229,18 +231,18 @@ class HealingBrain(KnowingBrain):
                 en = c.node(f"en{i}_{k}", R=None, lo=0.0, hi=1.0, start=0.0, memory=True)
             elif self.select == "reinforce":            # graded: a learned strength, jittered by two noise nodes
                 a = c.node(f"a{i}_{k}", R=None, lo=0.0, hi=1.0, start=REINFORCE_START, memory=True)
-                up = c.node(f"xi{i}_{k}+", R=JITTER_TAU * SPEED / JITTER_C, C=JITTER_C, lo=0.0, hi=1.0, start=0.0)
-                down = c.node(f"xi{i}_{k}-", R=JITTER_TAU * SPEED / JITTER_C, C=JITTER_C, lo=0.0, hi=1.0, start=0.0)
-                en = c.node(f"en{i}_{k}", R=0.5, C=1.0, lo=0.0, hi=1.0, start=0.0)     # (follows a + up - down)
+                up = c.node(f"xi{i}_{k}+", R=JITTER_TAU / JITTER_C, C=JITTER_C, lo=0.0, hi=1.0, start=0.0)
+                down = c.node(f"xi{i}_{k}-", R=JITTER_TAU / JITTER_C, C=JITTER_C, lo=0.0, hi=1.0, start=0.0)
+                en = c.node(f"en{i}_{k}", R=0.5 * R_TYP, C=C_TYP, lo=0.0, hi=1.0, start=0.0)   # (follows a + up - down)
                 for src, sign in ((a, 1.0), (up, 1.0), (down, -1.0)):
-                    c.element(en, src, 2.0 * sign, -10.0, slope=1.0, sigmoid=True, gate=src)   # a current of 2 x src
+                    c.element(en, src, 2 * I_TYP * sign, -10.0, slope=1.0, sigmoid=True, gate=src)  # 2 nA x src
                 for outcome, good in ((good_after, 1.0), (pain_after, -1.0)):
                     for jit, sign in ((up, 1.0), (down, -1.0)):   # move the strength the way the jitter went, or back
-                        c.element(a, outcome, good * sign * REINFORCE_RATE / OUCH_ABOVE, 0.5, slope=10.0, sigmoid=True,
-                                  gate=jit)
+                        c.element(a, outcome, good * sign * REINFORCE_RATE * C_TYP / OUCH_ABOVE, 0.5, slope=10.0,
+                                  sigmoid=True, gate=jit)
                 strength.append(a)
             else:
-                en, C = self.slow(c, f"en{i}_{k}", 20.0)
+                en, C = self.slow(c, f"en{i}_{k}", 0.2)
             enable.append(en)
             if kind == "inhibit":
                 c.element(target, H, -INHIBIT, 0.5, slope=10.0, sigmoid=True, gate=en)
@@ -249,9 +251,10 @@ class HealingBrain(KnowingBrain):
             else:                                       # turn the synapse down through a gate that rests open
                 _, (to, frm, gate) = c.elements[target]
                 if gate == -1:
-                    gate = c.node(f"Q{c.names[frm]}{c.names[to]}", bias=1.0, R=1.0, C=1.0, lo=0.0, hi=1.0, start=1.0)
+                    gate = c.node(f"Q{c.names[frm]}{c.names[to]}", bias=I_TYP, R=R_TYP, C=C_TYP, lo=0.0, hi=1.0,
+                                  start=1.0)
                     c.regate(target, gate)
-                c.element(gate, H, -3.0, 0.5, slope=10.0, sigmoid=True, gate=en)
+                c.element(gate, H, -3 * I_TYP, 0.5, slope=10.0, sigmoid=True, gate=en)
         if self.select == "all":
             for en in enable:
                 c.nodes[en] = c.nodes[en][:1] + (0.0,) + c.nodes[en][2:]    # (a full, unleaking enable)
@@ -263,8 +266,8 @@ class HealingBrain(KnowingBrain):
             for k, en in enumerate(enable):
                 Cn = c.nodes[en][2]
                 c.start[en] = 0.0                                                    # all rise from nothing ...
-                c.element(en, en, 0.15 * Cn, 0.5, slope=12.0, sigmoid=True, gate=en)  # ... the first past 1/2 latches
-                c.nodes[en] = (0.008 * Cn,) + c.nodes[en][1:]           # a slow rise (to about 0.64) until one wins
+                c.element(en, en, 0.15 * Cn / T_TYP, 0.5, slope=12.0, sigmoid=True, gate=en)  # ... the first past 1/2
+                c.nodes[en] = (0.008 * Cn / T_TYP,) + c.nodes[en][1:]   # latches; a slow rise (to about 0.64) until one wins
                 share = self.judge == "share"
                 f, Cf = self.slow(c, f"tired{i}_{k}", REST_SHARE if share else REST_TIRED)
                 sl = 30.0 if share else 10.0                # (steep: at 10 the resting tails, unequal now, add up to a
@@ -272,27 +275,27 @@ class HealingBrain(KnowingBrain):
                 c.element(f, good_after, -(GOOD_STEP if share else 1.0) * self.tire * Cf / OUCH_ABOVE, 0.5,
                           slope=sl, sigmoid=True, gate=en)
                 if share:                                   # it rests only while off: an off node, held down by en
-                    off = c.node(f"off{i}_{k}", bias=1.0, R=1.0, C=1.0, lo=0.0, hi=1.0, start=1.0)
-                    c.element(off, en, -3.0, 0.5, slope=12.0, sigmoid=True)
-                    c.element(f, f, -Cf / (REST_TIRED * SPEED), 0.0, slope=1.0, gate=off)   # (about f / REST_TIRED)
-                c.element(en, f, -0.5 * Cn, TIRED, slope=20.0, sigmoid=True, gate=f)  # tired: knocked out
+                    off = c.node(f"off{i}_{k}", bias=I_TYP, R=R_TYP, C=C_TYP, lo=0.0, hi=1.0, start=1.0)
+                    c.element(off, en, -3 * I_TYP, 0.5, slope=12.0, sigmoid=True)
+                    c.element(f, f, -Cf / REST_TIRED, 0.0, slope=1.0, gate=off)   # (about f / REST_TIRED)
+                c.element(en, f, -0.5 * Cn / T_TYP, TIRED, slope=20.0, sigmoid=True, gate=f)  # tired: knocked out
                 if self.starve:                             # no news is bad news: a slow rise while on
-                    ticks = STARVE if self.starve is True else self.starve
-                    c.element(f, en, TIRED * Cf / (ticks * SPEED), 0.5, slope=20.0, sigmoid=True, gate=en)
+                    span = STARVE if self.starve is True else self.starve
+                    c.element(f, en, TIRED * Cf / span, 0.5, slope=20.0, sigmoid=True, gate=en)
                 tired.append(f)
             for a in enable:                            # and holds the others down (pairwise: a shared inhibitor can't
                 for b in enable:                        # tell one option on from ten, and all latched together)
                     if a != b:
-                        c.element(a, b, -0.3 * c.nodes[a][2], 0.5, slope=20.0, sigmoid=True, gate=b)
+                        c.element(a, b, -0.3 * c.nodes[a][2] / T_TYP, 0.5, slope=20.0, sigmoid=True, gate=b)
                         # (steep: at slope 12 the tails of a dozen resting rivals outweighed the rise, and none won)
         # the recruit's own frustration, for a cascade: its parent still frustrated long after it came ("persist"), or
         # pain while it is idle, every option tried and knocked out ("idle")
         if self.cascade and self.trigger in ("persist", "root"):
             F_R, C = self.slow(c, f"F_R{i}", self.persist)
             src = fr["flag"] if self.trigger == "root" else fr["F"]   # root: the first frustrated unit's own flag
-            c.element(F_R, src, C / (self.persist * SPEED), 0.5, slope=12.0, sigmoid=True)   # fills over persist ticks
+            c.element(F_R, src, C / self.persist, 0.5, slope=12.0, sigmoid=True)   # fills over persist seconds
             if self.retire:                             # and when it is frustrated enough to recruit, it stands down
-                c.element(retired, F_R, 0.05, GROW_F, slope=20.0, sigmoid=True)
+                c.element(retired, F_R, 0.05 * I_TYP, GROW_F, slope=20.0, sigmoid=True)
             self.frust[R] = {"F": F_R, "O": fr["O"], "Y": fr["Y"], "flag": fr.get("flag", -1), "att": att,
                              "wave": fr["wave"] + 1}
         elif self.cascade:
@@ -300,7 +303,7 @@ class HealingBrain(KnowingBrain):
             c.nodes[idle] = (c.nodes[idle][1],) + c.nodes[idle][1:]  # (a bias equal to its leak: it rests at 1)
             c.start[idle] = 0.0
             for en in enable:                                        # ... and any option on holds it down
-                c.element(idle, en, -3.0 * C_i, 0.5, slope=12.0, sigmoid=True)
+                c.element(idle, en, -3.0 * C_i / T_TYP, 0.5, slope=12.0, sigmoid=True)
             F_R, C = self.slow(c, f"F_R{i}", FRUSTRATION)
             c.element(F_R, fr["O"], EXHAUSTED * C / OUCH_ABOVE, 0.5, slope=10.0, sigmoid=True, gate=idle)
             self.frust[R] = {"F": F_R, "O": fr["O"], "Y": fr["Y"], "flag": fr.get("flag", -1), "att": att,

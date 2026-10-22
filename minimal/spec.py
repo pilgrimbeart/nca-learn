@@ -1,9 +1,11 @@
 """A circuit brain written as a plain description (a spec), its parts counted, and lives of it scored (the minimal
 circuit search: minimal/NOTEBOOK.md).
 
-A spec is a dict:
-  nodes: [name, bias, R (None: no leak), C, lo, hi, start (None: where it rests), memory], ...
-  elements: [to, from, gate (-1: none), gain, offset, slope, tau, sigmoid], ...: node indices, as mixed_feedback
+A spec is a dict, in SI units (units.py; "units": "SI", which check requires, so that no design from before
+2026-10-22, in ticks, can be lived by mistake):
+  nodes: [name, bias (A), R (ohm; None: no leak), C (F), lo, hi, start (V; None: where it rests), memory], ...
+  elements: [to, from, gate (-1: none), gain (A), offset (V), slope (per V), tau (s), sigmoid], ...: node indices, as
+  mixed_feedback
   sensors: the two nodes the body stimulates; motors: the two whose spikes fire the thrusters (any nodes, the same
   node allowed); taste: the node taste is injected into.
 
@@ -28,7 +30,9 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from brains.circuit import CircuitBrain, TRACE  # noqa: E402
-from mixed_feedback import RAIL, Circuit  # noqa: E402
+from mixed_feedback import SUBSTRATES, Circuit  # noqa: E402
+from units import (C_TYP, CAP_DENSITY, MICRO, NANO, RAIL, SLEW, TAU_LEAK, TAU_LOOP, TICK, UNIT_AREA,  # noqa: E402
+                   si)
 
 # RAIL: the supply's rails, +-RAIL (V): no node can go beyond them (the user's question, 2026-10-20: the body's pulses
 # are a current source, and nothing stopped a pulse lifting a node 10 V); a clamp inside them is a part (two diodes),
@@ -36,15 +40,15 @@ from mixed_feedback import RAIL, Circuit  # noqa: E402
 
 
 class SpecBrain(CircuitBrain):
-    """A circuit brain built from a spec. STREAMS False: one noise stream (fastlife needs it). noise: a share of the
-    usual, within mixed_feedback.NOISY. level0: watched in the node view (blocks.NodeView), having no neurons."""
+    """A circuit brain built from a spec. STREAMS False: one noise stream (fastlife needs it). substrate: whose noise
+    (mixed_feedback.SUBSTRATES). level0: watched in the node view (blocks.NodeView), having no neurons."""
 
     level0 = True
 
-    def __init__(self, seed: int, spec: dict, noise: float = 1.0):
+    def __init__(self, seed: int, spec: dict, substrate: str = "biology"):
         check(spec)
         self.seed, self.spec = seed, spec
-        c = self.circuit = Circuit(seed=seed + 1_000_003, noise=noise)
+        c = self.circuit = Circuit(seed=seed + 1_000_003, substrate=substrate)
         for name, bias, R, C, lo, hi, start, memory in spec["nodes"]:     # every node within the supply's rails
             c.node(name, bias, R, C, -RAIL if lo is None else max(lo, -RAIL), RAIL if hi is None else min(hi, RAIL),
                    start, memory)
@@ -97,8 +101,8 @@ def tidy(spec: dict) -> dict:
         remove_node(spec, dead[-1])
 
 
-def make(spec: dict, noise: float = 1.0):
-    return functools.partial(SpecBrain, spec=spec, noise=noise)
+def make(spec: dict, substrate: str = "biology"):
+    return functools.partial(SpecBrain, spec=spec, substrate=substrate)
 
 
 def parts(spec: dict) -> dict:
@@ -116,46 +120,43 @@ def parts(spec: dict) -> dict:
             "nodes": len(spec["nodes"]), "elements": len(spec["elements"])}
 
 
-AREA = {"element": 5, "gate": 3, "leak": 2, "clamp": 1, "memory": 5, "capacitor": 10}
-                    # chip area, in unit transistors (an analogue-sized MOSFET with its spacing, about 15 um^2 in a
-                    # mature process), by analogy with subthreshold analogue CMOS (the user's question, 2026-10-21: what
-                    # does a gate cost?): an element is a transconductance amplifier (differential pair, current mirror,
-                    # bias), a gate a two-quadrant multiplier stacked on it, a leak a pseudo-resistor, a memory node's
-                    # floating gate its tunnelling and injection structures, and a capacitor its area per unit of C
-                    # (a filter: an amplifier and a capacitor of unit C). The capacitor's price is a guess (it depends
-                    # on what currents and time a tick stands for); reported, not ranked on.
+AREA = {"element": 5, "gate": 3, "leak": 2, "clamp": 1, "memory": 5}
+                    # chip area, in unit transistors (units.UNIT_AREA, an analogue-sized MOSFET with its spacing), by
+                    # analogy with subthreshold analogue CMOS (the user's question, 2026-10-21: what does a gate cost?):
+                    # an element is a transconductance amplifier (differential pair, current mirror, bias), a gate a
+                    # two-quadrant multiplier stacked on it, a leak a pseudo-resistor, a memory node's floating gate its
+                    # tunnelling and injection structures; a capacitor takes its own area (capacitor_area), and a
+                    # filter is an amplifier and a capacitor of units.C_TYP. Reported, not ranked on.
+
+
+def capacitor_area(C: float) -> float:
+    """A capacitor's area in unit transistors: a MOS capacitor (units.CAP_DENSITY)."""
+    return C / CAP_DENSITY / UNIT_AREA
 
 
 def area(spec: dict) -> float:
     """The chip area an analogue build would take (AREA), in unit transistors."""
     a = 0.0
     for _, _, r, c, lo, hi, _, mem in spec["nodes"]:
-        a += AREA["capacitor"] * c + AREA["leak"] * (r is not None) + AREA["memory"] * bool(mem)
+        a += capacitor_area(c) + AREA["leak"] * (r is not None) + AREA["memory"] * bool(mem)
         a += AREA["clamp"] * ((lo is not None and math.isfinite(lo)) + (hi is not None and math.isfinite(hi)))
     for _, _, gate, _, _, _, tau, _ in spec["elements"]:
-        a += AREA["element"] + AREA["gate"] * (gate >= 0) + (AREA["element"] + AREA["capacitor"]) * (tau > 0)
+        a += AREA["element"] + AREA["gate"] * (gate >= 0) + (AREA["element"] + capacitor_area(C_TYP)) * (tau > 0)
     return a
 
 
-SLEW = 10.0         # the most any element, leak or input pulse may move a node per circuit tick (0.5 V per step of
-                    # 0.05): the honesty limit on gains and time constants against the step (AGENTS.md)
-
-
-LOOP = 2.0          # the fastest an unfiltered element on its own node may act, gain x (its f's steepest slope) / C, per
-                    # circuit tick: a time constant of at least 10 integration steps (the user's question, 2026-10-20:
-                    # a device fed back to itself "implies infinite speed"; the designed circuit's neurons sit at 2)
-
-
 def slew(spec: dict) -> float:
-    """How fast the circuit is against its limits, as a slew (the limit is SLEW): the fastest a node can be moved per
-    circuit tick, by an element (|gain| / C), its leak (1 / RC), or the body's pulse into a sensor or the taste node
-    (3 / C); and the fastest unfiltered self-feedback, scaled so that LOOP maps to SLEW."""
+    """How fast the circuit is against the honesty limits (units.py: SLEW, TAU_LEAK, TAU_LOOP, all from the
+    integration step), as a share of them (above 1 is illegal): the fastest a node can be moved, by an element
+    (|gain| / C) or the body's pulse into a sensor or the taste node, against SLEW; the fastest leak (1 / RC) against
+    1 / TAU_LEAK; and the fastest unfiltered element on its own node (gain x its f's steepest slope / C: a device fed
+    back to itself must not be infinitely fast, the user's question, 2026-10-20) against 1 / TAU_LOOP."""
     from brains.circuit import STIMULUS, TASTE
     C = [n[3] for n in spec["nodes"]]
-    out = [abs(e[3]) / C[e[0]] for e in spec["elements"]]
-    out += [1.0 / (n[2] * n[3]) for n in spec["nodes"] if n[2] is not None]
-    out += [STIMULUS / C[i] for i in spec["sensors"]] + [TASTE / C[spec["taste"]]]
-    out += [abs(e[3]) * (e[5] / 4 if e[7] else e[5]) / C[e[0]] * SLEW / LOOP
+    out = [abs(e[3]) / C[e[0]] / SLEW for e in spec["elements"]]
+    out += [TAU_LEAK / (n[2] * n[3]) for n in spec["nodes"] if n[2] is not None]
+    out += [STIMULUS / C[i] / SLEW for i in spec["sensors"]] + [TASTE / C[spec["taste"]] / SLEW]
+    out += [abs(e[3]) * (e[5] / 4 if e[7] else e[5]) / C[e[0]] * TAU_LOOP
             for e in spec["elements"] if e[0] == e[1] and e[6] == 0]
     return max(out)
 
@@ -168,6 +169,8 @@ def violations(spec: dict) -> list:
     memory nodes (floating gates), stay allowed under his rules (the user's decision, 2026-10-21). Empty: a legal
     circuit."""
     n, out = len(spec["nodes"]), []
+    if spec.get("units") != "SI":
+        return ["not in SI units (a design from before 2026-10-22, in ticks: convert it)"]
     for e in spec["elements"]:
         if not (0 <= e[0] < n and 0 <= e[1] < n and -1 <= e[2] < n):
             out.append(f"element {e[:3]} names no node")
@@ -179,8 +182,8 @@ def violations(spec: dict) -> list:
             out.append(f"node {nd[0]}: capacitance and leak must be positive")
         if spec.get("rules") == "mixed" and ((nd[2] is None and not nd[7]) or nd[4] is not None or nd[5] is not None):
             out.append(f"mixed feedback's rules: node {nd[0]} must leak (unless a memory node), with no clamp")
-    if not out and slew(spec) > SLEW * (1 + 1e-9):
-        out.append(f"too fast for the step: {slew(spec):.1f} against the limit {SLEW:g} (SLEW, LOOP)")
+    if not out and slew(spec) > 1 + 1e-9:
+        out.append(f"too fast for the step: {slew(spec):.0%} of the limits (units.py: SLEW, TAU_LEAK, TAU_LOOP)")
     return out
 
 
@@ -192,30 +195,36 @@ def check(spec: dict) -> None:
 
 
 class Lived(list):
-    """A life's thirds (a list), with its circuit's mean power, its thrusters' firings per 1,000 ticks, and how far
-    the circuit is over the slew limit."""
+    """A life's thirds (a list of (food, poison, seconds)), with its circuit's mean power (W), its thrusters' firings
+    per SPAN, how far the circuit is over the honesty limits, and the substrate whose noise it lived with."""
     power = 0.0
     firings = 0.0
     over = 0.0
-    noise = 1.0
+    substrate = "biology"
 
 
-def one(job):
-    """(spec, seed, poison, ticks, learning, noise) -> (food, poison, ticks) after moving, by third of life, then
-    (0, 0, ticks before moving), so that rates over all four are per tick of life. Mismatch comes with every circuit
-    (mixed_feedback.MISMATCH), drawn from the seed."""
-    from minimal.fastlife import life
-    spec, seed, poison, ticks, learning, noise = job
-    meals, moving, power, firings = life(make(spec, noise), seed, poison, ticks, learning)
+def thirds(meals, moving, ticks, poison) -> list:
+    """A life's meals [(tick, colour)] as (food, poison, seconds) after moving began, by third of life, then (0, 0,
+    seconds before moving), so that rates over all four are per second of life."""
     start = moving if moving is not None else ticks
     out = []
     for i in range(3):
         a, z = start + i * (ticks - start) / 3, start + (i + 1) * (ticks - start) / 3
         part = [c for t, c in meals if a <= t < z]
-        out.append((sum(c != poison for c in part), sum(c == poison for c in part), z - a))
-    lived = Lived(out + [(0, 0, start)])
-    lived.power, lived.firings, lived.over = power, 1000 * firings / ticks, max(0.0, slew(spec) / SLEW - 1.0)
-    lived.noise = noise
+        out.append((sum(c != poison for c in part), sum(c == poison for c in part), (z - a) * TICK))
+    return out + [(0, 0, start * TICK)]
+
+
+def one(job):
+    """(spec, seed, poison, seconds, learning, substrate) -> the life's thirds (thirds). Mismatch comes with every
+    circuit (mixed_feedback.MISMATCH), drawn from the seed."""
+    from minimal.fastlife import life
+    spec, seed, poison, seconds, learning, substrate = job
+    ticks = int(round(seconds / TICK))
+    meals, moving, power, firings = life(make(spec, substrate), seed, poison, ticks, learning)
+    lived = Lived(thirds(meals, moving, ticks, poison))
+    lived.power, lived.firings, lived.over = power, SPAN * firings / (ticks * TICK), max(0.0, slew(spec) - 1.0)
+    lived.substrate = substrate
     return lived
 
 
@@ -229,71 +238,81 @@ def pool():
     return _POOL
 
 
-JUDGED = (0.5, 1.0, 2.0)  # the noise levels a circuit is judged at, as shares of the usual, the worst counting and the
-                    # job required at each: half, nominal and double, in every polish, pruning, open search and final
-                    # judgement (the user's decision, 2026-10-22: judged at one level, pruning traded mechanism for
-                    # noise, which costs no parts); --noises judges at others
+JUDGED = ("silicon", "biology", "biology x2")  # the substrates whose noise a circuit is judged with (mixed_feedback.
+                    # SUBSTRATES), the worst counting and the job required in each, in every polish, pruning, open search
+                    # and final judgement (the user's decisions, 2026-10-22: judged at one level, pruning traded
+                    # mechanism for noise, which costs no parts; then silicon, biology and twice biology's, so that a
+                    # design must also work as built in silicon, where one leaning on noise fails); --substrates
+                    # judges with others
+LIFE = 100.0        # s: a life (10,000 ticks)
+SPAN = 10.0         # s: rates are per SPAN (the same numbers as "per 1,000 ticks" before 2026-10-22)
 
 
-def score(specs, seeds=range(8), ticks=10000, learning=True, all_food=False, noise=None):
+def score(specs, seeds=range(8), seconds=LIFE, learning=True, all_food=False, substrate=None):
     """Each spec over the given seeds, each seed lived twice, red then blue as poison (a circuit that ignores taste
-    lives the same life twice with the labels swapped, so it nets exactly 0), or once in all food; at each noise level
-    (a share of the usual, mixed_feedback.NOISY; a number, or several; default JUDGED), level after level. Per spec: a
-    list of lives, each its thirds [(food, poison, ticks)]."""
-    noises = JUDGED if noise is None else (noise,) if np.isscalar(noise) else tuple(noise)
+    lives the same life twice with the labels swapped, so it nets exactly 0), or once in all food; with each substrate's
+    noise (one, or several; default JUDGED), substrate after substrate. Per spec: a list of lives (Lived)."""
+    subs = JUDGED if substrate is None else (substrate,) if isinstance(substrate, str) else tuple(substrate)
     poisons = (None,) if all_food else ("red", "blue")
     legal = [not violations(s) for s in specs]
-    jobs = [(s, seed, p, ticks, learning, nz) for s, ok in zip(specs, legal) if ok
-            for nz in noises for seed in seeds for p in poisons]
+    jobs = [(s, seed, p, seconds, learning, sb) for s, ok in zip(specs, legal) if ok
+            for sb in subs for seed in seeds for p in poisons]
     res = iter(pool().map(one, jobs, chunksize=max(1, len(jobs) // 64)))
-    k = len(seeds) * len(poisons) * len(noises)
+    k = len(seeds) * len(poisons)
     out = []
     for s, ok in zip(specs, legal):
         if ok:
-            out.append([next(res) for _ in range(k)])
+            out.append([next(res) for _ in range(k * len(subs))])
         else:                                           # not lived: a starving life, and a penalty graded by how far
-            dead = Lived([(0, 0, ticks / 3)] * 3 + [(0, 0, 0)])     # over the limits (so a search can find its way
-            try:                                                    # back), or a fixed one if it can't be measured
-                dead.over = max(0.0, slew(s) / SLEW - 1.0) + 0.1
-            except (IndexError, ZeroDivisionError):
-                dead.over = 10.0
-            out.append([dead] * k)
+            lives = []                                  # over the limits (so a search can find its way back), or a
+            for sb in subs:                             # fixed one if it can't be measured
+                dead = Lived([(0, 0, seconds / 3)] * 3 + [(0, 0, 0)])
+                try:
+                    dead.over = max(0.0, slew(s) - 1.0) + 0.1
+                except (IndexError, ZeroDivisionError, TypeError):
+                    dead.over = 10.0
+                dead.substrate = sb
+                lives += [dead] * k
+            out.append(lives)
     return out
 
 
+# What a creature spends and gains, in meals (the user's decisions, 2026-10-21: a low-energy brain is no use if it
+# drives the body wastefully; the simplest brain should cost little beside its body). Three axioms, guesses to adjust:
+MEAL = 10 * MICRO   # J: what a meal is worth
+METABOLISM = 1 * MICRO  # W: what a creature burns at rest, whatever it does (a small insect's order)
+FIRING = 20 * NANO  # J: what a thruster firing costs (a typical winner of the free-moving search, 2 meals and 280
+                    # firings per SPAN, spends about 30% of what it eats; a circuit of a few nW about a hundredth of
+                    # what moving costs)
 COST = 2.0          # a poison meal counts as this many food meals lost: eating without telling them apart loses
-THRUST = 0.002      # the body's energy: a thruster firing costs this share of a meal (the user's decision, 2026-10-21:
-                    # a low-energy brain is no use if it drives the body wastefully). A typical winner of the free-moving
-                    # search (2 meals, 280 firings per 1,000 ticks) would spend about 30% of what it eats; a guess, to adjust
-ENERGY = 0.001      # the circuit's energy: the cost per unit of mean power (mixed_feedback._step: what each device
-                    # dissipates, its current times the voltage across it), set so that today's circuits (power about 6)
-                    # spend about a hundredth of what they spend on moving (the user's R = 100, 2026-10-21: the simplest
-                    # brain should cost little beside its body; fixed, not tied to any circuit's power)
-NEED = 1.0          # food per 1,000 ticks a creature needs, in every third of every life: each meal short of it
-                    # costs COST (starving) ...
-JOB = (1.0, 3.0, 0.05)  # ... and the job: at least this much food per 1,000 ticks, this food:poison in the last third,
-                    # and at most this share of lives stranded (no food at all in the last third; a creature eating
-                    # 1.4 per 1,000 goes a last third without food by chance about 1% of the time)
+NEED = METABOLISM * SPAN / MEAL     # meals per SPAN a creature needs, in every third of every life (1): each meal
+                    # short of it costs COST (starving) ...
+THRUST = FIRING / MEAL  # meals a firing costs (0.002)
+ENERGY = SPAN / MEAL    # meals per SPAN per watt of the circuit's mean power (mixed_feedback._step: what each device
+                        # dissipates, its current times the voltage across it)
+JOB = (1.0, 3.0, 0.05)  # ... and the job: at least this much food per SPAN, this food:poison in the last third, and at
+                    # most this share of lives stranded (no food at all in the last third; a creature eating 1.4 per
+                    # SPAN goes a last third without food by chance about 1% of the time)
 
 
 def net(lives, cost: float = COST, need: float = NEED, energy: float = ENERGY) -> float:
-    """The score: food - cost x poison, per 1,000 ticks of life (counted from birth), less cost x how far each third
-    of each life falls short of need (a third with no ticks, as when a creature never moves, wholly short), less
-    THRUST x its thruster firings per 1,000 ticks (each a share of a meal), energy x its mean power, and a heavy
-    penalty for a circuit over the slew limit. Starving is counted life by life
-    and third by third, so a life that strands (eats, then finds nothing more) costs in its own last third instead of
-    hiding among other lives' meals (the user's question, 2026-10-20: a creature that spun on the spot forever once
-    it had eaten what was near; a fifth of the winners' lives did). With cost above 1 a circuit that ignores taste
-    scores below 0 (in paired lives, -(cost - 1) x what it eats, less any starving), and one that stays still scores
-    -cost x need; only learning scores above 0. Lives at several noise levels: the worst level's score."""
-    levels = sorted({getattr(l, "noise", 1.0) for l in lives})
+    """The score: food - cost x poison, per SPAN of life (counted from birth), less cost x how far each third of each
+    life falls short of need (a third with no time, as when a creature never moves, wholly short), less THRUST x its
+    thruster firings per SPAN (each a share of a meal), energy x its mean power, and a heavy penalty for a circuit over
+    the honesty limits. Starving is counted life by life and third by third, so a life that strands (eats, then finds
+    nothing more) costs in its own last third instead of hiding among other lives' meals (the user's question,
+    2026-10-20: a creature that spun on the spot forever once it had eaten what was near; a fifth of the winners'
+    lives did). With cost above 1 a circuit that ignores taste scores below 0 (in paired lives, -(cost - 1) x what it
+    eats, less any starving), and one that stays still scores -cost x need; only learning scores above 0. Lives with
+    several substrates' noise: the worst substrate's score."""
+    levels = by_level(lives)
     if len(levels) > 1:
-        return min(net([l for l in lives if getattr(l, "noise", 1.0) == k], cost, need, energy) for k in levels)
+        return min(net(v, cost, need, energy) for v in levels.values())
     f = sum(a for l in lives for a, _, _ in l)
     p = sum(b for l in lives for _, b, _ in l)
-    ticks = sum(t for l in lives for _, _, t in l)
-    fr, pr = 1000 * f / ticks, 1000 * p / ticks
-    short = float(np.mean([max(0.0, need - 1000 * a / t) if t > 0 else need for l in lives for a, _, t in l[:3]]))
+    time = sum(t for l in lives for _, _, t in l)
+    fr, pr = SPAN * f / time, SPAN * p / time
+    short = float(np.mean([max(0.0, need - SPAN * a / t) if t > 0 else need for l in lives for a, _, t in l[:3]]))
     power = float(np.mean([getattr(l, "power", 0.0) for l in lives]))
     over = max(getattr(l, "over", 0.0) for l in lives)
     thrust = THRUST * float(np.mean([getattr(l, "firings", 0.0) for l in lives]))
@@ -301,9 +320,9 @@ def net(lives, cost: float = COST, need: float = NEED, energy: float = ENERGY) -
 
 
 def spent(l) -> float:
-    """What a life spends, in meals: resting (NEED per 1,000 ticks, the food every creature needs whatever it does),
-    moving (THRUST a firing) and thinking (ENERGY per unit of the circuit's power, per 1,000 ticks)."""
-    return (NEED + THRUST * l.firings + ENERGY * l.power) * sum(t for _, _, t in l) / 1000
+    """What a life spends, in meals: resting (NEED per SPAN, the food every creature needs whatever it does), moving
+    (THRUST a firing) and thinking (ENERGY per watt of the circuit's power, per SPAN)."""
+    return (NEED + THRUST * l.firings + ENERGY * l.power) * sum(t for _, _, t in l) / SPAN
 
 
 def efficiency(lives) -> float:
@@ -317,18 +336,18 @@ def efficiency(lives) -> float:
 
 
 def gain(lives) -> float:
-    """Meals gained (food less COST a poison) per 1,000 ticks of life: speed and accuracy, energy free."""
-    return 1000 * sum(a - COST * b for l in lives for a, b, _ in l) / sum(t for l in lives for _, _, t in l)
+    """Meals gained (food less COST a poison) per SPAN of life: speed and accuracy, energy free."""
+    return SPAN * sum(a - COST * b for l in lives for a, b, _ in l) / sum(t for l in lives for _, _, t in l)
 
 
 def does_job(lives) -> bool:
-    """The job (JOB): enough food, food:poison in the last third, few lives stranded; at every noise level judged."""
-    levels = sorted({getattr(l, "noise", 1.0) for l in lives})
+    """The job (JOB): enough food, food:poison in the last third, few lives stranded; with every substrate judged."""
+    levels = by_level(lives)
     if len(levels) > 1:
-        return all(does_job([l for l in lives if getattr(l, "noise", 1.0) == k]) for k in levels)
+        return all(does_job(v) for v in levels.values())
     t = sum(t for l in lives for _, _, t in l)
     lf, lp = sum(l[2][0] for l in lives), sum(l[2][1] for l in lives)
-    return bool(t and 1000 * sum(a for l in lives for a, _, _ in l) / t >= JOB[0]
+    return bool(t and SPAN * sum(a for l in lives for a, _, _ in l) / t >= JOB[0]
                 and (lf / lp if lp else math.inf) >= JOB[1] and sum(l[2][0] == 0 for l in lives) / len(lives) <= JOB[2])
 
 
@@ -342,7 +361,7 @@ FAIL = 10.0         # a circuit not doing the job, judged by efficiency or gain:
 
 def objective(lives, by: str = "score") -> float:
     """The lives judged by one of OBJECTIVES; for efficiency or gain, only a circuit doing the job counts (FAIL), and
-    across noise levels the worst level's."""
+    across substrates the worst one's."""
     if by == "score":
         return net(lives)
     if not does_job(lives):
@@ -351,15 +370,17 @@ def objective(lives, by: str = "score") -> float:
 
 
 def by_level(lives) -> dict:
-    """The lives at each noise level, in order (score lives them level by level, each seed's pair together)."""
+    """The lives with each substrate's noise, in SUBSTRATES' order (score lives them substrate by substrate, each
+    seed's pair together)."""
     out = {}
     for l in lives:
-        out.setdefault(getattr(l, "noise", 1.0), []).append(l)
-    return dict(sorted(out.items()))
+        out.setdefault(getattr(l, "substrate", "biology"), []).append(l)
+    order = list(SUBSTRATES)
+    return dict(sorted(out.items(), key=lambda kv: order.index(kv[0]) if kv[0] in order else len(order)))
 
 
 def worst(lives, f) -> float:
-    """A measure (higher is better) at the worst noise level."""
+    """A measure (higher is better) with the worst substrate's noise."""
     return min(f(v) for v in by_level(lives).values())
 
 
@@ -373,34 +394,35 @@ def boot_index(n_pairs: int) -> np.ndarray:
 
 
 def per_pair(lives) -> dict:
-    """Each seed's pair of lives summed: food, poison, ticks, last third's food and poison, lives stranded, meals spent."""
+    """Each seed's pair of lives summed: food, poison, seconds, last third's food and poison, lives stranded, meals
+    spent, firings."""
     def col(f):
         x = np.array([f(l) for l in lives], dtype=float)
         return x[0::2] + x[1::2]
     return {"food": col(lambda l: sum(a for a, _, _ in l)), "poison": col(lambda l: sum(b for _, b, _ in l)),
-            "ticks": col(lambda l: sum(t for _, _, t in l)), "lf": col(lambda l: l[2][0]), "lp": col(lambda l: l[2][1]),
+            "time": col(lambda l: sum(t for _, _, t in l)), "lf": col(lambda l: l[2][0]), "lp": col(lambda l: l[2][1]),
             "stranded": col(lambda l: l[2][0] == 0),
-            "spent": col(spent), "fired": col(lambda l: l.firings * sum(t for _, _, t in l) / 1000)}
+            "spent": col(spent), "fired": col(lambda l: l.firings * sum(t for _, _, t in l) / SPAN)}
 
 
 def resampled(pp: dict, idx: np.ndarray) -> dict:
-    """Per resample: food per 1,000 ticks, gain rate (food less COST a poison, per 1,000 ticks: speed and accuracy,
-    energy free), efficiency (poison counted), thrift (food per 1,000 firings), last third's food:poison, share
-    stranded."""
+    """Per resample: food per SPAN, gain rate (food less COST a poison, per SPAN: speed and accuracy, energy free),
+    efficiency (poison counted), thrift (food per 1,000 firings), last third's food:poison, share stranded."""
     s = {k: v[idx].sum(axis=1) for k, v in pp.items()}
     with np.errstate(divide="ignore", invalid="ignore"):
-        return {"food": 1000 * s["food"] / s["ticks"], "gain": 1000 * (s["food"] - COST * s["poison"]) / s["ticks"],
+        return {"food": SPAN * s["food"] / s["time"], "gain": SPAN * (s["food"] - COST * s["poison"]) / s["time"],
                 "efficiency": (s["food"] - COST * s["poison"]) / s["spent"],
-                "thrift": np.where(s["fired"] > 0, 1000 * s["food"] / np.maximum(s["fired"], 1e-9), 0.0), "last": np.where(s["lp"] > 0, s["lf"] / np.maximum(s["lp"], 1e-9),
-                np.inf), "stranded": s["stranded"] / (2 * idx.shape[1])}
+                "thrift": np.where(s["fired"] > 0, 1000 * s["food"] / np.maximum(s["fired"], 1e-9), 0.0),
+                "last": np.where(s["lp"] > 0, s["lf"] / np.maximum(s["lp"], 1e-9), np.inf),
+                "stranded": s["stranded"] / (2 * idx.shape[1])}
 
 
 LOWER_IS_WORSE = ("food", "gain", "efficiency", "thrift", "last")     # (and "stranded" higher is worse)
 
 
 def worst_resampled(levels: dict, idx: np.ndarray) -> dict:
-    """resampled at each noise level (levels: each level's per_pair) with the same resamples (a seed drawn at one level
-    is drawn at every level), and the worst level's value in each resample: the statistic the judging uses."""
+    """resampled with each substrate (levels: each one's per_pair) with the same resamples (a seed drawn with one is
+    drawn with every one), and the worst substrate's value in each resample: the statistic the judging uses."""
     rs = [resampled(pp, idx) for pp in levels.values()]
     return {k: (np.min if k in LOWER_IS_WORSE else np.max)(np.stack([r[k] for r in rs]), axis=0) for k in rs[0]}
 
@@ -412,14 +434,14 @@ def interval(x) -> list:
 
 def summary(lives) -> dict:
     """The score (net, above; with a bootstrap 95% interval over seeds, each seed's pair kept together), plain net
-    (food - poison), food and poison per 1,000 ticks of life, food:poison over the last third, the share of lives
-    stranded (no food in the last third), firings per 1,000 ticks, gain rate (food less COST a poison per 1,000
-    ticks), efficiency (meals gained per meal spent), thrift (food per 1,000 firings), whether it does the job (JOB),
-    and 95% intervals (ci) for food, gain, efficiency, thrift, food:poison and stranded. Lives at several noise levels:
-    every measure is the worst level's (its interval resampled with the same seeds at every level), the job must be
-    done at every one, and by_noise holds each level's summary."""
+    (food - poison), food and poison per SPAN of life, food:poison over the last third, the share of lives stranded
+    (no food in the last third), firings per SPAN, gain rate (food less COST a poison per SPAN), efficiency (meals
+    gained per meal spent), thrift (food per 1,000 firings), whether it does the job (JOB), and 95% intervals (ci) for
+    food, gain, efficiency, thrift, food:poison and stranded. Lives with several substrates' noise: every measure is the
+    worst substrate's (its interval resampled with the same seeds for every substrate), the job must be done with every
+    one, and by_substrate holds each one's summary."""
     levels = by_level(lives)
-    if len(levels) > 1:                                 # every measure the worst level's, its interval resampled jointly
+    if len(levels) > 1:                                 # every measure the worst substrate's, its interval resampled jointly
         by = {k: summary(v) for k, v in levels.items()}
         n = len(next(iter(levels.values()))) // 2
         idx = boot_index(n)
@@ -433,7 +455,7 @@ def summary(lives) -> dict:
                 "stranded": sw["stranded"], "firings": float(np.mean([s["firings"] for s in by.values()])),
                 "efficiency": w("efficiency"), "thrift": w("thrift"), "job": all(s["job"] for s in by.values()),
                 "ci": {**{k: interval(v) for k, v in rs.items() if k != "stranded"}, "stranded": sw["ci"]["stranded"]},
-                "by_noise": {str(k): s for k, s in by.items()}}
+                "by_substrate": by}
     pairs = [lives[i:i + 2] for i in range(0, len(lives), 2)]
     idx = boot_index(len(pairs))
     boot = [net([l for i in row for l in pairs[i]]) for row in idx]
@@ -448,8 +470,8 @@ def summary(lives) -> dict:
     stranded = sum(l[2][0] == 0 for l in lives) / len(lives)
     return {"net": net(lives), "plain": net(lives, 1.0, 0.0, 0.0), "power": float(np.mean([l.power for l in lives])),
             "over": max(l.over for l in lives), "lo": float(np.nanpercentile(boot, 2.5)), "hi": float(np.nanpercentile(boot, 97.5)),
-            "food": 1000 * f / t if t else 0.0, "poison": 1000 * p / t if t else 0.0,
-            "gain": 1000 * (f - COST * p) / t if t else 0.0,
+            "food": SPAN * f / t if t else 0.0, "poison": SPAN * p / t if t else 0.0,
+            "gain": SPAN * (f - COST * p) / t if t else 0.0,
             "last": lf / lp if lp else math.inf, "stranded": stranded,
             "firings": float(np.mean([l.firings for l in lives])), "efficiency": efficiency(lives),
             "thrift": float(rs_all["thrift"][0]),
@@ -465,14 +487,15 @@ def wilson(k: int, n: int) -> list:
 
 
 def pack(lives) -> list:
-    """Lives as plain lists (for a cache), and back (unpack)."""
-    return [[[list(x) for x in l], l.power, l.firings, l.over] for l in lives]
+    """Lives as plain lists (for a cache), and back (unpack), each with its substrate (once dropped, which pooled the
+    league's noise levels instead of judging the worst)."""
+    return [[[list(x) for x in l], l.power, l.firings, l.over, l.substrate] for l in lives]
 
 
 def unpack(packed) -> list:
     out = []
-    for thirds, power, firings, over in packed:
-        l = Lived([tuple(x) for x in thirds])
-        l.power, l.firings, l.over = power, firings, over
+    for thirds_, power, firings, over, substrate in packed:
+        l = Lived([tuple(x) for x in thirds_])
+        l.power, l.firings, l.over, l.substrate = power, firings, over, substrate
         out.append(l)
     return out

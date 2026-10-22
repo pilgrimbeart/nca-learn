@@ -15,12 +15,17 @@ This is an open-ended exploration, learning by doing: brains that build themselv
   hide a missing dependency: numba's `@` needs scipy, which isn't required, and a push once failed. No GitHub CI: it
   only repeated the checks, slowly.)
 - **Rip up and rewrite**: prefer a cleaner, smaller design to incremental edits that keep legacy structure.
+- **Real units, from few axioms** (the user's decision, 2026-10-22): every quantity in the code is in SI units (seconds,
+  metres, volts, amperes, farads, ohms, watts, joules), and every number that can be derived is derived, from the
+  axioms in `units.py` (each with why it has its value), so that no one has to keep numbers plausible by hand. A
+  design's own choices stay with the design, in SI. Rates are per 10 s, a life lasts 100 s.
 - **Each fact in one place**; link, don't copy:
 
   | what | where |
   |---|---|
   | the rules (principles, honesty, every brain's constraints) | this file |
   | an overview, how to run things, and the terms coined along the way | `README.md` (Terms: define a new term there when it first appears in a user-facing document) |
+  | the axioms: physical constants, scales, units, and what follows from them | `units.py` |
   | the noise model | `mixed_feedback.py`'s docstring |
   | lessons that cut across the project | `LESSONS.md` |
   | each line of work's history, methods and results | the sheet brain: `LESSONS.md`'s part on it; recruitment: `experiments/NOTEBOOK.md`; the minimal search: `minimal/NOTEBOOK.md` |
@@ -58,10 +63,12 @@ The project's point is a brain that learns in situ, so the brain must do the wor
   So for every brain: random timing (never lockstep, no inputs only on tick boundaries), noise on everything, nothing
   carried below the noise, and a result must hold at a finer step and on fresh seeds; for an optimised circuit, also
   limits on time constants and gains against the step (the minimal search's rules, below).
-- **Circuit noise is biology's, and the simulator's alone** (the user's decision, 2026-10-20): shot noise, membrane
-  noise, mismatch and pulses at random moments, as `mixed_feedback.py`'s docstring specifies. All of it lives in the
+- **Circuit noise is a substrate's, and the simulator's alone** (the user's decisions, 2026-10-20 and 2026-10-22):
+  shot noise, resting noise, mismatch and pulses at random moments, as `mixed_feedback.py`'s docstring specifies, for
+  biology (events of a channel's or vesicle's charge, membrane noise) or silicon (single electrons, a leak's thermal
+  noise), each derived from `units.py`'s axioms. All of it lives in the
   one integration step every simulation calls (`_step`) and in how the arrays are built, with no switch to turn it
-  off: it can only be scaled within half to double. Never add a way round it (a brain-level noise setting, a second
+  off: it can only be one of the declared substrates (`mixed_feedback.SUBSTRATES`). Never add a way round it (a brain-level noise setting, a second
   integrator, parameters edited after the arrays are built), and keep `test_compiled.py` checking that it is the same
   at any step and can't be dodged.
 - **Local only, no god.** Everything a unit knows comes from its own state and its neighbours' signals. A unit may draw
@@ -108,22 +115,23 @@ enforced in software (`minimal/spec.py`: `check` refuses an illegal circuit, so 
 minimal.test_minimal` tests it); add a rule to `check` and a case to the test whenever one is added here.
 
 - **Within the supply**: every node is held within the rails (+-3 V); a clamp inside them is a part.
-- **Not faster than the step**: nothing may move a node more than 10 V per circuit tick (0.5 V per integration
-  step), whether an element (gain / C), a leak (1 / RC) or the body's pulse into an input (3 / C); and an unfiltered
-  element on its own node acts no faster than gain x slope / C = 2 per circuit tick (a time constant of at least 10
-  steps: a device fed back to itself must not be infinitely fast).
-- **Judged honestly**: on seeds the search never saw, with the simulator's mismatch, at half, nominal and double
-  noise, the worst level counting and the job required at every level (the user's decision, 2026-10-22: judged at
-  one level, pruning traded mechanism for noise); every polish, pruning and open search judges the same way. Lives
-  are paired (red, then blue, as poison, on one seed), so a circuit that ignores taste scores below 0. A design must
-  also hold in the real `creature.Life` at a finer step (`minimal/check.py`).
-- **The job**: at least 1 food per 1,000 ticks, food:poison at least 3 in the last third of a 10,000-tick life, and
-  at most 5% of lives stranded (no food in the last third); the score charges starving life by life and third by
-  third (`spec.py`), so failing lives can't hide among the rest.
+- **Not faster than the step** (`units.py`, all from the integration step of 0.125 ms): nothing may move a node faster
+  than 4 kV/s (0.5 V a step), whether an element (gain / C) or the body's pulse into an input (3 nA / C); no leak
+  faster than a time constant of 0.25 ms; and an unfiltered element on its own node acts no faster than gain x slope
+  / C = 1 / 1.25 ms (10 steps: a device fed back to itself must not be infinitely fast).
+- **Judged honestly**: on seeds the search never saw, with the simulator's mismatch, with the noise of silicon,
+  biology and twice biology's, the worst counting and the job required with each (the user's decisions, 2026-10-22:
+  judged at one level, pruning traded mechanism for noise; then silicon, so that a design must work as built in
+  silicon, where one leaning on noise fails, and twice biology's as a margin); every polish, pruning and open search
+  judges the same way. Lives are paired (red, then blue, as poison, on one seed), so a circuit that ignores taste
+  scores below 0. A design must also hold in the real `creature.Life` at a finer step (`minimal/check.py`).
+- **The job**: at least 1 food per 10 s, food:poison at least 3 in the last third of a 100 s life, and at most 5% of
+  lives stranded (no food in the last third); the score charges starving life by life and third by third (`spec.py`),
+  so failing lives can't hide among the rest.
 - **Moving and thinking cost, in meals** (the user's decision, 2026-10-21: a low-energy brain is no use if it drives
-  the body wastefully): a thruster firing `spec.THRUST` (0.002) of a meal, and the circuit's power `spec.ENERGY`
-  (0.001) per unit, so that today's circuits spend about a hundredth on thinking of what they spend on moving. Both
-  are guesses, to adjust; `search.py --thrust` tries another price.
+  the body wastefully): a meal is worth `spec.MEAL` (10 uJ), a creature burns `spec.METABOLISM` (1 uW) at rest, a
+  thruster firing costs `spec.FIRING` (20 nJ), and the circuit what its devices dissipate (a few nW: about a hundredth
+  of what moving costs). All guesses, to adjust; `search.py --thrust` tries another price.
 - **Counted plainly**: parts are capacitors, resistors, diodes and transistors (a gated element two, a filtered input
   a resistor and capacitor more); power is what each device dissipates, its current times the voltage across it.
 - **Three objectives, never traded** (the user's, 2026-10-22), each among circuits doing the job: the simplest brain

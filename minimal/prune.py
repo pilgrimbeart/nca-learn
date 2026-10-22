@@ -20,7 +20,7 @@ import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from minimal.spec import OBJECTIVES, objective, parts, score, tidy, violations  # noqa: E402
+from minimal.spec import LIFE, OBJECTIVES, objective, parts, score, tidy, violations  # noqa: E402
 
 SEEDS = range(15000, 15032)     # pruning's own lives (the polish's start at 10000, the open search's at 20000, the
                                 # held-out are 100-163 and 200-231)
@@ -66,17 +66,17 @@ def simpler(spec: dict) -> list:
     return out
 
 
-def prune(spec: dict, seeds=SEEDS, tol: float | None = None, ticks: int = 10000, log=print, by: str = "score"):
+def prune(spec: dict, seeds=SEEDS, tol: float | None = None, seconds: float = LIFE, log=print, by: str = "score"):
     """(the pruned circuit, the steps taken as [(what, parts, the objective)])."""
     tol = TOL[by] if tol is None else tol
-    start = objective(score([spec], seeds=seeds, ticks=ticks)[0], by)
+    start = objective(score([spec], seeds=seeds, seconds=seconds)[0], by)
     log(f"start: {parts(spec)['total']} parts, {by} {start:+.3f} (keeping within {tol} of it)")
     steps = []
     while True:
         options = simpler(spec)
         if not options:
             break
-        scores = [objective(l, by) for l in score([s for _, s in options], seeds=seeds, ticks=ticks)]
+        scores = [objective(l, by) for l in score([s for _, s in options], seeds=seeds, seconds=seconds)]
         ok = [(f, k) for k, f in enumerate(scores) if f >= start - tol]
         if not ok:
             log("  nothing more can go")
@@ -94,12 +94,12 @@ if __name__ == "__main__":
     ap.add_argument("results")
     ap.add_argument("--name")
     ap.add_argument("--by", choices=tuple(OBJECTIVES), default="score", help="what pruning may cost little of")
-    ap.add_argument("--noises", type=float, nargs="+", help="an experiment: judge at these noise levels (shares of"
-                                                                 " the usual), the worst counting (default spec.JUDGED)")
+    ap.add_argument("--substrates", nargs="+", help="an experiment: judge with these substrates' noise"
+                                                    " (mixed_feedback.SUBSTRATES), the worst counting (default spec.JUDGED)")
     a = ap.parse_args()
-    if a.noises:
+    if a.substrates:
         import minimal.spec
-        minimal.spec.JUDGED = tuple(a.noises)           # (lives are scored in this process, at these levels)
+        minimal.spec.JUDGED = tuple(a.substrates)       # (lives are scored in this process, with these)
 
     found = json.load(open(a.results))
     name = a.name or os.path.basename(a.results)[:-5] + "_pruned"

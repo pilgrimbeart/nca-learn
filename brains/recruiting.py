@@ -6,7 +6,7 @@ node's voltage passes GROW, attached where that sprout is.
   Frustration F, at the taste neuron: a slow node charged at a bad taste while the taste neuron had fired just before
   it ("I predicted this pain, and it came anyway"), through an amplifier from the taste node gated by T's
   eligibility E_T, charged by T's spikes. (T's innate answer to the taste itself comes too late to count: only
-  anticipation does; E2.) F fades over FRUSTRATION ticks.
+  anticipation does; E2.) F fades over FRUSTRATION seconds.
   Help, routed back along T's input synapses: for each sensor s a node h_s, charged while F is high through an
   amplifier gated by W_s, the strength of s's synapse onto T, so the sensor whose activity predicted the pain hears
   most. (route=False: gated by nothing, so both sensors hear alike: an ablation.)
@@ -14,20 +14,20 @@ node's voltage passes GROW, attached where that sprout is.
   of one sensor inhibit each other, so one wins (compete=False: they don't: an ablation). A synapse that carries help
   back (onto T) doesn't sprout.
   Growth (the primitive): when a sprout passes GROW its synapse is split by a bridge: a neuron relaying the sensor's
-  spikes on to the motor, held down (a hold node, fading over HOLD ticks) while that sensor's own spikes come with a
+  spikes on to the motor, held down (a hold node, fading over HOLD seconds) while that sensor's own spikes come with a
   strong synapse onto T, "my activity predicts pain". So when the poison sensor fires it drives only its other motor,
   and the creature veers. Everything the bridge connects to is on the synapses of the sensor it grew from, so the
   growth rule needs to know nothing else (E7; hold="T", E1-E6's version, charged the hold by T's spikes instead, so
-  growth had to know T, and the creature veered at T's false alarms too: 0.11 net food per 1,000 ticks worse). A
+  growth had to know T, and the creature veered at T's false alarms too: 0.11 net food per 10 s worse). A
   bridge passes the signal unchanged until it is held: inserting it changes nothing by itself.
   Found by experiment (experiments/NOTEBOOK.md), and on by default: sharp, help only to a sensor that predicts pain
   (its synapse onto T past 1/2) and only while frustrated (a flag node, F past 1/2), a logical AND rather than help in
   proportion to W; once, a bridge brings a memory node that keeps its neuron's other sprouts down: one bridge per
   neuron. (sharp=False gives help in proportion to W, and once=False lets a neuron sprout again: E3's design.)
-  Slow nodes are quiet nodes: every node gets the same noise current, so a node integrating over tau circuit ticks
-  with capacitance C wanders by about NOISE x sqrt(tau / 2) / C; each slow node's C is chosen to keep that near QUIET
-  (C grows as the square root of its time), its R to give its time, and the gains into it scaled with C to give its
-  rates.
+  Slow nodes are quiet nodes: designed when every node got the same noise current, so that a node integrating over
+  tau with capacitance C wandered by about sqrt(tau / 2 T_TYP) x C_TYP / C, each slow node's C was chosen to keep that
+  near QUIET (C growing as the square root of its time), its R to give its time, and the gains into it scaled with C
+  to give its rates (rates in volts per second). Kept as designed under the noise of biology (mixed_feedback.py).
 """
 
 from __future__ import annotations
@@ -35,26 +35,27 @@ from __future__ import annotations
 import numpy as np
 
 from brains.knowing import KnowingBrain
-from brains.circuit import INHIBIT, SIDE, SPEED
+from brains.circuit import INHIBIT, SIDE
 from mixed_feedback import Circuit
+from units import C_TYP, I_TYP, T_TYP
 
-GUARD = 0.0         # a slow element by which T's spikes could reach E_T (circuit ticks), to keep T's innate answer
+GUARD = 0.0         # s: a slow element by which T's spikes could reach E_T, to keep T's innate answer
                     # to a taste out of F: unneeded (E2: that answer comes too late to count anyway), and a cost
-FRUSTRATION = 3000.0    # ticks over which frustration fades
+FRUSTRATION = 30.0  # s over which frustration fades
 FRUSTRATE = 0.5     # how far one anticipated pain raises F (0..1), with T fully eligible: F settles near rate x this x
                     # FRUSTRATION x eligibility, above 1/2 at the knowing circuit's rate of poison meals and below it
                     # once a bridge cuts that rate (E2; 0.5 rather than 0.3 brings growth earlier: E5b, confirmed in E6)
-HELP = 100.0        # ticks over which a sensor's help fades
-HELP_RATE = 0.005   # how fast a sensor's help rises while F is high (at W = 1), per circuit tick
-SPROUT = 200.0      # ticks over which a sprout fades
-SPROUT_RATE = 0.005  # how fast a sprout rises while its sensor's help is high, per circuit tick
-RIVAL = 0.02        # how fast a sprout that is ahead empties its rivals, per circuit tick
-ELIGIBLE_T = 10.0   # ticks over which the taste neuron's eligibility fades
+HELP = 1.0          # s over which a sensor's help fades
+HELP_RATE = 2.0     # V/s: how fast a sensor's help rises while F is high (at W = 1)
+SPROUT = 2.0        # s over which a sprout fades
+SPROUT_RATE = 2.0   # V/s: how fast a sprout rises while its sensor's help is high
+RIVAL = 8.0         # V/s: how fast a sprout that is ahead empties its rivals
+ELIGIBLE_T = 0.1    # s over which the taste neuron's eligibility fades
 GROW = 0.6          # a sprout this high grows its bridge (the growth primitive; E5b, E6)
-HOLD = 10.0         # ticks over which a bridge stays held down after the taste neuron fires
+HOLD = 0.1          # s over which a bridge stays held down after the taste neuron fires
 QUIET = 0.02        # how far noise may move a slow node (voltage, steady state)
 PAINFUL = -0.8      # the taste node below this is a bad taste, for frustration (a bad taste takes it to about -1.3;
-                    # its own noise, about 0.1, mustn't reach it, or F integrates the leaks over thousands of ticks)
+                    # its own noise, about 0.1 V, mustn't reach it, or F integrates the leaks over many seconds)
 
 
 class RecruitingBrain(KnowingBrain):
@@ -69,23 +70,22 @@ class RecruitingBrain(KnowingBrain):
         super().__init__(seed)
 
     @staticmethod
-    def slow(c: Circuit, name: str, ticks: float) -> tuple:
-        """A quiet slow node fading over this many world ticks, 0..1: (node, its capacitance)."""
-        tau = ticks * SPEED                             # in circuit ticks
-        C = c.noise * np.sqrt(tau / 2.0) / QUIET
+    def slow(c: Circuit, name: str, tau: float) -> tuple:
+        """A quiet slow node fading over tau seconds, 0..1: (node, its capacitance)."""
+        C = C_TYP * np.sqrt(tau / (2.0 * T_TYP)) / QUIET
         return c.node(name, R=tau / C, C=C, lo=0.0, hi=1.0), C
 
     def build(self, c: Circuit) -> None:
         super().build(c)
         self.E_T, C = self.slow(c, "E_T", ELIGIBLE_T)
-        c.element(self.E_T, self.T, 1.0 * C, 0.0, tau=self.guard, slope=5.0, sigmoid=True)    # T's spike charges it
+        c.element(self.E_T, self.T, C / T_TYP, 0.0, tau=self.guard, slope=5.0, sigmoid=True)  # T's spike charges it
         self.F, C = self.slow(c, "F", FRUSTRATION)
-        c.element(self.F, self.taste_node, self.frustrate * C / 1.3, PAINFUL, slope=-20.0, sigmoid=True,
+        c.element(self.F, self.taste_node, self.frustrate * C / (1.3 * T_TYP), PAINFUL, slope=-20.0, sigmoid=True,
                   gate=self.E_T)
         self.help, self.sprout = {}, {}
         if self.sharp:                                  # a flag: F past 0.5, frustrated
-            self.frustrated, C = self.slow(c, "frustrated", 2.0)
-            c.element(self.frustrated, self.F, 1.0 * C, 0.5, slope=20.0, sigmoid=True)
+            self.frustrated, C = self.slow(c, "frustrated", 0.02)
+            c.element(self.frustrated, self.F, C / T_TYP, 0.5, slope=20.0, sigmoid=True)
         for s in self.sensors:
             h, C = self.slow(c, f"h{c.names[s]}", HELP)
             if self.sharp:                              # help iff this sensor predicts pain (W past 1/2) and frustrated
@@ -120,19 +120,19 @@ class RecruitingBrain(KnowingBrain):
         c = self.circuit
         tag = f"{c.names[s]}{c.names[m]}"
         bridge = c.neuron(f"B{tag}")
-        hold = c.node(f"H{tag}", R=HOLD * SPEED / 10.0, C=10.0, lo=0.0, hi=1.0)
+        hold = c.node(f"H{tag}", R=HOLD / (10 * C_TYP), C=10 * C_TYP, lo=0.0, hi=1.0)
         c.redirect(self.syn[(s, m)], bridge)                        # the sensor now drives the bridge ...
         self.syn[(s, m)] = c.synapse(m, bridge, SIDE)               # ... which drives the motor
         if self.hold_from == "sensor":                  # local: the sensor's spike, gated by its synapse onto T ...
-            c.element(hold, s, 10.0, 0.0, slope=5.0, sigmoid=True, gate=self.W[s])
+            c.element(hold, s, 10 * I_TYP, 0.0, slope=5.0, sigmoid=True, gate=self.W[s])
         else:                                           # ... or T's spike (the growth rule must know T) ...
-            c.element(hold, self.T, 10.0, 0.0, slope=5.0, sigmoid=True)
+            c.element(hold, self.T, 10 * I_TYP, 0.0, slope=5.0, sigmoid=True)
         c.element(bridge, hold, -INHIBIT, 0.5, slope=10.0, sigmoid=True)    # ... which holds the bridge down
         if self.once:                                   # a sprouted neuron is changed: its other sprouts stay down
             done = c.node(f"D{tag}", R=None, lo=0.0, hi=1.0, start=1.0, memory=True)
             for (s2, m2), x in self.sprout.items():
                 if s2 == s and m2 != m:
-                    c.element(x, done, -1.0 * c.nodes[x][2], 0.5, slope=20.0, sigmoid=True)
+                    c.element(x, done, -c.nodes[x][2] / T_TYP, 0.5, slope=20.0, sigmoid=True)
         c.grow()
         self.grown.add((s, m))
         self.bridges.append((self.t, s, m))

@@ -1,5 +1,5 @@
 """Mixed-feedback circuits, after Ribar and Sepulchre, "Neuromorphic Control" (2021): every circuit is nodes and one
-kind of element.
+kind of element. Everything is in SI units (units.py, where the axioms behind every number below are).
 
   A node is a capacitor: C dV/dt = (bias - V / R) + (the currents of the elements into it) + (the pulses into it),
   where bias - V / R is its leak, a resistor to its rest voltage bias x R (with no leak, bias is a steady current); it
@@ -12,25 +12,28 @@ kind of element.
   it); the timescales at which each acts set the behaviour (an excitable neuron: fast positive feedback, slow
   negative). A memory node (a floating gate or memristor, or a synapse's weight) has no leak and no membrane.
 
-Noise and mismatch are as biology (and subthreshold silicon) make them, and built in here, where no circuit, brain or
-search can turn them off (the user's decision, 2026-10-20; the reasoning in LESSONS.md, Noise as biology makes it):
+Noise and mismatch are built in here, where no circuit, brain or search can turn them off (the user's decision,
+2026-10-20; the reasoning in LESSONS.md, Noise as biology makes it). The noise is a substrate's, one of SUBSTRATES
+(the user's decision, 2026-10-22: judged in silicon, in biology and at twice biology's noise), each derived from the
+physics of what carries its currents (units.py):
 
   Shot noise: every current is carried by discrete events (channels opening, vesicles released, electrons crossing a
-  transistor's barrier), so each device's current I carries noise of variance SHOT x |I| per tick. It is summed over
-  every device on a node, gross, not net (two big currents that cancel still flicker), the body's pulses included.
-  Raising a node's currents to drown its noise works only as the square root, and costs power in proportion.
-  Membrane noise: a node's capacitance is membrane area, and area holds leak channels that flicker even at rest, so
-  every node but a memory adds variance MEMBRANE x C per tick. A node scaled up k times, capacitance and currents
-  together (the same behaviour), is quieter only by sqrt(k), for k times the power and area. (A noise fixed per node,
-  as before, let the same scaling silence a node for free.)
+  transistor's barrier), so each device's current I carries noise of variance q x |I| per second, q the charge one
+  event carries: about 78,000 electrons' worth in biology (Q_BIO, calibrated), one electron in silicon. It is summed
+  over every device on a node, gross, not net (two big currents that cancel still flicker), the body's pulses
+  included. Raising a node's currents to drown its noise works only as the square root, and costs power in proportion.
+  Resting noise, which a node has even when no net current flows: in biology, membrane noise (a node's capacitance is
+  membrane area, and area holds channels that flicker at rest: the shot noise of a resting current J_REST per farad,
+  so every node but a memory adds variance Q_BIO x J_REST x C per second; a node scaled up k times, capacitance and
+  currents together, the same behaviour, is quieter only by sqrt(k), for k times the power and area); in silicon, the
+  thermal noise of a node's leak (variance 2 k T / R per second), a capacitor's own being negligible.
   A memory node gets only its writers' shot noise: perfectly still while nothing writes it; written, rough by the
-  charge moved (variance in proportion to what is written: a weight built of discrete steps). (Before, each step's
-  write was rough by a share of itself, which made a memory quieter at a finer step.)
-  Both are rates per tick, so the integration step doesn't change them (Euler-Maruyama, noise scaled by sqrt(DT)).
-  SHOT and MEMBRANE share the old noise (0.2 per node, which gave the paper's neuron about 6.5 spikes of its own
-  per 1,000 ticks; awake cortex fluctuates by about 10-25% of the way from rest to threshold) about equally for the
-  standard neuron at rest; a node far from it in size or currents now differs. Circuit(noise=...) scales both, as a
-  sensitivity check, only within NOISY.
+  charge moved (variance in proportion to what is written: a weight built of discrete steps).
+  Both are rates per second, so the integration step doesn't change them (Euler-Maruyama, noise scaled by sqrt(DT)).
+  Biology's two numbers are calibrated together: the standard neuron (neuron(), at rest, its parts as designed) fires
+  on its own about twice a second, as cortical neurons at rest do (mismatched, some fire more, and some oscillate), its membrane fluctuating by about 10-25% of the way from rest to
+  threshold, as awake cortex does; each gives about half its noise. Silicon, at these currents, is about 280 times
+  quieter in amplitude: far below biology, so a design that needs noise to work fails there.
   Mismatch: no two parts are alike (analogue silicon differs by 10% or more; identified neurons of one type by 2-5
   times, held in shape by homeostasis these circuits lack). Every node's bias, leak and capacitance and every
   element's gain, slope and time constant is off by about MISMATCH of itself, and every offset by about MISMATCH
@@ -39,8 +42,8 @@ search can turn them off (the user's decision, 2026-10-20; the reasoning in LESS
   Pulses: the body's inputs are charges at moments it gives, anywhere within a tick (pulse()), spread over the steps
   they overlap; never on tick boundaries, which would let a circuit lock to the tick (lockstep).
 
-Time is in ticks, integrated in steps of DT, compiled: one call runs many ticks. A node spikes when its voltage rises
-through SPIKE, and can spike again once it has fallen below RESET.
+Time is in seconds, integrated in steps of DT, compiled: one call runs many steps. A node spikes when its voltage
+rises through SPIKE, and can spike again once it has fallen below RESET.
 """
 
 from __future__ import annotations
@@ -48,23 +51,27 @@ from __future__ import annotations
 import numpy as np
 from numba import njit
 
-DT = 0.05           # integration step (ticks)
-SPIKE, RESET = 0.0, -1.0
-SETTLE = 200        # ticks a new circuit runs without noise, to settle at rest
-SHOT = 0.005        # shot noise: variance per tick per unit of a device's current
-MEMBRANE = 0.02     # membrane noise: variance per tick per unit of a node's capacitance (none on a memory)
-NOISY = (0.5, 2.0)  # the noise may be scaled within these (a sensitivity check), never turned off
-MISMATCH = 0.1      # every part off by about this share of itself at birth (offsets by this many volts)
-RAIL = 3.0          # the supply's rails, +-RAIL (V): power is reckoned against them (an element feeding a node draws
-                    # from +RAIL, one draining it sinks to -RAIL)
+from units import DT, I_TYP, J_REST, K_B, LOUDER, MISMATCH, PULSE, Q_BIO, Q_SI, R_TYP, C_TYP, RAIL, T, T_TYP
+
+SPIKE, RESET = 0.0, -1.0    # V
+SETTLE = 0.5                # s a new circuit runs without noise, to settle at rest
+SUBSTRATES = {              # name: (the charge one event of shot noise carries, a node's resting noise per second from
+                            # its capacitance, its leak's conductance and whether it is a memory)
+    "silicon": (Q_SI, lambda cap, leak, memory: 0.0 if memory else 2 * K_B * T * leak),
+    "biology": (Q_BIO, lambda cap, leak, memory: 0.0 if memory else Q_BIO * J_REST * cap),
+    "biology x2": (LOUDER ** 2 * Q_BIO, lambda cap, leak, memory: 0.0 if memory else LOUDER ** 2 * Q_BIO * J_REST * cap),
+}
+                            # (RAIL, the supply's rails, +-RAIL: power is reckoned against them, an element feeding a
+                            # node drawing from +RAIL, one draining it sinking to -RAIL)
 
 
 @njit(cache=True)
-def _step(V, Vx, armed, spikes, vmax, drive, node, el, link, z, noise, dt, dV, gross):
+def _step(V, Vx, armed, spikes, vmax, drive, node, el, link, z, q, rest, dt, dV, gross):
     """One integration step, shared by every simulation of a circuit (here and minimal/fastlife.py), so the noise
     can't be left out of one. node: each node's (bias, leak, cap, lo, hi, memory); el: each element's (gain, offset,
     slope, tau, sigmoid); link: each element's (to, from, gate); drive: each node's pulse current in this step; z: a
-    standard normal draw for each node. Returns the power the devices dissipate: an element feeding a node,
+    standard normal draw for each node; q, rest: the substrate's charge per event of shot noise and each node's resting
+    noise per second (SUBSTRATES). Returns the power the devices dissipate: an element feeding a node,
     |I| x (RAIL - V); one draining it, |I| x (V + RAIL); a leak, its current squared over its conductance (a
     capacitor gives back what it stores)."""
     n, m = V.shape[0], link.shape[1]
@@ -94,10 +101,9 @@ def _step(V, Vx, armed, spikes, vmax, drive, node, el, link, z, noise, dt, dV, g
         dV[to[e]] += I
         gross[to[e]] += abs(I)
         power += abs(I) * max(RAIL - V[to[e]] if I > 0.0 else V[to[e]] + RAIL, 0.0)
-    root = noise * np.sqrt(dt)
     for i in range(n):
-        var = SHOT * gross[i] + (0.0 if memory[i] > 0.0 else MEMBRANE * cap[i])
-        v = V[i] + (dt * dV[i] + root * np.sqrt(var) * z[i]) / cap[i]
+        var = (q * gross[i] + rest[i]) * dt               # the charge's variance over the step
+        v = V[i] + (dt * dV[i] + np.sqrt(var) * z[i]) / cap[i]
         V[i] = min(max(v, lo[i]), hi[i])
         vmax[i] = max(vmax[i], V[i])
         up = armed[i] and V[i] > SPIKE
@@ -107,14 +113,14 @@ def _step(V, Vx, armed, spikes, vmax, drive, node, el, link, z, noise, dt, dV, g
 
 
 @njit(cache=True)
-def _run(V, Vx, armed, spikes, vmax, drive, node, el, link, z, noise, dt, steps):
-    """steps integration steps (_step); drive and z: (steps, nodes). Returns the energy dissipated (power x steps)."""
+def _run(V, Vx, armed, spikes, vmax, drive, node, el, link, z, q, rest, dt, steps):
+    """steps integration steps (_step); drive and z: (steps, nodes). Returns the power summed over the steps."""
     n = V.shape[0]
     dV, gross = np.empty(n), np.empty(n)
-    energy = 0.0
+    power = 0.0
     for k in range(steps):
-        energy += _step(V, Vx, armed, spikes, vmax, drive[k], node, el, link, z[k], noise, dt, dV, gross)
-    return energy
+        power += _step(V, Vx, armed, spikes, vmax, drive[k], node, el, link, z[k], q, rest, dt, dV, gross)
+    return power
 
 
 @njit(cache=True)
@@ -124,7 +130,7 @@ def _settle(V, Vx, node, el, link, dt, steps, fixed, born):
     dV, gross, zero = np.empty(n), np.empty(n), np.zeros(n)
     armed, spikes, vmax = np.zeros(n, dtype=np.bool_), np.zeros(n, dtype=np.int64), np.zeros(n)
     for k in range(steps):
-        _step(V, Vx, armed, spikes, vmax, zero, node, el, link, zero, 0.0, dt, dV, gross)
+        _step(V, Vx, armed, spikes, vmax, zero, node, el, link, zero, 0.0, zero, dt, dV, gross)
         for i in range(n):
             if fixed[i]:
                 V[i] = born[i]
@@ -132,7 +138,7 @@ def _settle(V, Vx, node, el, link, dt, steps, fixed, born):
 
 @njit(cache=True)
 def _pulse(drive, node, current, at, length, dt):
-    """Adds a pulse of current into node, from `at` to `at + length` (circuit ticks from drive's first step), to
+    """Adds a pulse of current into node, from `at` to `at + length` (seconds from drive's first step), to
     drive (steps, nodes): each step gets the share of it that falls within the step, so the charge delivered and
     its timing don't depend on the step."""
     k0, k1 = int(at / dt), min(int(np.ceil((at + length) / dt)), drive.shape[0])
@@ -148,21 +154,22 @@ class Circuit:
     same node in every variant of a brain (common random numbers), so that variants can be compared life for life.
     Without it all nodes draw from one stream, and adding a node reshuffles everyone's noise. Mismatch is drawn for
     each part from its own stream (the seed and its index) either way.
-    noise: the noise as a share of its usual, within NOISY (a sensitivity check)."""
+    substrate: whose noise, one of SUBSTRATES."""
 
-    def __init__(self, seed: int = 0, streams: bool = False, noise: float = 1.0):
-        assert NOISY[0] <= noise <= NOISY[1], f"the noise can be scaled only within {NOISY}, never turned off"
-        self.rng, self.noise, self.seed, self.streams = np.random.default_rng(seed), noise, seed, streams
+    def __init__(self, seed: int = 0, streams: bool = False, substrate: str = "biology"):
+        assert substrate in SUBSTRATES, f"the noise is a substrate's, one of {tuple(SUBSTRATES)}, never turned off"
+        self.rng, self.substrate, self.seed, self.streams = np.random.default_rng(seed), substrate, seed, streams
+        self.q = SUBSTRATES[substrate][0]
         self.nodes, self.elements, self.names, self.start = [], [], [], []
         self.node_rng = []
         self.V = None
         self.drive = np.zeros((0, 0))                   # pulses to come: (steps, nodes)
-        self.energy, self.steps = 0.0, 0                # watching: what the devices dissipated, over how many steps
+        self.power_sum, self.steps = 0.0, 0             # watching: the devices' power summed over the steps, and how many
 
-    def node(self, name: str, bias: float = 0.0, R: float | None = 2.0, C: float = 1.0, lo: float = -np.inf,
+    def node(self, name: str, bias: float = 0.0, R: float | None = 2 * R_TYP, C: float = C_TYP, lo: float = -np.inf,
              hi: float = np.inf, start: float | None = None, memory: bool = False) -> int:
-        """A node; R None: no leak. start: its voltage at birth (else where it settles at rest). memory: a memory node
-        (no leak, no membrane: noisy only when written)."""
+        """A node: bias in A, R in ohms (None: no leak), C in F, lo, hi and start in V. start: its voltage at birth (else
+        where it settles at rest). memory: a memory node (no leak, no membrane: noisy only when written)."""
         assert not memory or R is None, "a memory node has no leak"
         self.nodes.append((bias, 0.0 if R is None else 1.0 / R, C, lo, hi, float(memory)))
         self.names.append(name)
@@ -173,6 +180,7 @@ class Circuit:
 
     def element(self, to: int, frm: int, gain: float, offset: float, tau: float = 0.0, slope: float = 1.0,
                 sigmoid: bool = False, gate: int = -1) -> int:
+        """An element: gain in A, offset in V, tau in s (0: unfiltered), slope per volt."""
         self.elements.append(((gain, offset, slope, tau, float(sigmoid)), (to, frm, gate)))
         return len(self.elements) - 1
 
@@ -187,7 +195,8 @@ class Circuit:
         self.elements[e] = (params, (to, frm, gate))
 
     def _arrays(self) -> None:
-        """The arrays the integration runs on: every part as built, mismatched (MISMATCH), each by draws of its own."""
+        """The arrays the integration runs on: every part as built, mismatched (MISMATCH), each by draws of its own;
+        and each node's resting noise in this substrate, from its parts as mismatched."""
         node = np.array(self.nodes, dtype=float).T.copy()
         for i in range(node.shape[1]):
             d = np.random.default_rng([self.seed, 7, i]).standard_normal(3)
@@ -201,6 +210,8 @@ class Circuit:
             el[3, j] *= 1.0 + MISMATCH * d[3]                   # time constant
         self.node_arr, self.el_arr = node, el
         self.link = np.array([l for _, l in self.elements], dtype=np.int64).reshape(-1, 3).T.copy()
+        rest = SUBSTRATES[self.substrate][1]
+        self.rest = np.array([rest(node[2, i], node[1, i], node[5, i] > 0) for i in range(node.shape[1])])
 
     def grow(self) -> None:
         """Growth, during a life: after nodes or elements were added, or an element redirected, rebuild the arrays the
@@ -222,16 +233,16 @@ class Circuit:
         self.vmax = np.concatenate([self.vmax, np.full(grown, -np.inf)])
         self.drive = np.concatenate([self.drive, np.zeros((len(self.drive), grown))], axis=1)
 
-    def neuron(self, name: str, bias: float = -1.6, tau: float = 10.0, strength: float = 2.0) -> int:
-        """An excitable neuron: fast positive feedback (it fires), slow negative feedback (it recovers). At rest
-        below its threshold, a pulse above it gives one spike; noise gives the odd spike of its own."""
+    def neuron(self, name: str, bias: float = -1.6 * I_TYP, tau: float = 10 * T_TYP, strength: float = 2 * I_TYP) -> int:
+        """An excitable neuron: fast positive feedback (it fires), slow negative feedback (it recovers, over tau). At
+        rest below its threshold, a pulse above it gives one spike; noise gives the odd spike of its own."""
         n = self.node(name, bias)
         self.element(n, n, strength, -1.5)                      # fast: positive feedback, all-or-none
         self.element(n, n, -strength, -1.5, tau=tau)            # slow: negative feedback, recovery
         return n
 
-    def synapse(self, to: int, frm: int, weight: float, tau: float = 0.5, slope: float = 5.0) -> int:
-        """A current into `to` while `frm` spikes (excitatory if weight > 0)."""
+    def synapse(self, to: int, frm: int, weight: float, tau: float = 0.5 * T_TYP, slope: float = 5.0) -> int:
+        """A current (weight, in A) into `to` while `frm` spikes (excitatory if weight > 0)."""
         return self.element(to, frm, weight, SPIKE, tau=tau, slope=slope, sigmoid=True)
 
     def _ready(self):
@@ -241,29 +252,31 @@ class Circuit:
         self._arrays()
         n = len(self.names)
         fixed = np.array([v is not None for v in self.start])
-        self.V = np.array([-3.0 if v is None else v for v in self.start])
+        self.V = np.array([-RAIL if v is None else v for v in self.start])
         self.V = np.minimum(np.maximum(self.V, self.node_arr[3]), self.node_arr[4])
         self.Vx = self.V[self.link[1]].copy()
-        _settle(self.V, self.Vx, self.node_arr, self.el_arr, self.link, DT, int(SETTLE / DT), fixed, self.V.copy())
+        _settle(self.V, self.Vx, self.node_arr, self.el_arr, self.link, DT, int(round(SETTLE / DT)), fixed,
+                self.V.copy())
         self.armed = np.ones(n, dtype=np.bool_)
         self.spikes = np.zeros(n, dtype=np.int64)
         self.vmax = np.full(n, -np.inf)
         self.drive = np.zeros((self.drive.shape[0], n))
 
-    def pulse(self, node: int, current: float, at: float, length: float = 1.0) -> None:
-        """A pulse of current into node, starting `at` circuit ticks after the next tick() begins (any time, not a
-        whole number), lasting `length` circuit ticks; it may run on into later ticks."""
+    def pulse(self, node: int, current: float, at: float, length: float = PULSE) -> None:
+        """A pulse of current (A) into node, starting `at` seconds after the next run() begins (any time, not a whole
+        number of steps), lasting `length` seconds; it may run on into later runs."""
         self._ready()
         need = int(np.ceil((at + length) / DT)) + 1
         if need > len(self.drive):
             self.drive = np.concatenate([self.drive, np.zeros((need - len(self.drive), len(self.names)))])
         _pulse(self.drive, node, current, at, length, DT)
 
-    def tick(self, ticks: int = 1) -> np.ndarray:
-        """Runs this many ticks, with the pulses given (pulse()); how many times each node spiked. Afterwards vmax
-        holds each node's highest voltage over them, and last_charge the charge the pulses brought into each node."""
+    def run(self, seconds: float) -> np.ndarray:
+        """Runs for this long (a whole number of steps), with the pulses given (pulse()); how many times each node
+        spiked. Afterwards vmax holds each node's highest voltage over the run, and last_charge the charge (C) the
+        pulses brought into each node."""
         self._ready()
-        steps = int(round(1 / DT)) * ticks
+        steps = int(round(seconds / DT))
         n = len(self.names)
         self.spikes[:] = 0
         self.vmax[:] = -np.inf
@@ -277,7 +290,11 @@ class Circuit:
             self.drive = np.concatenate([self.drive, np.zeros((steps - len(self.drive), n))])
         drive, self.drive = self.drive[:steps], self.drive[steps:].copy()
         self.last_charge = drive.sum(axis=0) * DT
-        self.energy += _run(self.V, self.Vx, self.armed, self.spikes, self.vmax, np.ascontiguousarray(drive),
-                            self.node_arr, self.el_arr, self.link, z, self.noise, DT, steps)
+        self.power_sum += _run(self.V, self.Vx, self.armed, self.spikes, self.vmax, np.ascontiguousarray(drive),
+                               self.node_arr, self.el_arr, self.link, z, self.q, self.rest, DT, steps)
         self.steps += steps
         return self.spikes.copy()
+
+    def power(self) -> float:
+        """Watching: the devices' mean power (W) so far."""
+        return self.power_sum / max(self.steps, 1)

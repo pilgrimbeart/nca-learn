@@ -32,8 +32,8 @@ if __name__ == "__main__":
         print(summary("", res[name][1], all_food=True), flush=True)
         if name in ("R3", "R4"):
             kinds, when = growth(res[name][0])
-            print(f"{'':35s}bridges per poison life {kinds}; first at median tick {when}", flush=True)
-    print("\\nnet food per 1,000 ticks, paired (held-out seeds 100-131)")
+            print(f"{'':35s}bridges per poison life {kinds}; first at median {when} s", flush=True)
+    print("\\nnet food per 10 s, paired (held-out seeds 100-131)")
     for name in ("oracle O1", "R3", "R4"):
         d, lo, hi = paired(res["knowing (no growth)"][0], res[name][0])
         e, elo, ehi = paired(res["knowing (no growth)"][1], res[name][1])

@@ -5,11 +5,15 @@ so not in requirements.txt: pip install schemdraw cairosvg pillow.
 Every input and output is a terminal on the brain's boundary: transconductance amplifiers (op-amp symbols), RC
 filters, sources, numbered nodes. Learning is in the circuit too: each plastic synapse's bias current is set by a
 capacitor holding p, charged or emptied while the one taste input is good or bad, as fast as its sensor's eligibility
-allows. One side assignment shown (S0 -> M0, S1 -> M1 strong); the coin toss may choose otherwise. The values are
-drawn by hand: change them here when the brain changes."""
+allows. One side assignment shown (S0 -> M0, S1 -> M1 strong); the coin toss may choose otherwise. The layout is
+drawn by hand: change it here when the brain changes; the values, in SI (units.py), are read from the brain's code."""
 import pathlib
 import schemdraw
 import schemdraw.elements as elm
+
+from brains.circuit import SIDE, STRONG, STIMULUS, TASTE
+from brains.designed import CP, ELIGIBLE, HUSH, LEARN
+from units import C_TYP, I_TYP, PULSE, R_TYP, T_TYP, si
 
 schemdraw.use("svg")
 d = schemdraw.Drawing(show=False)
@@ -136,7 +140,7 @@ def follower_integrator(cx, cy, src_x, node, tau):
     wire((out[0] + 0.4, out[1]), n)
     dot(n)
     text((n[0] + 0.15, n[1] + 0.4), node, size=FS + 1)
-    hang(n, elm.Capacitor, f"τ = {tau}")
+    hang(n, elm.Capacitor, f"τ = {si(tau, 's')}")
     return n
 
 
@@ -153,33 +157,34 @@ def draw_neuron(ox, oy, name, nv, ns, sensor):
     wire((ox, oy), (right, oy))
     dot((ox + 1.2, oy))
     text((ox + 1.2, oy + 0.45), f"N{nv}  V({name})", size=FS + 1)
-    for x, el, lab in ((2.8, elm.Capacitor, "C = 1"), (4.8, elm.Resistor, "R = 2"), (6.8, elm.SourceI, "bias\n1.6 out"),
-                       (9.2, elm.SourceSin, "noise\n0.2")):
+    for x, el, lab in ((2.8, elm.Capacitor, f"C = {si(C_TYP, 'F')}"), (4.8, elm.Resistor, f"R = {si(2 * R_TYP, 'Ω')}"),
+                       (6.8, elm.SourceI, f"bias\n{si(1.6 * I_TYP, 'A')} out"),
+                       (9.2, elm.SourceSin, "noise\n(a substrate's)")):
         hang((ox + x, oy), el, lab)
         dot((ox + x, oy))
     if sensor is not None:                                   # the stimulus: 3.0 switched in for one tick
         d.add(elm.Switch().at((ox, oy - 2.2)).up(2.2))
         d.add(elm.SourceI().at((ox, oy - 4.6)).up(2.4))
         d.add(elm.Ground().at((ox, oy - 4.6)))
-        text((ox + 0.45, oy - 3.4), "3.0")
+        text((ox + 0.45, oy - 3.4), si(STIMULUS, "A"))
         dashed((LEFT, oy - 1.1), (ox - 0.35, oy - 1.1))
-        terminal((LEFT, oy - 1.1), f"in: sees colour {sensor}\n(closes the switch\nfor 1 tick)", "right")
-    a = ota(ox + 13.2, oy - 3.2, True, "fast +: the spike's rise", "I_b = 2")
+        terminal((LEFT, oy - 1.1), f"in: sees colour {sensor}\n({si(STIMULUS, 'A')} for\n{si(PULSE, 's')})", "right")
+    a = ota(ox + 13.2, oy - 3.2, True, "fast +: the spike's rise", f"I_b = {si(2 * I_TYP, 'A')}")
     plus, minus, out = a["in2"], a["in1"], a["out"]
     wire((ox + 10.8, oy), (ox + 10.8, plus[1]), plus)
     dot((ox + 10.8, oy))
     wire(minus, (ox + 11.1, minus[1]), (ox + 11.1, oy - 5.0))
-    battery_to_ground((ox + 11.1, oy - 5.0), "−1.5")
+    battery_to_ground((ox + 11.1, oy - 5.0), "−1.5 V")
     wire(out, (out[0] + 0.4, out[1]), (out[0] + 0.4, oy))
     dot((out[0] + 0.4, oy))
     dot((ox + 16.0, oy))                                     # slow negative feedback through the recovery node
     wire((ox + 16.0, oy), (ox + 16.0, oy - 3.2 + 0.62))
-    vs = follower_integrator(ox + 18.0, oy - 3.2, ox + 16.0, f"N{ns}", 10)
-    a = ota(ox + 23.4, oy - 3.2, False, "slow −: recovery", "I_b = 2")
+    vs = follower_integrator(ox + 18.0, oy - 3.2, ox + 16.0, f"N{ns}", 10 * T_TYP)
+    a = ota(ox + 23.4, oy - 3.2, False, "slow −: recovery", f"I_b = {si(2 * I_TYP, 'A')}")
     plus, minus, out = a["in2"], a["in1"], a["out"]
     wire(vs, (vs[0] + 0.6, vs[1]), (vs[0] + 0.6, minus[1]), minus)
     wire(plus, (plus[0] - 0.3, plus[1]), (plus[0] - 0.3, oy - 6.0))
-    battery_to_ground((plus[0] - 0.3, oy - 6.0), "−1.5")
+    battery_to_ground((plus[0] - 0.3, oy - 6.0), "−1.5 V")
     end = (out[0] + 0.4, oy)                                 # the membrane's right end
     wire(out, (end[0], out[1]), end)
     wire((right, oy), end)
@@ -188,7 +193,7 @@ def draw_neuron(ox, oy, name, nv, ns, sensor):
 
 
 def synapse(x, y, src, dst_x, node, title, weight, label_below=False):
-    """The presynaptic membrane, followed fast (tau 0.5), into an amplifier against 0 V; its output current goes to
+    """The presynaptic membrane, followed fast (tau 1.25 ms), into an amplifier against 0 V; its output current goes to
     the postsynaptic membrane. Returns the amplifier's anchors (its bias pins) and its Part."""
     part = Part(title, (x + 0.5, x + 11.0))
     with part:
@@ -198,7 +203,7 @@ def synapse(x, y, src, dst_x, node, title, weight, label_below=False):
 
 def draw_synapse(x, y, src, dst_x, node, weight, label_below):
     dot((src, y + 0.62))
-    n = follower_integrator(x + 2.5, y, src, node, 0.5)
+    n = follower_integrator(x + 2.5, y, src, node, 0.5 * T_TYP)
     a = ota(x + 9.0, y, True, "" if label_below else "σ  (slope 5)")
     if label_below:
         text((x + 9.6, y - 1.3), "σ  (slope 5)")
@@ -234,7 +239,7 @@ ROW_X = {0: 27.0, 1: 28.0}
 
 
 def taste_node():
-    """The one taste input: a current 3·taste into the taste node (R 0.5, C 1), whose wire runs to every learning
+    """The one taste input: a current 3 nA x taste into the taste node (R 0.5 GOhm, C 2.5 pF), whose wire runs to every learning
     cell."""
     with Part("TASTE: one input for both learning cells", (-1e9, 6.5)):
         draw_taste(1.0)
@@ -245,13 +250,13 @@ def draw_taste(x):
     d.add(src)
     d.add(elm.Ground().at((x, TASTE_Y - 3.0)))
     dashed((LEFT, TASTE_Y - 1.5), (x - 0.4, TASTE_Y - 1.5))
-    text((x + 0.45, TASTE_Y - 2.4), "3·taste")
+    text((x + 0.45, TASTE_Y - 2.4), f"{si(TASTE, 'A')}·taste")
     terminal((LEFT, TASTE_Y - 1.5), "in: taste\n+1 food, −1 poison,\nfor 1 tick when a block\ntouches the mouth; else 0",
              "right")
     wire((x, TASTE_Y), (LEFT_CELL[1] + 11.2, TASTE_Y))
     dot((x, TASTE_Y))
     text((x + 0.2, TASTE_Y + 0.45), "N17  taste", size=FS + 1)
-    for dx, el, lab in ((3.0, elm.Capacitor, "C = 1"), (5.0, elm.Resistor, "R = 0.5")):
+    for dx, el, lab in ((3.0, elm.Capacitor, f"C = {si(C_TYP, 'F')}"), (5.0, elm.Resistor, f"R = {si(0.5 * R_TYP, 'Ω')}")):
         hang((x + dx, TASTE_Y), el, lab)
         dot((x + dx, TASTE_Y))
 
@@ -260,7 +265,7 @@ LEFT_CELL = {0: 31.0, 1: 63.0}
 
 
 def cell(k, a, syn, enode, pnode):
-    """Sensor k's learning cell. E: its eligibility node (C 10, R 1, clamped 0..1 V), charged by a spike of its own
+    """Sensor k's learning cell. E: its eligibility node (C 25 pF, R 4 GOhm, clamped 0..1 V), charged by a spike of its own
     sensor and emptied by one of the other's. P: a capacitor holding p (no leak, clamped 0..1 V, 0.5 V at birth),
     charged while taste is good and discharged while it is bad, by two amplifiers whose bias currents E sets. P sets
     the plastic synapse's bias current. a: that synapse's amplifier."""
@@ -268,7 +273,8 @@ def cell(k, a, syn, enode, pnode):
         draw_cell(k, enode, pnode)
     pin = min(a["vd"], a["vs"], key=lambda q: q[1]) if k == 0 else max(a["vd"], a["vs"], key=lambda q: q[1])
     with syn:                                                # P sets the plastic synapse's bias current
-        mid = bias_source(pin, k == 1, f"I_b = 0.70·V({pnode.split()[-1]})\nthe synapse's weight", None, None)
+        mid = bias_source(pin, k == 1, f"I_b = {si(STRONG, 'A')}·V({pnode.split()[-1]})/V\nthe synapse's weight", None,
+                          None)
     px, py = LEFT_CELL[k] + 24.0, -74.0
     cx = px + 1.6 if k == 0 else 58.6
     dot((px, py + 1.4))
@@ -299,9 +305,9 @@ def draw_cell(k, enode, pnode):
     dot((ex, ys[1]))
     dot((ex, ey))
     text((ex + 0.2, ey + 0.45), enode, size=FS + 1)
-    hang((ex, ey), elm.Capacitor, "C = 10")
+    hang((ex, ey), elm.Capacitor, f"C = {si(10 * C_TYP, 'F')}")
     wire((ex, ey), (ex + 2.4, ey))
-    hang((ex + 2.4, ey), elm.Resistor, "R = 4\nclamped 0..1 V")
+    hang((ex + 2.4, ey), elm.Resistor, f"R = {si(ELIGIBLE / (10 * C_TYP), 'Ω')}\nclamped 0..1 V")
     # p: taste good charges P, bad discharges it, each as fast as E allows
     gx, px = x0 + 17.0, x0 + 24.0
     tx = x0 + 11.2
@@ -324,7 +330,7 @@ def draw_cell(k, enode, pnode):
         mid = bias_source(pin, False, "", None, None)
         dashed((ex + 1.4, mid), (pin[0] - 0.3, mid))
         mids.append(mid)
-        text((pin[0] + 0.5, mid), f"I_b = 230·V({enode.split()[-1]})\n{sub}", size=FS)
+        text((pin[0] + 0.5, mid), f"I_b = {si(LEARN * CP / (1.3 * T_TYP), 'A')}·V({enode.split()[-1]})/V\n{sub}", size=FS)
     dashed((ex, ey + 1.2), (ex + 1.4, ey + 1.2), (ex + 1.4, mids[0]))   # E sets both sources' currents
     dot((ex, ey + 1.2))
     dot((ex + 1.4, mids[1]))
@@ -334,13 +340,13 @@ def draw_cell(k, enode, pnode):
     dot((px, ys[1]))
     dot((px, py))
     text((px + 0.2, py + 0.45), pnode, size=FS + 1)
-    hang((px, py), elm.Capacitor, f"C = 1000: holds p{k}\nclamped 0..1 V, 0.5 V at birth")
+    hang((px, py), elm.Capacitor, f"C = {si(CP, 'F')}: holds p{k}\nclamped 0..1 V, 0.5 V at birth")
     text((x0 + 0.2, -77.6), f"E{k} holds how much more S{k} has spiked lately than S{1 - k}. A good taste raises p{k}, "
          f"a bad one lowers it, each as fast as E{k} allows.", size=FS)
 
 
 def hush(k, x, y, s):
-    """Sensor k's hush cell: its spike charges H (C 10, R 4, clamped 0..1 V) through a sigmoid; while H is above
+    """Sensor k's hush cell: its spike charges H (C 25 pF, R 4 GOhm, clamped 0..1 V) through a sigmoid; while H is above
     0.5 V a second sigmoid draws current out of the other sensor's membrane. Its first amplifier at (x, y); the cell
     runs right (s = 1) or left (s = -1). Returns that amplifier's anchors and the second's output."""
     a = ota(x, y, True, "σ  +10", left=s < 0)
@@ -352,10 +358,10 @@ def hush(k, x, y, s):
     wire(out, (hx, y))
     dot((hx, y))
     text((hx - 0.6 if s > 0 else hx - 1.0, y + 0.45), f"N{18 + k}  H{k}", size=FS + 1)
-    hang((hx, y), elm.Capacitor, "C = 10")
+    hang((hx, y), elm.Capacitor, f"C = {si(10 * C_TYP, 'F')}")
     rx = hx + 1.6 * s
     wire((hx, y), (rx, y))
-    hang((rx, y), elm.Resistor, "R = 4")
+    hang((rx, y), elm.Resistor, f"R = {si(HUSH / (10 * C_TYP), 'Ω')}")
     b = ota(rx + 3.9 * s, y, False, "σ  −1.5  (slope 10)", left=s < 0)
     plus, minus, out = b["in2"], b["in1"], b["out"]
     jx = rx + 0.8 * s
@@ -433,12 +439,12 @@ dot((A0, -11 + 0.62)); dot((A1, -38))
 wire((A0, ROW[0]), (LEFT_CELL[1] + 0.4, ROW[0]))
 wire((A1, ROW[1]), (LEFT_CELL[1] + 1.0, ROW[1]))
 text((A0 - 0.3, ROW[0] - 0.1), "V(S0)", "right", FS); text((A1 - 1.3, ROW[1] - 0.1), "V(S1)", "right", FS)
-synapse(SX, -4, A0, MX - 1.8, "N9", "SYNAPSE S0 → M0: fixed", "weight 1.0: relays every spike of S0 to M0")
+synapse(SX, -4, A0, MX - 1.8, "N9", "SYNAPSE S0 → M0: fixed", f"weight {si(SIDE, 'A')}: relays every spike of S0 to M0")
 a10, syn10 = synapse(SX, -11, A0, MX - 1.0, "N10", "SYNAPSE S0 → M1: learns",
-                     "weight 0.7·p0: relays S0's spikes to M1 while p0 is high")
+                     f"weight {si(STRONG, 'A')}·p0: relays S0's spikes to M1 while p0 is high")
 a11, syn11 = synapse(SX, -28, A1, MX - 1.8, "N11", "SYNAPSE S1 → M0: learns",
-                     "weight 0.7·p1: relays S1's spikes to M0 while p1 is high", True)
-synapse(SX, -35, A1, MX - 1.0, "N12", "SYNAPSE S1 → M1: fixed", "weight 1.0: relays every spike of S1 to M1")
+                     f"weight {si(STRONG, 'A')}·p1: relays S1's spikes to M0 while p1 is high", True)
+synapse(SX, -35, A1, MX - 1.0, "N12", "SYNAPSE S1 → M1: fixed", f"weight {si(SIDE, 'A')}: relays every spike of S1 to M1")
 taste_node()
 hush_cells()
 key(-5.0, -10.0)
@@ -465,8 +471,8 @@ text((LEFT, TOP + 4.6), "The designed circuit: four neurons (sensors S0, S1; mot
      "two that learn), two hush cells by which each sensor quiets the other, two learning cells and the taste. Each "
      "shaded box is one of these parts, titled with what it does.", size=FS + 3)
 text((LEFT, TOP + 3.5), "Each triangle is a transconductance amplifier, output current I_b·tanh(V+ − V−); followers "
-     "with a capacitor are low-pass filters. Nodes N1–N19; ground is 0 V. Times in the circuit's ticks: it runs 4 to "
-     "each tick of the world.", size=FS + 1)
+     "with a capacitor are low-pass filters. Nodes N1–N19; ground is 0 V. Values in SI (units.py); a tick of the "
+     "world is 10 ms.", size=FS + 1)
 text((LEFT, TOP + 2.5), "Shown: S0 relays every spike to M0 and S1 to M1 (each sensor's side is a coin toss at "
      "birth). The body decides what each sensor sees, which thruster each motor fires, and the taste when a block "
      "touches the mouth: one input, saying nothing of which sensor saw it.", size=FS + 1)

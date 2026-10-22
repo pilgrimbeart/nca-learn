@@ -34,7 +34,7 @@ if __name__ == "__main__":
             print(summary(name, res[(first, name)][0]), flush=True)
             if name.startswith("R4"):
                 kinds, when = growth(res[(first, name)][0])
-                print(f"{'':35s}bridges per poison life {kinds}; first at median tick {when}", flush=True)
+                print(f"{'':35s}bridges per poison life {kinds}; first at median {when} s", flush=True)
         base = res[(first, "knowing (no growth)")]
         for name in ("oracle, T hold", "oracle, local hold", "R4, T hold", "R4, local hold"):
             d, lo, hi = paired(base[0], res[(first, name)][0])

@@ -1,12 +1,12 @@
 """Tuning a circuit's parameters for the minimal circuit search (minimal/NOTEBOOK.md): CMA-ES (Hansen's covariance
-matrix adaptation evolution strategy, in its plain form) on the score (net food per 1,000 ticks), or with --by on
+matrix adaptation evolution strategy, in its plain form) on the score (net food per 10 s), or with --by on
 efficiency or gain rate, a circuit counting only if it does the job (minimal/spec.py, objective). Each parameter is searched in
 [0, 1], mapped onto its bounds (on a log scale when they are both positive). Every generation scores its candidates
 on fresh seeds, the same seeds for all of them (paired), so that no candidate is tuned to particular lives. Noise and
-mismatch are the simulator's own (mixed_feedback), at the nominal noise (the user's decision, 2026-10-20). Every
-polish ends with pruning (minimal/prune.py), saved beside it as NAME_pruned if anything could go.
+mismatch are the simulator's own (mixed_feedback), with each substrate's noise judged (spec.JUDGED). Every polish
+ends with pruning (minimal/prune.py), saved beside it as NAME_pruned if anything could go.
 
-    python -m minimal.search DESIGN|RESULTS.json [GENERATIONS] [--ticks 10000] [--seeds 8] [--lam 16] [--name NAME]
+    python -m minimal.search RESULTS.json [GENERATIONS] [--seconds 100] [--seeds 8] [--lam 16] [--name NAME]
                              [--by score|efficiency|gain]
 """
 
@@ -23,7 +23,8 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from minimal.spec import OBJECTIVES, objective, parts, score, summary  # noqa: E402
+from minimal.spec import LIFE, OBJECTIVES, objective, parts, score, summary  # noqa: E402
+from units import si  # noqa: E402
 
 RESULTS = os.path.join(os.path.dirname(__file__), "results")
 
@@ -44,7 +45,7 @@ def encode(p: dict, params: dict):
     return np.array(u)
 
 
-def cmaes(design, params: dict, gens: int = 60, lam: int = 16, seeds: int = 8, ticks: int = 10000,
+def cmaes(design, params: dict, gens: int = 60, lam: int = 16, seeds: int = 8, seconds: float = LIFE,
           sigma: float = 0.15, start: dict | None = None, log=print, first_seed: int = 10000, by: str = "score"):
     """Maximise the objective (by: minimal/spec.py, OBJECTIVES). Returns (best parameters by their generation's mean, history)."""
     n = len(params)
@@ -69,7 +70,7 @@ def cmaes(design, params: dict, gens: int = 60, lam: int = 16, seeds: int = 8, t
         x = mean + sigma * y
         x[-1] = mean                                            # (the mean itself, scored on the same lives)
         specs = [design(decode(xi, params)) for xi in x]
-        lives = score(specs, seeds=range(first_seed + g * seeds, first_seed + (g + 1) * seeds), ticks=ticks)
+        lives = score(specs, seeds=range(first_seed + g * seeds, first_seed + (g + 1) * seeds), seconds=seconds)
         f = np.array([objective(l, by) for l in lives])
         order = np.argsort(-f[:-1])
         if f[-1] > best[0]:
@@ -92,71 +93,63 @@ def cmaes(design, params: dict, gens: int = 60, lam: int = 16, seeds: int = 8, t
     return decode(mean, params), best, history
 
 
-def validate(spec, seeds=range(100, 164), ticks: int = 10000) -> dict:
+def validate(spec, seeds=range(100, 164), seconds: float = LIFE) -> dict:
     """Held-out lives (seeds the search never saw)."""
-    return summary(score([spec], seeds=seeds, ticks=ticks)[0])
+    return summary(score([spec], seeds=seeds, seconds=seconds)[0])
 
 
 def report(name, spec, v: dict) -> str:
     """The held-out summary v as a line or two; it does the job only within the rules too."""
-    from minimal.spec import SLEW, slew
+    from minimal.spec import slew
     done = v["job"] and v["over"] == 0
-    return (f"{name}: parts {parts(spec)}; fastest slew {slew(spec):.1f} per circuit tick (limit {SLEW:g})\n"
+    return (f"{name}: parts {parts(spec)}; fastest {slew(spec):.0%} of the honesty limits\n"
             f"  net {v['net']:+.2f} [{v['lo']:+.2f}, {v['hi']:+.2f}] (food - poison {v['plain']:+.2f}), food"
             f" {v['food']:.2f}, poison {v['poison']:.2f}, last third {v['last']:.2f}, stranded {v['stranded']:.0%},"
-            f" power {v['power']:.2f}, thruster firings {v['firings']:.0f} per 1,000, efficiency"
+            f" power {si(v['power'], 'W')}, thruster firings {v['firings']:.0f} per 10 s, efficiency"
             f" {v['efficiency']:.2f} meals gained per meal spent\n"
-            + "".join(f"  at x{k} noise: net {w['net']:+.2f}, food {w['food']:.2f}, last third {w['last']:.2f},"
+            + "".join(f"  {k}: net {w['net']:+.2f}, food {w['food']:.2f}, last third {w['last']:.2f},"
                       f" stranded {w['stranded']:.0%}, efficiency {w['efficiency']:.2f}, job {w['job']}\n"
-                      for k, w in v.get("by_noise", {}).items())
+                      for k, w in v.get("by_substrate", {}).items())
             + f"  {'DOES THE JOB' if done else 'does not do the job'}")
 
 
 if __name__ == "__main__":
-    from minimal.designs import DESIGNS
     ap = argparse.ArgumentParser()
-    ap.add_argument("design")
+    ap.add_argument("design", help="a results file (minimal/results/*.json): its circuit, polished")
     ap.add_argument("gens", type=int, nargs="?", default=60)
-    ap.add_argument("--ticks", type=int, default=10000)
+    ap.add_argument("--seconds", type=float, default=LIFE)
     ap.add_argument("--seeds", type=int, default=8)
     ap.add_argument("--lam", type=int, default=16)
-    ap.add_argument("--start", help="a results file to start from")
     ap.add_argument("--name", help="the results file's name (default: the design's)")
     ap.add_argument("--by", choices=tuple(OBJECTIVES), default="score",
                     help="what to maximise: the score, or efficiency or gain rate for a circuit doing the job")
     ap.add_argument("--thrust", type=float, help="an experiment: the score's cost per thruster firing, in meals"
                                                  " (default spec.THRUST)")
-    ap.add_argument("--noises", type=float, nargs="+", help="an experiment: judge at these noise levels (shares of"
-                                                                 " the usual), the worst counting (default spec.JUDGED)")
+    ap.add_argument("--substrates", nargs="+", help="an experiment: judge with these substrates' noise"
+                                                    " (mixed_feedback.SUBSTRATES), the worst counting (default spec.JUDGED)")
     a = ap.parse_args()
-    if a.noises:
-        import minimal.spec
-        minimal.spec.JUDGED = tuple(a.noises)           # (lives are scored in this process, at these levels)
     import minimal.spec
+    if a.substrates:
+        minimal.spec.JUDGED = tuple(a.substrates)       # (lives are scored in this process, with these)
     if a.thrust is not None:
         minimal.spec.THRUST = a.thrust                  # (the score is reckoned here, in this process)
-    if a.design.endswith(".json"):                     # polish a raw circuit (one the open search found)
-        from minimal.designs import raw
-        found = json.load(open(a.design))
-        design, params = raw(found["spec"])
-        a.design = os.path.basename(a.design)[:-5]
-        start = None
-    else:
-        design, params = DESIGNS[a.design]
-        start = json.load(open(a.start))["params"] if a.start else None
+    from minimal.designs import raw
+    found = json.load(open(a.design))
+    design, params = raw(found["spec"])
+    a.design = os.path.basename(a.design)[:-5]
     t0 = time.time()
-    final, best, hist = cmaes(design, params, a.gens, a.lam, a.seeds, a.ticks, start=start, by=a.by)
+    final, best, hist = cmaes(design, params, a.gens, a.lam, a.seeds, a.seconds, by=a.by)
     spec = design(final)
-    v = validate(spec, ticks=a.ticks)
+    v = validate(spec, seconds=a.seconds)
     print(report(a.name or a.design, spec, v) + f"\n  ({time.time() - t0:.0f} s)")
     os.makedirs(RESULTS, exist_ok=True)
-    json.dump({"design": a.design, "params": final, "spec": spec, "held_out": v, "parts": parts(spec),
+    json.dump({"design": a.design, "spec": spec, "held_out": v, "parts": parts(spec),
                "history": hist, "args": vars(a)}, open(os.path.join(RESULTS, f"{a.name or a.design}.json"), "w"), indent=1)
     from minimal.prune import prune                     # then pruned, as standard (minimal/prune.py)
     pruned, steps = prune(spec, by=a.by)
     if steps:
         name = f"{a.name or a.design}_pruned"
-        v = validate(pruned, ticks=a.ticks)
+        v = validate(pruned, seconds=a.seconds)
         print(report(name, pruned, v))
         json.dump({"design": name, "pruned_from": a.name or a.design, "spec": pruned, "held_out": v,
                    "parts": parts(pruned), "steps": steps}, open(os.path.join(RESULTS, f"{name}.json"), "w"), indent=1)

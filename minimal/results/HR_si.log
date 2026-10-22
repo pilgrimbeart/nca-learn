@@ -1,0 +1,69 @@
+gen   0  mean +1.767  best +0.688  sigma 0.150
+gen   1  mean +1.084  best -0.449  sigma 0.141
+gen   2  mean +1.142  best -0.432  sigma 0.136
+gen   3  mean +0.699  best +0.294  sigma 0.133
+gen   4  mean +0.827  best +0.282  sigma 0.130
+gen   5  mean +0.892  best +0.478  sigma 0.128
+gen   6  mean +1.022  best +1.028  sigma 0.126
+gen   7  mean +1.632  best +0.525  sigma 0.124
+gen   8  mean +1.499  best +1.018  sigma 0.121
+gen   9  mean +1.262  best +0.772  sigma 0.118
+gen  10  mean +0.754  best +0.709  sigma 0.117
+gen  11  mean +1.577  best +1.626  sigma 0.117
+gen  12  mean +1.234  best +1.260  sigma 0.116
+gen  13  mean +1.696  best +1.651  sigma 0.116
+gen  14  mean +1.446  best +0.873  sigma 0.117
+gen  15  mean +1.366  best +1.665  sigma 0.116
+gen  16  mean +1.859  best +1.837  sigma 0.114
+gen  17  mean +2.147  best +1.765  sigma 0.113
+gen  18  mean +1.888  best +1.524  sigma 0.111
+gen  19  mean +2.135  best +1.860  sigma 0.109
+gen  20  mean +1.000  best +1.200  sigma 0.108
+gen  21  mean +1.056  best +1.764  sigma 0.107
+gen  22  mean +2.196  best +2.055  sigma 0.106
+gen  23  mean +1.307  best +1.649  sigma 0.104
+gen  24  mean +2.414  best +1.556  sigma 0.102
+gen  25  mean +1.638  best +2.315  sigma 0.101
+gen  26  mean +1.519  best +1.632  sigma 0.099
+gen  27  mean +1.412  best +1.727  sigma 0.098
+gen  28  mean +1.501  best +1.855  sigma 0.096
+gen  29  mean +1.697  best +2.144  sigma 0.096
+gen  30  mean +2.171  best +1.997  sigma 0.095
+gen  31  mean +2.077  best +1.753  sigma 0.094
+gen  32  mean +1.880  best +1.735  sigma 0.094
+gen  33  mean +1.861  best +2.125  sigma 0.093
+gen  34  mean +2.191  best +1.988  sigma 0.091
+gen  35  mean +2.085  best +1.758  sigma 0.090
+gen  36  mean +1.771  best +1.945  sigma 0.089
+gen  37  mean +2.183  best +2.457  sigma 0.089
+gen  38  mean +1.926  best +2.039  sigma 0.088
+gen  39  mean +2.283  best +2.426  sigma 0.088
+gen  40  mean +2.295  best +2.529  sigma 0.088
+gen  41  mean +2.298  best +2.412  sigma 0.087
+gen  42  mean +2.629  best +2.239  sigma 0.086
+gen  43  mean +2.327  best +1.979  sigma 0.086
+gen  44  mean +2.017  best +1.921  sigma 0.086
+gen  45  mean +1.676  best +2.099  sigma 0.087
+gen  46  mean +1.959  best +1.995  sigma 0.087
+gen  47  mean +1.893  best +2.344  sigma 0.087
+gen  48  mean +2.381  best +2.137  sigma 0.087
+gen  49  mean +1.881  best +1.656  sigma 0.087
+gen  50  mean +1.678  best +1.814  sigma 0.087
+gen  51  mean +1.832  best +1.771  sigma 0.087
+gen  52  mean +1.848  best +2.173  sigma 0.086
+gen  53  mean +2.127  best +2.180  sigma 0.085
+gen  54  mean +2.346  best +2.354  sigma 0.083
+gen  55  mean +1.723  best +2.151  sigma 0.081
+gen  56  mean +2.211  best +2.301  sigma 0.079
+gen  57  mean +2.188  best +2.138  sigma 0.078
+gen  58  mean +1.878  best +2.319  sigma 0.077
+gen  59  mean +1.548  best +2.208  sigma 0.076
+HR_si: parts {'C': 10, 'R': 9, 'D': 0, 'T': 16, 'total': 35, 'nodes': 8, 'elements': 11}; fastest 66% of the honesty limits
+  net +2.04 [+1.81, +2.22] (food - poison +3.09), food 4.78, poison 1.02, last third 6.24, stranded 0%, power 15.5 nW, thruster firings 314 per 10 s, efficiency 1.62 meals gained per meal spent
+  silicon: net +3.18, food 5.53, last third 8.62, stranded 0%, efficiency 2.34, job True
+  biology: net +2.52, food 4.99, last third 7.10, stranded 0%, efficiency 1.95, job True
+  biology x2: net +2.04, food 4.78, last third 6.24, stranded 0%, efficiency 1.62, job True
+  DOES THE JOB
+  (8273 s)
+start: 35 parts, score +2.142 (keeping within 0.1 of it)
+  nothing more can go

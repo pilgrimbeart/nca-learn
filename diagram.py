@@ -99,7 +99,7 @@ text(CX0, 44, "brain.update(me, mean, count, inp, out): 85 numbers kept, 28 of t
 text(RX, 26, "OUT", "colh")
 text(RX, 44, "what the cell shows its", "colhs")
 text(RX, 58, "neighbours, and gives the body", "colhs")
-text(KX0, 96, "Updates at random (in the creature, with chance 0.9 a tick: never in lockstep); then every kept number gets "
+text(KX0, 96, "Updates at random (in the creature, with chance 0.9 a step, 400 steps a second: never in lockstep); then every kept number gets "
      "noise N(0, 0.001),", "hd")
 text(KX0, 113, "and whole numbers are re-rounded at its next update. Order inside:  organs  →  choose and learn  →  "
      "channel 1  →  channel 2.", "hd")

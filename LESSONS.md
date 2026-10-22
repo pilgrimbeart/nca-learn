@@ -62,8 +62,23 @@ they were written with: the "grown brain" is the sheet brain, the "mixed-signal 
   deleting a clock's feedback or a hunger's drive and letting noise do the job (a damped resonance rung by noise; a
   gate opened by noise). Both did the job at the nominal noise and failed at half of it. Noise costs no parts, so a
   search that pays for parts but never varies the noise will buy noise. The old half-and-double check caught exactly
-  this, so every polish, pruning and final judgement now uses half, nominal and double noise, the worst counting (the
-  user's decision, 2026-10-22).
+  this, so every polish, pruning and final judgement judged across the noise range, the worst counting (the user's
+  decision, 2026-10-22): first half, nominal and double noise, then silicon's, biology's and twice biology's (next).
+- **Real units show what abstract ones hide** (the user's decision, 2026-10-22: real units everywhere, every number
+  derived from few axioms, `units.py`). Named in seconds, amperes and farads, the circuits turned out to have silicon's
+  sizes (picofarads, gigaohms, nanoamps) and biology's noise (events of 12.5 fC, about 78,000 electrons, where a
+  transistor's are single electrons): no contradiction while the units were abstract, plain once they weren't. In
+  silicon at these currents the noise is about 280 times smaller in amplitude, and the circuits that leaned on noise
+  failed there outright: EF_22p, the "simplest", stranded in every life, while the hold-and-roam circuit, whose roam
+  is a timer, did the job as well as in biology. Units also give finger-in-the-air plausibility checks (a resistance
+  a chip can set stops at about 100 GOhm, a time constant at a few seconds without a floating gate) and a meaning to
+  every display (the live view now says how fast it runs against real time). The conversion was checked by living
+  the same lives before and after: every one of 1,280 came out with the same meals.
+- **A cache must keep every label the judging groups by, and be keyed on everything that shapes it.** The league
+  cached each life without its noise level, so for a day its "worst level" was all three pooled (EF_22p looked as if
+  it ate 2.1 food per 10 s at its worst; at half noise it ate 0.87 and stranded in a quarter of its lives). Its key
+  also left out the body and the brain's interface, so a change there could have served stale lives. A test now
+  checks that cached lives keep their substrates, and the key covers every file that shapes a life.
 - **Trace the mechanism, not just the score.** A hunger meant to make a creature travel did nothing: its drain leaked
   at rest exactly as fast as it charged, so a polish tuned a circuit that was never hungry, and only a trace of the
   node's voltage showed it (The minimal circuit search, below).
@@ -509,8 +524,8 @@ exploitable.
   fresh seeds for every evaluation, and the result judged on lives never trained on; every parameter a few percent
   off at birth (mismatch, as Sepulchre stresses: no knife-edge tuning or exact cancellation between identical parts);
   noise on every node, as now. Each motor spike is a full kick, so a fast oscillator gets the most thrust: the
-  minimal search now charges each firing (2026-10-21), and eating will be checked along the path a fast creature
-  moves in a tick.
+  minimal search now charges each firing (2026-10-21), and eating is checked along the path a fast creature moves in
+  a tick (2026-10-22; it changed EF_22p's meals by about 1%).
 
 ### Noise as biology makes it (2026-10-20)
 

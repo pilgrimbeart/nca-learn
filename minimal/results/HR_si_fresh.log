@@ -1,0 +1,4 @@
+HR_si, fresh seeds 500-563: score +1.94 [+1.65, +2.21], food 4.86, efficiency 1.56 [1.3909973721693698, 1.7112401768449212], gain 2.64 [2.35857421875, 2.91173828125], stranded 1% [0.0013803963628788857, 0.04292731834932121], job True
+  silicon: score +3.10, efficiency 2.27, stranded 0%, job True
+  biology: score +2.45, efficiency 1.90, stranded 1%, job True
+  biology x2: score +1.94, efficiency 1.56, stranded 0%, job True

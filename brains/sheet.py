@@ -1,6 +1,7 @@
 """The sheet brain: a sheet of identical cells that builds itself, then learns (sheet.py, rules/). Sensor k is the
 cell that named itself S(k+1), motor k the cell that named itself M(k+1), taste the cells that named themselves T;
-the brain touches the sheet only through them, by name. The sheet runs SPEED updates to each tick of the world."""
+the brain touches the sheet only through them, by name. The sheet runs RATE updates a second, a whole number in each
+tick of the world (units.TICK)."""
 
 from __future__ import annotations
 
@@ -8,9 +9,10 @@ import numpy as np
 
 import sheet
 from rules import brain, wiring
+from units import TICK
 
 SIZE = 49           # the sheet: SIZE x SIZE cells
-SPEED = 4           # the sheet's updates per tick of the world: how fast the brain runs beside the body
+RATE = 400.0        # the sheet's updates per second: how fast the brain runs beside the body
 UPDATE = 0.9        # the chance a cell updates in an update of the sheet (never all at once)
 NAME = {"S1": 1, "S2": 2, "M1": 3, "M2": 4, "T": 5}     # the names cells give themselves
 DAMAGE = 7          # watching: the radius of the disc of cells damage_at replaces with new-born ones
@@ -32,7 +34,7 @@ class SheetBrain:
 
     def step(self) -> list:
         """One tick of the world; the motors that fired (a motor once for each pulse its cell took)."""
-        self.sheet.step(SPEED)
+        self.sheet.step(int(round(RATE * TICK)))
         return [m for m in (0, 1) for _ in range(int(self.sheet.take(self._cells(f"M{m + 1}"), f"fired_{m + 1}").sum()))]
 
     def drive(self, sensor: int) -> float:

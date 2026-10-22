@@ -33,8 +33,8 @@ if __name__ == "__main__":
         print(summary("", res[name][1], all_food=True), flush=True)
         if name not in ("knowing (no growth)", "oracle O1"):
             kinds, when = growth(res[name][0])
-            print(f"{'':35s}bridges per poison life {kinds}; first at median tick {when}", flush=True)
-    print("\\nnet food per 1,000 ticks, paired: against knowing (poison lives; all-food lives), and against oracle O1")
+            print(f"{'':35s}bridges per poison life {kinds}; first at median {when} s", flush=True)
+    print("\\nnet food per 10 s, paired: against knowing (poison lives; all-food lives), and against oracle O1")
     for name in res:
         d, lo, hi = paired(res["knowing (no growth)"][0], res[name][0])
         e, elo, ehi = paired(res["knowing (no growth)"][1], res[name][1])

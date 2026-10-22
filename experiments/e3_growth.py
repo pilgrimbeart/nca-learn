@@ -30,7 +30,7 @@ def growth(records):
         kinds[f"{on.get('poison', 0)} on poison's sensor, {on.get('food', 0)} on food's" if b else "none"] += 1
         if b:
             first.append(b[0][0])
-    return dict(kinds), (int(np.median(first)) if first else None)
+    return dict(kinds), (round(float(np.median(first)), 1) if first else None)
 
 
 if __name__ == "__main__":
@@ -42,7 +42,7 @@ if __name__ == "__main__":
         print(summary(name, res[name][0]), flush=True)
         print(summary("", res[name][1], all_food=True), flush=True)
     kinds, when = growth(res["recruiting"][0])
-    print(f"\\nrecruiting, poison lives: bridges per life {kinds}; first bridge at median tick {when}")
+    print(f"\\nrecruiting, poison lives: bridges per life {kinds}; first bridge at median {when} s")
     print(f"recruiting, all-food lives: bridges per life {growth(res['recruiting'][1])[0]}")
     for name in ("oracle O1", "recruiting"):
         d, lo, hi = paired(res["knowing (no growth)"][0], res[name][0])

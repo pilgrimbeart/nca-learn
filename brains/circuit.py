@@ -1,7 +1,8 @@
 """What every circuit brain shares (README: The circuit brains; the minimal search's circuits too, minimal/spec.py): a
-mixed-feedback circuit (mixed_feedback.py) with two sensor and two motor neurons and a taste node, run SPEED circuit
-ticks to each tick of the world; the body gives pulses of current to the sensors and the taste node, each at a moment
-of its own within the tick, and counts the motors' spikes. Each brain wires its own circuit between them (build).
+mixed-feedback circuit (mixed_feedback.py) with two sensor and two motor neurons and a taste node, run for each tick of
+the world (units.TICK); the body gives pulses of current to the sensors and the taste node, each at a moment of its
+own within the tick, and counts the motors' spikes. Each brain wires its own circuit between them (build). Values in SI
+(units.py).
 """
 
 from __future__ import annotations
@@ -11,14 +12,15 @@ from collections import deque
 import numpy as np
 
 from mixed_feedback import Circuit
+from units import I_TYP, PULSE, R_TYP, TICK
 
-SPEED = 4           # circuit ticks per tick of the world: how fast the brain runs beside the body
-STIMULUS = 3.0      # the current a stimulus injects into its sensor for a circuit tick (threshold about 1)
-SIDE = 1.0          # the weight of a synapse that relays every spike
-STRONG = 0.7        # a gated synapse's weight when fully open: relays nearly every spike
-INHIBIT = 1.5       # how hard a hold or hush node holds a neuron down (a current out of it)
-TASTE = 3.0         # the current taste injects into the taste node for a circuit tick (x +1 food, -1 poison)
-TRACE = 490         # watching: ticks of history drawn
+STIMULUS = 3 * I_TYP    # A: the current a stimulus injects into its sensor, for units.PULSE (a neuron's threshold
+                        # needs about a third of that charge)
+SIDE = 1 * I_TYP        # A: the weight of a synapse that relays every spike
+STRONG = 0.7 * I_TYP    # A: a gated synapse's weight when fully open: relays nearly every spike
+INHIBIT = 1.5 * I_TYP   # A: how hard a hold or hush node holds a neuron down (a current out of it)
+TASTE = 3 * I_TYP       # A: the current taste injects into the taste node for units.PULSE (x +1 food, -1 poison)
+TRACE = 490             # watching: ticks of history drawn
 
 
 class CircuitBrain:
@@ -33,7 +35,7 @@ class CircuitBrain:
         c = self.circuit = Circuit(seed=seed + 1_000_003, streams=self.STREAMS)   # its own noise, not the world's
         self.sensors = [c.neuron(f"S{k}") for k in (0, 1)]
         self.motors = [c.neuron(f"M{k}") for k in (0, 1)]
-        self.taste_node = c.node("taste", R=0.5)
+        self.taste_node = c.node("taste", R=0.5 * R_TYP)
         self.build(c)
         self.last_inject = np.zeros(len(c.names))              # (watching: the charge each node took last tick)
         self.history = deque(maxlen=TRACE)                      # watching: (voltages, spikes) each tick
@@ -43,18 +45,18 @@ class CircuitBrain:
         raise NotImplementedError
 
     def stimulate(self, sensor: int, at: float) -> None:
-        """A stimulus, `at` (0..1) of the way through the next tick."""
-        self.circuit.pulse(self.sensors[sensor], STIMULUS, at * SPEED)
+        """A stimulus, `at` seconds into the next tick."""
+        self.circuit.pulse(self.sensors[sensor], STIMULUS, at, PULSE)
 
     def taste(self, value: float, at: float) -> None:
-        self.circuit.pulse(self.taste_node, TASTE * value, at * SPEED)
+        self.circuit.pulse(self.taste_node, TASTE * value, at, PULSE)
 
     def step(self) -> list:
         return self._motors(self._tick())
 
     def _tick(self) -> np.ndarray:
         """One tick of the world: the circuit's spikes, per node."""
-        spikes = self.circuit.tick(SPEED)
+        spikes = self.circuit.run(TICK)
         injected = self.last_inject = self.circuit.last_charge  # (watching: the charge the pulses brought this tick)
         self.history.append((self.circuit.V.copy(), spikes))
         if self.log is not None:                                # measuring: what went in, and what happened

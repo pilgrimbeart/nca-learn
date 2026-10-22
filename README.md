@@ -103,8 +103,8 @@ In the live view:
   feedback on itself.
 
 For the sheet brain, the view runs at 10 ticks a frame, but slows to 1 while the paths grow and until a little after
-the creature starts moving, so the pulses can be seen running down them. A life goes: "where am I" (to about tick
-450), "wiring", then "moving and learning". Within a few thousand ticks the poison sensor's chance of firing both
+the creature starts moving, so the pulses can be seen running down them. A life goes: "where am I" (to about 4.5 s),
+"wiring", then "moving and learning". Within a few tens of seconds the poison sensor's chance of firing both
 falls towards 0, and the food sensor's rises towards 1.
 
 ## The sheet brain
@@ -129,7 +129,7 @@ The ground rules (above) are built into the code:
 - **A rule never holds a view into the sheet.** The engine copies a cell's numbers and its neighbours' means into the
   rule's own small arrays, and `test_rules.py` runs every rule with array bounds checked, so an index past the end
   can't reach another cell's numbers.
-- **The engine does the rest.** The sheet runs in steps, 4 to each tick of the world; at each step each cell updates
+- **The engine does the rest.** The sheet runs in steps, 400 a second (4 to each tick of the world); at each step each cell updates
   with some chance, never all at once. Every number a cell keeps gets a little noise at every update. What it shows
   its neighbours is cruder: every shared number is clipped to -1..1 and shown with noise of 1%, drawn afresh every
   step. So a shared number can't carry much: no encoding can squeeze information below the noise or spread it over
@@ -139,7 +139,7 @@ The ground rules (above) are built into the code:
   at the tick a block touches the mouth: it never says which sensor it is about); only M1 and M2 are read. Watching uses
   `view()`; the experimenter's `damage()` replaces cells with new-born ones. `test_rules.py` checks every rule's
   imports, signature and birth, and that no body code reaches inside.
-- Numba-compiled: about 330,000 cell-updates a second on one core for the whole brain (about 150 steps, so 37 ticks
+- Numba-compiled: about 330,000 cell-updates a second on one core for the whole brain (about 150 steps, so 0.37 s
   of the world, a second at 49 × 49).
 
 ### What a cell can read from averages
@@ -232,21 +232,21 @@ direction at all, only means, so they build it from signals: the coordinates and
 ### Result
 
 Three scores: how soon the sensors learn (set by the rules), and how much more food than poison the creature then
-eats per 1,000 ticks and how many food blocks for each poison (set by the brain's behaviour and the body). 32 lives of
-10,000 ticks with learning and 32 without, half with red as poison and half blue, each with its own random wiring
+eats per 10 s and how many food blocks for each poison (set by the brain's behaviour and the body). 32 lives of
+100 s with learning and 32 without, half with red as poison and half blue, each with its own random wiring
 (`python creature.py --measure 32`). "Learned": both sensors' chance of firing both thrusters within 0.2 of right
 (poison's at most 0.2, food's at least 0.8), counted from when the creature starts moving.
 
-|  | learned | food minus poison per 1,000 ticks, by third of life after moving | food:poison, by third | firing both at the end |
+|  | learned | food minus poison per 10 s, by third of life after moving | food:poison, by third | firing both at the end |
 |---|---|---|---|---|
-| learning on | 24 of 32 lives, median 4,982 ticks | +0.25, +0.53, +0.89 | 1.5, 2.0, 3.0 | poison's sensor 0.17, food's 0.91 |
+| learning on | 24 of 32 lives, median 50 s | +0.25, +0.53, +0.89 | 1.5, 2.0, 3.0 | poison's sensor 0.17, food's 0.91 |
 | learning off | none | 0, 0, 0 | 1.0 | both 0.50 |
 
 Lives learn from taste alone: the brain works out which sensor a taste is about. An earlier version had the body hand
 the taste to the eaten colour's sensor, which did that work for it (withdrawn: see `LESSONS.md`). Now a taste after
 both colours were seen at once is sometimes credited to the wrong sensor, so p wanders a little near its target.
-Learning is slow because meals are few, about 1.5 per 1,000 ticks: in 8 lives of 32 the sensors had not both come
-right by 10,000 ticks. With p set perfect from birth by hand the creature eats 3.6, 2.7 and 4.8 food for each poison
+Learning is slow because meals are few, about 1.5 per 10 s: in 8 lives of 32 the sensors had not both come
+right by 100 s. With p set perfect from birth by hand the creature eats 3.6, 2.7 and 4.8 food for each poison
 by thirds (32 lives): the limit of this body with a brain this slow (earlier bodies capped it lower: `LESSONS.md`).
 Once learned, the thirds differ much by noise: poison meals are few, and even 32 lives are few for this score.
 
@@ -267,7 +267,7 @@ wrong one. Damage a sensor and a new cell takes the name, but what the old one h
 - In about 1 sheet in 32, two cells take the same actuator name (M1).
 - The coordinates take about 1,500 steps to settle (they are averages, and averages spread slowly).
 - 28 shared numbers: fewer would be better, though the lizard's 16 also carried direction, which ours must build.
-- Every life starts from scratch: the brain builds itself again (about 2,500 steps, 600 ticks, before the creature
+- Every life starts from scratch: the brain builds itself again (about 2,500 steps, 6 s, before the creature
   moves), and the sensors learn again.
 
 ### Inside one cell
@@ -285,10 +285,10 @@ Built from the one element of Ribar and Sepulchre's [Neuromorphic Control](https
 a current into a node, a sigmoid of a filtered voltage, with a sign (positive or negative feedback) and a timescale,
 perhaps gated by another node. Level 0 is nodes and elements; level 1, the motifs built from them (neurons, synapses,
 the states they hold), as the block view draws them. A memory node (a knob) holds its value, noisy only when written.
-Every circuit brain shares two sensor neurons, two motor neurons and a taste node (`brains/circuit.py`), runs 4 of its
-ticks to each tick of the world, and has noise and mismatch as biology makes them (Terms). Each eye fires at random
-moments, at a rate set by what it sees, and each pulse (a taste too) starts at a moment of its own within the tick.
-Compiled with numba, with the world, a life of 10,000 ticks takes about a second.
+Every circuit brain shares two sensor neurons, two motor neurons and a taste node (`brains/circuit.py`), is integrated
+in steps of 0.125 ms (80 to each 10 ms tick of the world), and has noise and mismatch as a substrate makes them
+(Terms). Each eye fires at random moments, at a rate set by what it sees, and each pulse (a taste too) starts at a
+moment of its own within the tick. Compiled with numba, with the world, a life of 100 s takes about a second.
 
 **Under biological noise every hand-built circuit brain falls to about 1 food for each poison** (2026-10-20): 10%
 mismatch pushes a share of their excitable neurons into firing on their own or missing pulses, and none was built to
@@ -302,18 +302,18 @@ Designed by hand rather than grown (`python creature.py --brain designed-circuit
 or `media/designed_circuit.png`), it says what growing costs. Four excitable neurons, alike: two sensors and two motors.
 Each sensor excites the motor on its side (a coin toss at birth) through a synapse that relays every spike, and the
 other through a plastic synapse whose strength p sets: at p = 1 it relays nearly every spike, at 0 none, in between
-noise decides. The sensors hush each other: a sensor's spikes charge a node that for about 10 ticks holds the other
+noise decides. The sensors hush each other: a sensor's spikes charge a node that for about 0.1 s holds the other
 sensor down, so the creature heeds one colour at a time. Its spikes come often and each kick is small. Learning is three
-factors, all in the circuit: each sensor's spikes charge its eligibility node, which leaks away over 10 ticks, and empty
+factors, all in the circuit: each sensor's spikes charge its eligibility node, which leaks away over 0.1 s, and empty
 the other sensor's (cross-inhibition, so only the sensor that fired last is eligible); one taste node, driven by the
 same taste input, charges or empties a capacitor holding p while taste is good or bad, as fast as eligibility allows. p
 sets the plastic synapse's strength. Noise on every node makes the odd spontaneous spike, so a creature that sees
 nothing still moves.
 
-Under the earlier noise, on the same 32 lives as the sheet brain (`--measure 32`), it learned in 28 (median 3,622
-ticks) and ate 2.2, 5.9 and 4.6 food for each poison by thirds of life, netting about twice the sheet brain's food: it
-moves from the first tick (the sheet spends about 600 building itself), reacts at once where a pulse takes about 13
-ticks to cross the sheet, and its sensors hush each other. So building costs time, and a big brain is slow.
+Under the earlier noise, on the same 32 lives as the sheet brain (`--measure 32`), it learned in 28 (median 36
+s) and ate 2.2, 5.9 and 4.6 food for each poison by thirds of life, netting about twice the sheet brain's food: it
+moves from the first tick (the sheet spends about 6 s building itself), reacts at once where a pulse takes about 0.13
+s to cross the sheet, and its sensors hush each other. So building costs time, and a big brain is slow.
 
 ### Recruitment: growing in the life
 
@@ -341,7 +341,8 @@ growth are required: a circuit is any nodes and elements of `mixed_feedback.py`,
 spec, `minimal/spec.py`), its parts counted as an analogue build would need them. The task, body, interface and noise
 are every brain's, and the rules against cheating the simulator are enforced in code (`AGENTS.md`). Circuits are
 designed by hand, tuned (a polish, `minimal/search.py`), pruned part by part (`minimal/prune.py`) and searched by
-evolution over topologies (`minimal/evolve.py`), all judged on fresh seeds at half, nominal and double noise.
+evolution over topologies (`minimal/evolve.py`), all judged on fresh seeds with the noise of silicon, biology and
+twice biology's (Terms: substrate).
 
 Three objectives, each among the circuits that do the job (learn the bit, eat enough, rarely strand), never traded
 against each other: the simplest brain, the best driver for energy (body efficiency) and the best for speed and
@@ -350,30 +351,45 @@ the notebook (`minimal/NOTEBOOK.md`) tells how they were found.
 
 What it has found so far:
 
-- **The simplest circuits that learn have about 22 parts, and no positive feedback.** The bit is a perfect integrator
-  (a floating gate) written by a three-factor rule (what was seen, times the taste); the creature spins until food is
-  in view; its events come from the body's spike counter and its rhythm from noise.
+- **The simplest circuit that does the job, robustly, has 35 parts, and it is also the best driver.** Judged at one
+  noise level, circuits of about 22 parts seemed to do it: the bit a perfect integrator (a floating gate) written by a
+  three-factor rule (what was seen, times the taste), the creature spinning until food is in view. But their rhythm
+  came from noise: in silicon, about 280 times quieter, they never get moving. Only the hold-and-roam circuit, whose
+  scan is an oscillator and whose roam is a timer, does the job in silicon, biology and at twice biology's noise; re-polished
+  with all three (HR_si), none of its parts can go, and it is the best driver too (`minimal/NOTEBOOK.md`, M12).
 - **Match the brain's speed to the body's.** Spinning sweeps the eyes' narrow corridor past far food faster than a
   brief reaction can catch it. A slow node that holds the course for some ticks after a sighting, and a timer that
   sends the creature off to roam after a long spell of seeing nothing (the hold-and-roam circuit), more than doubled
   the best efficiency.
 - **Noise costs no parts, so a search judged at one noise level buys it**: pruning twice replaced a mechanism (a clock,
-  a hunger) by noise doing the job at the nominal level only. Hence judging at three.
+  a hunger) by noise doing the job at the nominal level only. Hence judging with three noises: silicon's (about 280
+  times quieter than biology's at these currents, so a design that needs noise fails there), biology's, and twice
+  biology's.
 
 ## Next
 
 - **Object persistence**: a creature that has just lost sight of food sweeps back for it (the body can turn both
   ways), the user's idea.
 - **Reversal**: every circuit so far learns only from food, so none unlearns when the poison colour swaps.
+- **A smaller robust circuit**: circuits that make their own motion (a clock), from starts with the hold-and-roam
+  circuit's motor stage; and whether a chip's limits (`python -m minimal.physical`) should bind the search.
 - **Sepulchre's discipline**: do circuits of mixed-feedback components (every node leaky, events from positive
-  feedback) do the job as simply, and more robustly? (A three-arm experiment, `MIXED_FEEDBACK.md`.)
-- **Eating along the mouth's path**: checked through each tick's movement, so a fast creature can't jump a block
-  (agreed, 2026-10-22).
+  feedback) do the job as simply? The first three-arm experiment settled nothing (`MIXED_FEEDBACK.md`): it needs a
+  start built of his components.
 - **Recruitment under biological noise**, on a neuron that survives mismatch; and a recruit that walks
   (`RECRUITMENT.md`).
 - **Back to the sheet**: cellular automata again, with what the circuits have taught.
 
 ## Terms
+
+**Units** (the axioms: `units.py`)
+
+- **Real units**: everything in SI, every number that can be derived derived from a few axioms (`units.py`).
+- **Tick**: the body's step, 10 ms: the eyes look, the thrusters fire and the body moves once a tick (a reaction in 2
+  to 4 ticks is an insect's). The circuit is integrated in steps of 0.125 ms, 80 to a tick. The live view shows real
+  time at about 3 ticks a frame (it says how fast it runs against real time).
+- **Typical sizes**: what circuits are built around, as in subthreshold analogue silicon: a current of 1 nA, a
+  capacitor of 2.5 pF (which 1 nA moves 1 V in 2.5 ms, the body's pulse) and a resistor of 1 GOhm.
 
 **Circuits and noise** (the model: `mixed_feedback.py`'s docstring)
 
@@ -381,12 +397,15 @@ What it has found so far:
 - **Shot noise**: a current is carried by discrete events (ion channels opening, vesicles released, electrons
   crossing a transistor), so it flickers, with variance in proportion to its size, summed over all the currents on a
   node, not their net. A circuit can drown it by raising its currents only as the square root, for power in proportion.
-- **Membrane noise**: a node's capacitance is membrane area, whose leak channels flicker even at rest: noise in
-  proportion to the capacitance, so a node k times bigger is quieter only by the square root of k. A memory node has
-  none: still until written, then rough by the square root of what is written.
+- **Resting noise**: what a node has even when no net current flows. In biology, membrane noise: a node's capacitance
+  is membrane area, whose channels flicker even at rest: noise in proportion to the capacitance, so a node k times
+  bigger is quieter only by the square root of k. In silicon, a leak's thermal noise (kT/C). A memory node has none:
+  still until written, then rough by the square root of what is written.
 - **Mismatch**: no two parts are alike: every part off by about 10% of itself (offsets by 0.1 V), drawn at birth, so
   no design can lean on exact values or exact cancellations.
-- **Nominal noise**: the noise as the simulator makes it; it can be scaled only between half and double, never off.
+- **Substrate**: whose noise a circuit lives with, never none: **biology** (shot noise in events of 12.5 fC, between
+  an ion channel's and a vesicle's, and membrane noise), **silicon** (single electrons and a leak's thermal noise:
+  about 280 times quieter in amplitude at these currents) and **biology x2** (twice biology's, a margin).
 
 **Recruitment**
 
@@ -409,27 +428,27 @@ What it has found so far:
 
 - **Parts**: capacitors, resistors, diodes and transistors, counted as an analogue build would need them.
 - **The job**: learning the bit well enough (food:poison at least 3 in the last third of a life), eating enough (1
-  food per 1,000 ticks) and rarely stranding (at most 5% of lives), at every noise level judged.
+  food per 10 s) and rarely stranding (at most 5% of lives), with every substrate judged.
 - **Stranding**: a life that eats, then finds nothing more (no food at all in its last third). A creature that
   travels only towards food it sees spins on the spot for ever once it has eaten what is near.
 - **Polish**: tuning a circuit's values (CMA-ES), each generation on fresh lives. **Pruning**: trying every single
   simplification (an element, a filter, a gate, a leak, a clamp taken away) and keeping the best that costs no more
   than a little, until none does.
 - **Meals gained**: food, less 2 for each poison (as in the score).
-- **Body efficiency**: meals gained per meal's worth of energy spent: resting (the 1 meal per 1,000 ticks every
-  creature needs, whatever it does), moving (0.002 of a meal a thruster firing) and thinking (the circuit's power, for
-  today's circuits a hundredth of moving). Above 1 a creature gains. Haste wastes fuel and dawdling the resting cost,
+- **Body efficiency**: meals gained per meal's worth of energy spent (a meal being worth 10 uJ): resting (1 uW, a
+  meal every 10 s, whatever a creature does), moving (20 nJ a thruster firing) and thinking (the circuit's power, a few
+  nW, for today's circuits a hundredth of moving). Above 1 a creature gains. Haste wastes fuel and dawdling the resting cost,
   so a careful creature has a best speed.
-- **Gain rate**: meals gained per 1,000 ticks, energy free: speed and accuracy.
+- **Gain rate**: meals gained per 10 s, energy free: speed and accuracy.
 - **The three objectives**: the simplest brain doing the job (fewest parts), the best driver for energy (body
   efficiency) and the best for speed and accuracy (gain rate), each its own dimension, never traded.
 - **Thrift**: food per 1,000 thruster firings (fuel alone, time no object); shown, not ranked.
-- **Area**: what a circuit would take on a chip, by analogy with subthreshold analogue CMOS, in unit transistors: an
-  element 5 (a transconductance amplifier), a gate 3 more, a leak 2, a clamp 1, a memory node's floating gate 5, and
-  each capacitor 10 per unit of its value. Capacitors dominate, as on real neuromorphic chips; their price is a guess.
-  Shown, not ranked.
+- **Area**: what a circuit would take on a chip, by analogy with subthreshold analogue CMOS, in unit transistors (15
+  square microns each): an element 5 (a transconductance amplifier), a gate 3 more, a leak 2, a clamp 1, a memory
+  node's floating gate 5, and each capacitor its own area as a MOS capacitor (5 fF per square micron: 2.5 pF is 33
+  unit transistors). Capacitors dominate, as on real neuromorphic chips. Shown, not ranked.
 - **Hold**, **roam** (the hold-and-roam circuit, HR): after a sighting of the food colour, a slow node keeps both
-  thrusters firing together for some ticks, so the creature goes on to the food instead of reacting for a moment and
+  thrusters firing together for a fraction of a second, so the creature goes on to the food instead of reacting for a moment and
   sweeping past it; after a long spell with nothing seen, a timer sends it straight off to look elsewhere. Matching
   the brain's speed to the body's sweep and momentum (impedance matching).
 - **Sepulchre's rules**: an experiment's constraint, every node leaky except memory nodes and no clamps (gates and
@@ -454,14 +473,15 @@ python creature.py --brain recruiting-circuit # rung 1, guided: grows the bridge
 python creature.py --brain healing-circuit    # rung 1 by a generic recruit that knows nothing of the circuit
 python creature.py --brain healing-cascade    # the first recruit can't help; a second, further out, can
 python creature.py --spec minimal/results/N_E1_23p.json --brain N_E1_23p  # a circuit of the minimal search, live
-python -m minimal.search DESIGN|RESULTS.json 60   # the minimal search: polish a circuit, then prune it
+python -m minimal.search RESULTS.json 60   # the minimal search: polish a circuit, then prune it
                                     # (--by efficiency|gain: for one objective; default the score)
 python -m minimal.prune RESULTS.json  # prune alone
 python -m minimal.evolve 60 --start RESULTS.json ...  # the open search over topologies
 python -m minimal.league            # its league table (minimal/LEAGUE.md)
 python -m minimal.check RESULTS.json  # a circuit in the real Life at two integration steps
+python -m minimal.physical RESULTS.json  # could it be built? its parts in real units against a chip's limits
 python -m experiments.e1_oracle     # the rung-1 experiments, E1 to E7 (experiments/NOTEBOOK.md)
-python -m experiments.h_run 64 100000 "share*"  # the healing experiments (H series): named rules, on the leaderboard
+python -m experiments.h_run 64 1000 "share*"  # the healing experiments (H series): named rules, on the leaderboard
 python measure_recruitment.py 32    # recruitment's local signals, neuron by neuron, watched from outside
 python test_rules.py                # check every sheet rule keeps the sheet brain's rules
 python test_compiled.py             # check the compiled circuit and eyes against plain numpy versions
@@ -471,7 +491,7 @@ python measure_wiring.py            # pulses sent from S1 and S2: how many arriv
 python diagram.py                   # redraw media/cell.svg, what runs inside one cell
 python schematic.py                 # redraw media/designed_circuit.svg and .png, the designed circuit's schematic
                                     # (needs pip install schemdraw cairosvg pillow)
-python creature.py --record frames  # save a life's frames as PNGs, headless (media/life.gif: --seed 0 --ticks 10000,
+python creature.py --record frames  # save a life's frames as PNGs, headless (media/life.gif: --seed 0 --seconds 100,
                                     # 180 frames taken evenly by tick)
 ```
 

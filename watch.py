@@ -63,7 +63,7 @@ def watch(rule_name: str, n: int, seed: int, show: list) -> None:
                     letter = LETTERS.get(int(round(s.view("name")[r, c])), "?")
                     label = font.render(letter, True, (0, 0, 0), (255, 255, 255))
                     screen.blit(label, (left + min(max(0, c * scale - 4), side - 12), min(max(0, r * scale - 4), side - 14)))
-        screen.blit(font.render(f"tick {s.t}   {per_frame} ticks per frame   r new seed   space   up/down   Esc",
+        screen.blit(font.render(f"step {s.t}   {per_frame} steps per frame   r new seed   space   up/down   Esc",
                                 True, (255, 255, 255)), (4, side + 26))
         pygame.display.flip()
         clock.tick(30)

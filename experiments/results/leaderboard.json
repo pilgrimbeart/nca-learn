@@ -1,7 +1,6 @@
 [
  {
   "name": "guided bridge (recruiting circuit)",
-  "ticks": 30000,
   "lives": 64,
   "net": 1.1775487348507734,
   "net_lo": 1.0712516956917022,
@@ -14,11 +13,11 @@
   "last_hi": 4.00388390277983,
   "veer": 1.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 300.0
  },
  {
   "name": "wsls, menu with synapses",
-  "ticks": 30000,
   "lives": 64,
   "net": 0.7091598575041445,
   "net_lo": 0.5887227552204282,
@@ -31,11 +30,11 @@
   "last_hi": 3.1657413600891857,
   "veer": 0.859375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 300.0
  },
  {
   "name": "wsls, menu of neurons only",
-  "ticks": 30000,
   "lives": 64,
   "net": -0.0041789237053126115,
   "net_lo": -0.11413442019595618,
@@ -48,11 +47,11 @@
   "last_hi": 1.0843571120220254,
   "veer": 0.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 300.0
  },
  {
   "name": "all options on, with synapses",
-  "ticks": 30000,
   "lives": 64,
   "net": 0.0953477661214246,
   "net_lo": 0.004138264686835241,
@@ -65,11 +64,11 @@
   "last_hi": 1.2529382961741633,
   "veer": 0.234375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 300.0
  },
  {
   "name": "one random option, with synapses",
-  "ticks": 30000,
   "lives": 64,
   "net": -0.042712953957973185,
   "net_lo": -0.2595187219508417,
@@ -82,11 +81,11 @@
   "last_hi": 1.14231525774668,
   "veer": 0.25,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 300.0
  },
  {
   "name": "wsls, no listening",
-  "ticks": 30000,
   "lives": 64,
   "net": 0.1948763017083906,
   "net_lo": 0.08235665928193524,
@@ -99,11 +98,11 @@
   "last_hi": 1.427079747561675,
   "veer": 0.5,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 300.0
  },
  {
   "name": "wsls, listening fixed full",
-  "ticks": 30000,
   "lives": 64,
   "net": 0.9279573188590132,
   "net_lo": 0.8127960424088256,
@@ -116,11 +115,11 @@
   "last_hi": 7.165862068965516,
   "veer": 0.890625,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 300.0
  },
  {
   "name": "wsls, inhibit/gate only",
-  "ticks": 30000,
   "lives": 64,
   "net": 0.8003222881759408,
   "net_lo": 0.6845954967700961,
@@ -133,11 +132,11 @@
   "last_hi": 2.994538441307969,
   "veer": 0.796875,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 300.0
  },
  {
   "name": "wsls, excite/gate only",
-  "ticks": 30000,
   "lives": 64,
   "net": 0.702360231679071,
   "net_lo": 0.5985923726458796,
@@ -150,11 +149,11 @@
   "last_hi": 2.4058084239130433,
   "veer": 0.828125,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 300.0
  },
  {
   "name": "wsls, learning from anticipated pain (wireheading?)",
-  "ticks": 30000,
   "lives": 64,
   "net": 0.4084909636797788,
   "net_lo": 0.2901928760004598,
@@ -167,11 +166,11 @@
   "last_hi": 1.7996511627906977,
   "veer": 0.609375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 300.0
  },
  {
   "name": "guided bridge (recruiting circuit)",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.163891794470464,
   "net_lo": 1.0873132076620804,
@@ -184,11 +183,11 @@
   "last_hi": 3.786378585035453,
   "veer": 1.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, listening full",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.0782484878123841,
   "net_lo": 1.0140105458794006,
@@ -201,11 +200,11 @@
   "last_hi": 4.050559806948128,
   "veer": 0.90625,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, inhibit/gate only",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.7630557507827253,
   "net_lo": 0.709600470614486,
@@ -218,11 +217,11 @@
   "last_hi": 2.3094767228143094,
   "veer": 0.84375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "reinforce",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.15564260863197277,
   "net_lo": 0.09686524743854484,
@@ -235,11 +234,11 @@
   "last_hi": 1.2586937352717669,
   "veer": 0.25,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "reinforce, listening full",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.0014078665119655557,
   "net_lo": -0.040318044301454636,
@@ -252,11 +251,11 @@
   "last_hi": 1.1294283342228548,
   "veer": 0.203125,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "reinforce, listening full, inhibit/gate only",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.005158392861331542,
   "net_lo": -0.04157728601737708,
@@ -269,11 +268,11 @@
   "last_hi": 1.158395328076179,
   "veer": 0.359375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.6955535420562216,
   "net_lo": 0.6419322229137999,
@@ -286,11 +285,11 @@
   "last_hi": 2.0888733493288045,
   "veer": 0.734375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, listening full, inhibit/gate only, early",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.1074725687652478,
   "net_lo": 1.0524496187967276,
@@ -303,11 +302,11 @@
   "last_hi": 5.088243582457137,
   "veer": 0.859375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, inhibit/gate only, early",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.808533705476489,
   "net_lo": 0.7690079348146971,
@@ -320,11 +319,11 @@
   "last_hi": 2.3620168809875195,
   "veer": 0.90625,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, inhibit/gate only, shadow",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.7443085623454604,
   "net_lo": 0.695393792106967,
@@ -337,11 +336,11 @@
   "last_hi": 2.155011386716826,
   "veer": 0.84375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, inhibit/gate only, inherit, shadow",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.8135369455266487,
   "net_lo": 0.7655635884785593,
@@ -354,11 +353,11 @@
   "last_hi": 2.3461545079146595,
   "veer": 0.828125,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, listening full, inhibit/gate only",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.1632634446144563,
   "net_lo": 1.1013534275451609,
@@ -371,11 +370,11 @@
   "last_hi": 5.183511063365521,
   "veer": 0.90625,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, inhibit/gate only, shadow, commissioned",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.7930593248457276,
   "net_lo": 0.7408570874049221,
@@ -388,11 +387,11 @@
   "last_hi": 2.2129042697567596,
   "veer": 0.75,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, inhibit/gate only, inherit, shadow, commissioned",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.964800325984662,
   "net_lo": 0.9144649728884348,
@@ -405,11 +404,11 @@
   "last_hi": 2.8881259317955927,
   "veer": 0.78125,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, neurons only, inherit, inhibit only, cascade",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.2115864549899036,
   "net_lo": 0.16829157256528385,
@@ -422,11 +421,11 @@
   "last_hi": 1.745684740197635,
   "veer": 0.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, inhibit/gate only, inherit",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.924638885273728,
   "net_lo": 0.879929901093465,
@@ -439,11 +438,11 @@
   "last_hi": 2.835188434353477,
   "veer": 0.84375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, neurons only, cascade",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.13736114169951888,
   "net_lo": 0.09500820779656508,
@@ -456,11 +455,11 @@
   "last_hi": 1.2566853327952106,
   "veer": 0.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, neurons only, listening full, inhibit only, cascade",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.01734495011872339,
   "net_lo": -0.020948325642373134,
@@ -473,11 +472,11 @@
   "last_hi": 1.3355291842475383,
   "veer": 0.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "guided bridge (recruiting circuit) (held out, seeds from 100)",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.1559115181852972,
   "net_lo": 1.0694472904399168,
@@ -490,11 +489,11 @@
   "last_hi": 3.841979929407173,
   "veer": 1.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, listening full, inhibit/gate only (held out, seeds from 100)",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.1005939730723977,
   "net_lo": 1.035406003956,
@@ -507,11 +506,11 @@
   "last_hi": 5.231625167672703,
   "veer": 0.859375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "wsls, inhibit/gate only, inherit (held out, seeds from 100)",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.9407319487056518,
   "net_lo": 0.8796222565754389,
@@ -524,11 +523,11 @@
   "last_hi": 2.877347203197661,
   "veer": 0.890625,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "share: wsls, listening full, inhibit/gate only",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.1449757548897859,
   "net_lo": 1.0755796422947594,
@@ -541,11 +540,11 @@
   "last_hi": 8.178070600191296,
   "veer": 1.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "share (step 0.15): wsls, listening full, inhibit/gate only",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.0763743089567472,
   "net_lo": 1.0154380349220737,
@@ -558,11 +557,11 @@
   "last_hi": 4.5528934950274,
   "veer": 0.90625,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "share: wsls, listening full",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.1243519825311816,
   "net_lo": 1.0571458683835693,
@@ -575,11 +574,11 @@
   "last_hi": 8.13975808584599,
   "veer": 1.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "share: wsls, inhibit/gate only, inherit",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.045281106888707,
   "net_lo": 0.9871553718550446,
@@ -592,11 +591,11 @@
   "last_hi": 3.5928170208256054,
   "veer": 0.96875,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "share: wsls",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.755561125908443,
   "net_lo": 0.6941472647520056,
@@ -609,11 +608,11 @@
   "last_hi": 2.4054692950135097,
   "veer": 0.9375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "share: wsls, neurons only, cascade",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.13845424281088398,
   "net_lo": 0.09141456399377136,
@@ -626,11 +625,11 @@
   "last_hi": 1.2931307858908228,
   "veer": 0.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "share: wsls, neurons only, inherit, inhibit only, cascade",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.17689733528104473,
   "net_lo": 0.12986317946839562,
@@ -643,11 +642,11 @@
   "last_hi": 1.6775343790739727,
   "veer": 0.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "share: wsls, neurons only, inherit, cascade",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.14783067790663473,
   "net_lo": 0.09829091119475802,
@@ -660,11 +659,11 @@
   "last_hi": 1.7717936552800881,
   "veer": 0.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "share: wsls, listening full, inhibit/gate only (held out, seeds from 100)",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.1599754263610205,
   "net_lo": 1.0909307367506946,
@@ -677,11 +676,11 @@
   "last_hi": 7.6195243362831855,
   "veer": 1.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "inputs: no cascade (control)",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.14392216995756352,
   "net_lo": 0.09328306641280536,
@@ -694,11 +693,11 @@
   "last_hi": 1.1443393780710078,
   "veer": 0.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "share: wsls, listening full (held out, seeds from 100)",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.0616845901550649,
   "net_lo": 0.9866297821562326,
@@ -711,11 +710,11 @@
   "last_hi": 7.619413835711504,
   "veer": 1.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "share: wsls, inhibit/gate only, inherit (held out, seeds from 100)",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.0771569049924516,
   "net_lo": 1.0124382469961053,
@@ -728,11 +727,11 @@
   "last_hi": 3.716494503105096,
   "veer": 0.96875,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "inputs: cascade, listening full, inhibit/gate only",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.45083029882280445,
   "net_lo": 0.34799720673101653,
@@ -745,11 +744,11 @@
   "last_hi": 5.509236743091209,
   "veer": 0.578125,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "inputs: cascade, inherit, inhibit/gate only",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.5269269428152841,
   "net_lo": 0.4311301039066637,
@@ -762,11 +761,11 @@
   "last_hi": 3.1948721718533037,
   "veer": 0.578125,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "inputs: cascade, learned listening, inhibit/gate only",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.4145723697038718,
   "net_lo": 0.34110348812433516,
@@ -779,11 +778,11 @@
   "last_hi": 2.1821615405750894,
   "veer": 0.625,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "inputs: cascade, listening full, both signs",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.37098052441441015,
   "net_lo": 0.2629932167030977,
@@ -796,11 +795,11 @@
   "last_hi": 4.6823372384088024,
   "veer": 0.5,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "inputs: cascade, inherit, both signs",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.4436524550603701,
   "net_lo": 0.34519405837230877,
@@ -813,11 +812,11 @@
   "last_hi": 2.890899902982462,
   "veer": 0.546875,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "gated: share: wsls, listening full, inhibit/gate only",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.1721697336599881,
   "net_lo": 1.102613293615953,
@@ -830,11 +829,11 @@
   "last_hi": 8.311004784688995,
   "veer": 1.0,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "gated: inputs: cascade, listening full, inhibit/gate only",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.3820716365266872,
   "net_lo": 0.2700289921200876,
@@ -847,11 +846,11 @@
   "last_hi": 4.753148201484894,
   "veer": 0.546875,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "gated: inputs: cascade, retire",
-  "ticks": 100000,
   "lives": 64,
   "net": -0.0028109443907819824,
   "net_lo": -0.050168681956339375,
@@ -864,11 +863,11 @@
   "last_hi": 1.0560693286274934,
   "veer": 0.3125,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "gated: inputs: cascade, starve",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.4078638871181356,
   "net_lo": 0.29706680117011114,
@@ -881,11 +880,11 @@
   "last_hi": 4.023114224137931,
   "veer": 0.65625,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "gated: inputs: cascade, retire, starve",
-  "ticks": 100000,
   "lives": 64,
   "net": -0.007184163884340327,
   "net_lo": -0.07187668595572295,
@@ -898,11 +897,11 @@
   "last_hi": 1.0672782853465332,
   "veer": 0.4375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "gated: inputs: cascade, inherit, retire, starve",
-  "ticks": 100000,
   "lives": 64,
   "net": -0.02015458984990165,
   "net_lo": -0.08172038703977247,
@@ -915,11 +914,11 @@
   "last_hi": 1.0098960197482365,
   "veer": 0.25,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "gated: share, starve: wsls, listening full, inhibit/gate only",
-  "ticks": 100000,
   "lives": 64,
   "net": 1.175603764020516,
   "net_lo": 1.1209061286422473,
@@ -932,11 +931,11 @@
   "last_hi": 8.059722998087791,
   "veer": 0.984375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "root, 30k: inputs: cascade",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.37832314945249645,
   "net_lo": 0.2685989706239227,
@@ -949,11 +948,11 @@
   "last_hi": 5.299424605942249,
   "veer": 0.5,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "root, 30k: inputs: cascade, retire",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.08141116086255079,
   "net_lo": 0.02359337968329091,
@@ -966,11 +965,11 @@
   "last_hi": 1.0917575176039058,
   "veer": 0.34375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "root, 30k: inputs: cascade, retire, starve 20k",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.08078768127407424,
   "net_lo": 0.011092232622056048,
@@ -983,11 +982,11 @@
   "last_hi": 1.093698395165636,
   "veer": 0.40625,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "root: inputs: cascade",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.4003586588497106,
   "net_lo": 0.284556325963991,
@@ -1000,11 +999,11 @@
   "last_hi": 5.448374112576064,
   "veer": 0.59375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "root: inputs: cascade, retire",
-  "ticks": 100000,
   "lives": 64,
   "net": -0.004062127931972892,
   "net_lo": -0.0640697845793858,
@@ -1017,11 +1016,11 @@
   "last_hi": 1.0262614835492192,
   "veer": 0.265625,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "root: inputs: cascade, retire, starve 20k",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.015158526012213661,
   "net_lo": -0.03750184609834185,
@@ -1034,11 +1033,11 @@
   "last_hi": 1.0463335799370117,
   "veer": 0.359375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "root: inputs: cascade, inherit, retire, starve 20k",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.026564935236579892,
   "net_lo": -0.02313056216959375,
@@ -1051,11 +1050,11 @@
   "last_hi": 1.0754791058747242,
   "veer": 0.359375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  },
  {
   "name": "root: inputs: cascade, starve 20k",
-  "ticks": 100000,
   "lives": 64,
   "net": 0.658363579601823,
   "net_lo": 0.5342727376075217,
@@ -1068,6 +1067,7 @@
   "last_hi": 5.960281172444071,
   "veer": 0.859375,
   "food_recruits": 0,
-  "note": ""
+  "note": "",
+  "seconds": 1000.0
  }
 ]
