@@ -25,33 +25,42 @@ Parts are counted exactly. Listed by parts, then efficiency.
 
 **The three objectives** (the user's, 2026-10-22), each among the designs doing the job:
 
-1. the simplest brain doing the job: HR_si, 35 parts (doing it surely; efficiency 1.62, gain rate 2.73).
-2. the best driver for energy: meals gained per meal spent resting, moving and thinking: the most efficient, HR_si (35 parts), 1.62 [1.49, 1.73]; tied within noise with HR_35p_pol.
-3. the best driver for speed and accuracy, energy free: meals gained per 10 s: the fastest and most accurate, HR_si (35 parts), 2.73 [2.52, 2.91]; tied within noise with HR_35p_pol.
+1. the simplest brain doing the job: HR_30p, 30 parts (doing it marginally: an interval crosses a limit; efficiency 0.38, gain rate 0.69).
+2. the best driver for energy: meals gained per meal spent resting, moving and thinking: the most efficient, HR_si (35 parts), 1.62 [1.49, 1.73]; tied within noise with HR_32p, HR_32p_pol, HR_35p_pol.
+3. the best driver for speed and accuracy, energy free: meals gained per 10 s: the fastest and most accurate, HR_32p_pol (32 parts), 2.86 [2.59, 3.10]; tied within noise with HR_32p, HR_si, HR_35p_pol.
 
 ## Doing the job
 
 | design | parts | area | efficiency [95%] | gain rate [95%] | food | poison | firings | power (nW) | score [95%] | thrift | food:poison, last third [95%] | stranded [95%] | job | place |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| HR_si | 35 | 789 | 1.62 [1.49, 1.73] | 2.73 [2.52, 2.91] | 4.78 | 1.02 | 314 | 15.5 | +2.04 [+1.81, +2.22] | 14.4 | 6.24 [5.50, 7.00] | 0% [0%, 3%] | sure | Pareto, but tied with HR_35p_pol |
-| HR_35p_pol | 35 | 1027 | 1.43 [1.24, 1.60] | 2.51 [2.18, 2.80] | 4.78 | 1.13 | 345 | 26.3 | +1.74 [+1.40, +2.05] | 13.2 | 4.85 [4.05, 5.77] | 1% [0%, 4%] | sure | off the front, within noise |
-| HR_35p | 35 | 779 | 1.34 [1.18, 1.48] | 2.14 [1.88, 2.36] | 3.99 | 0.93 | 273 | 23.7 | +1.53 [+1.27, +1.76] | 14.0 | 6.15 [5.07, 6.74] | 2% [0%, 6%] | marginal | surely beaten by HR_si |
+| HR_30p | 30 | 974 | 0.38 [0.27, 0.50] | 0.69 [0.48, 0.91] | 2.21 | 0.86 | 385 | 22.6 | -0.22 [-0.45, +0.01] | 5.6 | 3.42 [2.77, 4.19] | 2% [1%, 7%] | marginal | Pareto, sure |
+| HR_32p | 32 | 748 | 1.59 [1.47, 1.70] | 2.66 [2.46, 2.85] | 4.73 | 1.03 | 312 | 16.1 | +1.98 [+1.79, +2.16] | 14.3 | 5.89 [5.28, 6.48] | 0% [0%, 3%] | sure | Pareto, but tied with HR_32p_pol |
+| HR_32p_pol | 32 | 1127 | 1.57 [1.42, 1.70] | 2.86 [2.59, 3.10] | 5.20 | 1.17 | 383 | 42.9 | +2.02 [+1.75, +2.27] | 13.3 | 5.79 [5.16, 6.34] | 1% [0%, 4%] | sure | Pareto, but tied with HR_32p |
+| HR_si | 35 | 789 | 1.62 [1.49, 1.73] | 2.73 [2.52, 2.91] | 4.78 | 1.02 | 314 | 15.5 | +2.04 [+1.81, +2.22] | 14.4 | 6.24 [5.50, 7.00] | 0% [0%, 3%] | sure | Pareto, but tied with HR_32p, HR_32p_pol, HR_35p_pol |
+| HR_35p_pol | 35 | 1027 | 1.43 [1.24, 1.60] | 2.51 [2.18, 2.80] | 4.78 | 1.13 | 345 | 26.3 | +1.74 [+1.40, +2.05] | 13.2 | 4.85 [4.05, 5.77] | 1% [0%, 4%] | sure | surely beaten by HR_32p, HR_32p_pol |
+| HR_35p | 35 | 779 | 1.34 [1.18, 1.48] | 2.14 [1.88, 2.36] | 3.99 | 0.93 | 273 | 23.7 | +1.53 [+1.27, +1.76] | 14.0 | 6.15 [5.07, 6.74] | 2% [0%, 6%] | marginal | surely beaten by HR_32p, HR_32p_pol, HR_si |
 
 ### Efficiency (meals gained per meal spent), design against design (paired)
 
-| efficiency: row against column | HR_si | HR_35p_pol | HR_35p |
-|---|---|---|---|
-| HR_si |  | tied | above |
-| HR_35p_pol | tied |  | tied |
-| HR_35p | below | tied |  |
+| efficiency: row against column | HR_30p | HR_32p | HR_32p_pol | HR_si | HR_35p_pol | HR_35p |
+|---|---|---|---|---|---|---|
+| HR_30p |  | below | below | below | below | below |
+| HR_32p | above |  | tied | tied | tied | above |
+| HR_32p_pol | above | tied |  | tied | tied | above |
+| HR_si | above | tied | tied |  | tied | above |
+| HR_35p_pol | above | tied | tied | tied |  | tied |
+| HR_35p | above | below | below | below | tied |  |
 
 ### Gain rate (meals gained per 10 s), design against design (paired)
 
-| gain rate: row against column | HR_si | HR_35p_pol | HR_35p |
-|---|---|---|---|
-| HR_si |  | tied | above |
-| HR_35p_pol | tied |  | tied |
-| HR_35p | below | tied |  |
+| gain rate: row against column | HR_30p | HR_32p | HR_32p_pol | HR_si | HR_35p_pol | HR_35p |
+|---|---|---|---|---|---|---|
+| HR_30p |  | below | below | below | below | below |
+| HR_32p | above |  | tied | tied | tied | above |
+| HR_32p_pol | above | tied |  | tied | tied | above |
+| HR_si | above | tied | tied |  | tied | above |
+| HR_35p_pol | above | tied | tied | tied |  | tied |
+| HR_35p | above | below | below | below | tied |  |
 
 ## Near misses (not doing the job)
 

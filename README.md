@@ -75,7 +75,7 @@ In the live view:
 
 ### What you're seeing
 
-- **Left, the brain.** For the sheet brain (49 × 49 cells), in greys:
+- **Left, the brain.** For the sheet brain (49 × 49 cells):
   - a faint **checkerboard**: the coordinates each cell has worked out for itself (x and y, each running from -1 to
     1 across the sheet), in squares of about 4 cells;
   - its organs, labelled with the names they gave themselves, **S1** and **S2** (the sensors, on one edge), between
@@ -83,9 +83,9 @@ In the live view:
     opposite edge), and then with what the body wired them to this life: **red** or **blue** (the sensor that sees
     that colour, with its chance of firing both thrusters, which it has learned) and **left** or **right** (the
     thruster it drives);
-  - **paths**: light grey from the sensors to M1, mid grey to M2; **pulses** running down them, white.
+  - **paths**: sky blue from the sensors to M1, orange to M2; **pulses** running down them, white.
 
-  For a circuit brain: each neuron's voltage, a white line at each spike.
+  For a circuit brain: each neuron's voltage (sky blue), a white line at each spike.
 - **Right, the world:** red blocks and blue blocks, lettered R and B, and the creature, a
   triangle pointing the way it faces, its point (the mouth) marked, and what its eyes see: a pale beam ahead, the
   corridor its mouth will sweep, fading with distance, each of its rays stopping at the first block it meets (so a
@@ -351,12 +351,13 @@ the notebook (`minimal/NOTEBOOK.md`) tells how they were found.
 
 What it has found so far:
 
-- **The simplest circuit that does the job, robustly, has 35 parts, and it is also the best driver.** Judged at one
-  noise level, circuits of about 22 parts seemed to do it: the bit a perfect integrator (a floating gate) written by a
-  three-factor rule (what was seen, times the taste), the creature spinning until food is in view. But their rhythm
-  came from noise: in silicon, about 280 times quieter, they never get moving. Only the hold-and-roam circuit, whose
-  scan is an oscillator and whose roam is a timer, does the job in silicon, biology and at twice biology's noise; re-polished
-  with all three (HR_si), none of its parts can go, and it is the best driver too (`minimal/NOTEBOOK.md`, M12).
+- **The simplest circuit that does the job, robustly, has 32 parts, and it is also among the best drivers.** Judged at
+  one noise level, circuits of about 22 parts seemed to do it: the bit a perfect integrator (a floating gate) written
+  by a three-factor rule (what was seen, times the taste), the creature spinning until food is in view. But their
+  rhythm came from noise: in silicon, about 280 times quieter, they never get moving. Only the hold-and-roam circuit,
+  whose scan is an oscillator and whose roam is a timer, does the job in silicon, biology and at twice biology's noise
+  (35 parts: HR_si, `media/HR_si.svg`); an open search from it took one of its feedbacks away and retuned the rest
+  (HR_32p, `media/HR_32p.svg`), as good with 3 parts fewer (`minimal/NOTEBOOK.md`, M12, M13).
 - **Match the brain's speed to the body's.** Spinning sweeps the eyes' narrow corridor past far food faster than a
   brief reaction can catch it. A slow node that holds the course for some ticks after a sighting, and a timer that
   sends the creature off to roam after a long spell of seeing nothing (the hold-and-roam circuit), more than doubled
@@ -371,8 +372,8 @@ What it has found so far:
 - **Object persistence**: a creature that has just lost sight of food sweeps back for it (the body can turn both
   ways), the user's idea.
 - **Reversal**: every circuit so far learns only from food, so none unlearns when the poison colour swaps.
-- **A smaller robust circuit**: circuits that make their own motion (a clock), from starts with the hold-and-roam
-  circuit's motor stage; and whether a chip's limits (`python -m minimal.physical`) should bind the search.
+- **A smaller robust circuit still**: the open search again, from HR_32p; and whether a chip's limits (`python -m
+  minimal.physical`) should bind the search.
 - **Sepulchre's discipline**: do circuits of mixed-feedback components (every node leaky, events from positive
   feedback) do the job as simply? The first three-arm experiment settled nothing (`MIXED_FEEDBACK.md`): it needs a
   start built of his components.
@@ -480,6 +481,7 @@ python -m minimal.evolve 60 --start RESULTS.json ...  # the open search over top
 python -m minimal.league            # its league table (minimal/LEAGUE.md)
 python -m minimal.check RESULTS.json  # a circuit in the real Life at two integration steps
 python -m minimal.physical RESULTS.json  # could it be built? its parts in real units against a chip's limits
+python -m minimal.draw RESULTS.json  # draw a circuit as a diagram (media/NAME.svg), in SI
 python -m experiments.e1_oracle     # the rung-1 experiments, E1 to E7 (experiments/NOTEBOOK.md)
 python -m experiments.h_run 64 1000 "share*"  # the healing experiments (H series): named rules, on the leaderboard
 python measure_recruitment.py 32    # recruitment's local signals, neuron by neuron, watched from outside

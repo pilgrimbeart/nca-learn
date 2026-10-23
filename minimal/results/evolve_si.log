@@ -1,0 +1,61 @@
+gen   0  best score +2.20 (35 parts)  front (doing the job), parts/efficiency/gain: 35p/1.72e/2.92g
+gen   1  best score +2.03 (35 parts)  front (doing the job), parts/efficiency/gain: 35p/1.6e/2.74g
+gen   2  best score +1.75 (35 parts)  front (doing the job), parts/efficiency/gain: 31p/1.37e/1.96g 35p/1.43e/2.51g 35p/1.45e/2.43g
+gen   3  best score +2.07 (43 parts)  front (doing the job), parts/efficiency/gain: 35p/1.57e/2.83g 43p/1.6e/2.87g
+gen   4  best score +2.35 (37 parts)  front (doing the job), parts/efficiency/gain: 33p/0.14e/0.26g 35p/1.75e/3.06g 37p/1.77e/3.07g
+gen   5  best score +2.38 (37 parts)  front (doing the job), parts/efficiency/gain: 32p/1.52e/2.64g 35p/1.76e/3.19g 37p/1.76e/3.2g
+gen   6  best score +2.42 (36 parts)  front (doing the job), parts/efficiency/gain: 32p/1.69e/2.79g 35p/1.77e/3.17g 35p/1.83e/3.12g 36p/1.88e/3.02g
+gen   7  best score +2.31 (36 parts)  front (doing the job), parts/efficiency/gain: 32p/1.79e/2.89g 35p/1.73e/3.06g 36p/1.79e/2.98g
+gen   8  best score +2.33 (35 parts)  front (doing the job), parts/efficiency/gain: 32p/1.49e/2.55g 34p/1.59e/2.69g 35p/1.78e/3.05g
+gen   9  best score +2.37 (38 parts)  front (doing the job), parts/efficiency/gain: 32p/1.6e/2.67g 34p/1.81e/2.97g 38p/1.78e/3.11g
+gen  10  best score +2.46 (43 parts)  front (doing the job), parts/efficiency/gain: 32p/1.36e/2.44g 34p/1.59e/2.79g 35p/1.57e/3.03g 35p/1.68e/2.77g 35p/1.58e/2.94g 36p/1.66e/3.08g 43p/1.78e/3.31g
+gen  11  best score +2.09 (33 parts)  front (doing the job), parts/efficiency/gain: 33p/1.63e/2.82g
+gen  12  best score +2.44 (40 parts)  front (doing the job), parts/efficiency/gain: 32p/1.58e/2.66g 35p/1.7e/2.92g 36p/1.72e/2.99g 37p/1.75e/3.07g 40p/1.85e/3.12g
+gen  13  best score +2.36 (35 parts)  front (doing the job), parts/efficiency/gain: 32p/1.15e/1.94g 33p/1.44e/2.51g 34p/1.79e/2.96g 35p/1.77e/3.12g
+gen  14  best score +2.24 (38 parts)  front (doing the job), parts/efficiency/gain: 32p/1.42e/2.37g 34p/1.55e/2.54g 35p/1.63e/2.96g 38p/1.75e/2.89g
+gen  15  best score +2.39 (32 parts)  front (doing the job), parts/efficiency/gain: 32p/1.27e/2.2g 33p/1.51e/2.6g 34p/1.63e/2.82g 34p/1.66e/2.77g 35p/1.59e/2.99g 35p/1.65e/2.93g 35p/1.67e/2.83g 38p/1.78e/3.04g 41p/1.72e/3.09g
+gen  16  best score +2.38 (35 parts)  front (doing the job), parts/efficiency/gain: 32p/1.32e/2.19g 33p/1.33e/2.31g 34p/1.49e/2.48g 35p/1.81e/3.09g
+gen  17  best score +2.68 (56 parts)  front (doing the job), parts/efficiency/gain: 32p/1.66e/2.78g 35p/1.62e/2.82g 36p/1.83e/3.21g 39p/1.89e/3.31g 56p/1.95e/3.44g
+gen  18  best score +2.81 (35 parts)  front (doing the job), parts/efficiency/gain: 33p/1.49e/2.56g 34p/1.67e/2.65g 35p/2.08e/3.48g
+gen  19  best score +2.85 (44 parts)  front (doing the job), parts/efficiency/gain: 33p/1.37e/2.24g 34p/1.6e/2.58g 35p/1.88e/3.29g 37p/1.9e/3.32g 44p/2.06e/3.59g
+gen  20  best score +2.72 (43 parts)  front (doing the job), parts/efficiency/gain: 33p/1.26e/2.16g 34p/1.59e/2.61g 35p/1.78e/2.96g 36p/1.81e/3.1g
+gen  21  best score +2.39 (35 parts)  front (doing the job), parts/efficiency/gain: 33p/1.42e/2.49g 34p/1.53e/2.78g 35p/1.82e/3.09g
+gen  22  best score +2.40 (39 parts)  front (doing the job), parts/efficiency/gain: 33p/1.09e/1.82g 34p/1.33e/2.39g 35p/1.62e/2.86g 35p/1.67e/2.85g 36p/1.66e/2.93g 39p/1.75e/3.27g
+gen  23  best score +2.54 (51 parts)  front (doing the job), parts/efficiency/gain: 33p/0.74e/1.29g 34p/1.36e/2.46g 34p/1.38e/2.32g 35p/1.61e/2.9g 36p/1.73e/3.09g 51p/1.9e/3.27g
+gen  24  best score +2.32 (38 parts)  front (doing the job), parts/efficiency/gain: 33p/1.22e/2.19g 34p/1.46e/2.49g 34p/1.43e/2.61g 34p/1.48e/2.39g 35p/1.67e/2.86g 36p/1.68e/2.89g 38p/1.72e/3.16g 41p/1.74e/3.13g
+gen  25  best score +2.48 (37 parts)  front (doing the job), parts/efficiency/gain: 33p/0.99e/1.72g 34p/1.8e/3.14g 36p/1.81e/3.17g 37p/1.84e/3.23g 37p/1.88e/3.16g
+gen  26  best score +2.56 (54 parts)  front (doing the job), parts/efficiency/gain: 33p/1.14e/2.01g 34p/1.85e/3.34g 54p/1.86e/3.38g
+gen  27  best score +2.41 (46 parts)  front (doing the job), parts/efficiency/gain: 33p/1.33e/2.34g 34p/1.73e/3.1g 46p/1.79e/3.2g
+gen  28  best score +2.40 (34 parts)  front (doing the job), parts/efficiency/gain: 33p/1.31e/2.22g 34p/1.81e/3.12g 51p/1.83e/2.88g
+gen  29  best score +2.27 (35 parts)  front (doing the job), parts/efficiency/gain: 33p/1.29e/2.26g 34p/1.63e/2.69g 34p/1.55e/2.76g 35p/1.71e/3.08g 37p/1.59e/3.09g
+gen  30  best score +2.43 (34 parts)  front (doing the job), parts/efficiency/gain: 30p/0.46e/0.87g 33p/1.15e/2.04g 34p/1.79e/3.23g 40p/1.8e/3.05g
+gen  31  best score +2.53 (34 parts)  front (doing the job), parts/efficiency/gain: 30p/0.49e/0.89g 34p/1.86e/3.31g
+gen  32  best score +2.46 (38 parts)  front (doing the job), parts/efficiency/gain: 34p/1.77e/3.16g 50p/1.81e/2.97g
+gen  33  best score +2.54 (38 parts)  front (doing the job), parts/efficiency/gain: 34p/1.66e/2.9g 37p/1.61e/3.05g 38p/1.89e/3.27g
+gen  34  best score +2.52 (51 parts)  front (doing the job), parts/efficiency/gain: 34p/1.64e/2.89g 35p/1.65e/2.99g 37p/1.56e/3.02g 38p/1.7e/3.06g 41p/1.75e/3.12g 51p/1.92e/3.14g
+gen  35  best score +2.62 (46 parts)  front (doing the job), parts/efficiency/gain: 34p/1.6e/2.77g 37p/1.83e/3.02g 39p/1.78e/3.12g 41p/1.84e/3.19g 46p/1.93e/3.36g
+gen  36  best score +2.47 (54 parts)  front (doing the job), parts/efficiency/gain: 34p/1.36e/2.39g 34p/1.37e/2.36g 35p/1.43e/2.7g 36p/1.56e/2.83g 37p/1.79e/2.95g 47p/1.77e/3.04g 50p/1.81e/3.08g 54p/1.88e/3.17g
+gen  37  best score +2.60 (47 parts)  front (doing the job), parts/efficiency/gain: 34p/1.32e/2.33g 35p/1.33e/2.11g 36p/1.65e/2.91g 37p/1.89e/3.02g 38p/1.78e/3.09g 47p/1.92e/3.31g
+gen  38  best score +2.56 (38 parts)  front (doing the job), parts/efficiency/gain: 34p/0.99e/1.79g 35p/1.08e/2.08g 36p/1.51e/2.83g 37p/1.73e/2.99g 38p/1.93e/3.31g 50p/1.86e/3.32g
+gen  39  best score +2.38 (51 parts)  front (doing the job), parts/efficiency/gain: 34p/1.11e/1.98g 35p/1.23e/2.34g 36p/1.54e/2.76g 37p/1.64e/2.79g 38p/1.58e/2.83g 39p/1.65e/2.87g 40p/1.72e/3.08g 46p/1.75e/3.03g 51p/1.81e/3.1g
+gen  40  best score +2.46 (38 parts)  front (doing the job), parts/efficiency/gain: 34p/1.05e/2.01g 35p/1.1e/2.27g 36p/1.6e/2.99g 37p/1.67e/3.06g 38p/1.82e/3.24g
+gen  41  best score +2.49 (40 parts)  front (doing the job), parts/efficiency/gain: 34p/1.43e/2.58g 36p/1.64e/2.98g 39p/1.67e/2.81g 40p/1.83e/3.29g
+gen  42  best score +2.56 (47 parts)  front (doing the job), parts/efficiency/gain: 34p/1.2e/2.21g 35p/1.27e/2.54g 36p/1.62e/2.93g 37p/1.69e/2.81g 38p/1.72e/3.15g 39p/1.81e/3.24g 44p/1.78e/3.27g 46p/1.88e/3.25g 47p/1.87e/3.35g
+gen  43  best score +2.54 (39 parts)  front (doing the job), parts/efficiency/gain: 34p/1.72e/2.97g 40p/1.82e/3.06g 55p/1.89e/3.21g
+gen  44  best score +2.40 (36 parts)  front (doing the job), parts/efficiency/gain: 34p/1.15e/1.99g 35p/1.53e/2.62g 35p/1.43e/2.64g 36p/1.81e/3.14g
+gen  45  best score +2.56 (42 parts)  front (doing the job), parts/efficiency/gain: 34p/1.64e/2.97g 37p/1.67e/2.91g 38p/1.69e/3.05g 39p/1.57e/3.31g 40p/1.78e/3.17g 42p/1.88e/3.26g 47p/1.85e/3.27g
+gen  46  best score +2.46 (38 parts)  front (doing the job), parts/efficiency/gain: 34p/1.47e/2.71g 35p/1.62e/2.94g 36p/1.76e/3.24g 38p/1.82e/3.24g 40p/1.78e/3.26g
+gen  47  best score +2.49 (37 parts)  front (doing the job), parts/efficiency/gain: 34p/1.25e/2.29g 35p/1.59e/2.91g 36p/1.7e/3.11g 37p/1.76e/3.44g 55p/1.83e/3.26g
+gen  48  best score +2.41 (48 parts)  front (doing the job), parts/efficiency/gain: 34p/1.42e/2.53g 35p/1.46e/2.61g 36p/1.51e/2.58g 37p/1.45e/2.78g 38p/1.72e/2.98g 48p/1.8e/3.16g
+gen  49  best score +2.21 (40 parts)  front (doing the job), parts/efficiency/gain: 34p/0.96e/1.81g 35p/1.45e/2.61g 36p/1.52e/2.79g 38p/1.59e/2.94g 40p/1.66e/3.06g
+gen  50  best score +2.52 (38 parts)  front (doing the job), parts/efficiency/gain: 34p/1.45e/2.6g 35p/1.73e/2.94g 38p/1.87e/3.27g
+gen  51  best score +2.54 (40 parts)  front (doing the job), parts/efficiency/gain: 34p/1.39e/2.51g 36p/1.47e/2.65g 36p/1.46e/2.66g 38p/1.69e/2.86g 39p/1.7e/3.01g 40p/1.87e/3.31g
+gen  52  best score +2.68 (55 parts)  front (doing the job), parts/efficiency/gain: 34p/1.28e/2.37g 35p/1.55e/2.74g 36p/1.5e/2.83g 38p/1.7e/3.14g 39p/1.76e/3.04g 42p/1.71e/3.09g 55p/1.92e/3.5g
+gen  53  best score +2.29 (48 parts)  front (doing the job), parts/efficiency/gain: 34p/1.46e/2.59g 38p/1.73e/2.98g 48p/1.74e/3.05g
+gen  54  best score +2.44 (36 parts)  front (doing the job), parts/efficiency/gain: 33p/1.26e/2.28g 35p/1.54e/2.63g 36p/1.79e/3.26g
+gen  55  best score +2.46 (40 parts)  front (doing the job), parts/efficiency/gain: 34p/1.22e/2.17g 35p/1.49e/2.63g 36p/1.72e/3.09g 38p/1.82e/3.14g 40p/1.82e/3.24g
+gen  56  best score +2.33 (47 parts)  front (doing the job), parts/efficiency/gain: 34p/1.32e/1.99g 34p/1.13e/2.04g 35p/1.42e/2.56g 36p/1.69e/3.15g 45p/1.7e/2.99g 47p/1.75e/3.09g
+gen  57  best score +2.60 (56 parts)  front (doing the job), parts/efficiency/gain: 34p/1.12e/2.06g 35p/1.66e/2.88g 37p/1.59e/2.94g 40p/1.66e/2.94g 46p/1.67e/3.02g 56p/1.9e/3.38g
+gen  58  best score +2.35 (38 parts)  front (doing the job), parts/efficiency/gain: 34p/1.44e/2.55g 34p/1.64e/2.44g 35p/1.63e/2.91g 37p/1.66e/2.98g 38p/1.76e/3.11g
+gen  59  best score +2.83 (56 parts)  front (doing the job), parts/efficiency/gain: 34p/1.43e/2.59g 35p/1.59e/2.86g 36p/1.69e/3.06g 38p/1.89e/3.4g 40p/1.9e/3.45g 56p/1.99e/3.67g
+(23296 s)

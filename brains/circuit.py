@@ -78,8 +78,8 @@ class CircuitBrain:
         return "waiting"
 
     def draw(self, screen, side: int, font, sensors: list, motors: list, lit) -> None:
-        """Its panel, in greys: each neuron's voltage over the last TRACE ticks, a white mark at each spike; labelled
-        with what the body wired it to. lit: a sensor to highlight, or None."""
+        """Its panel: each neuron's voltage over the last TRACE ticks in sky blue (Okabe-Ito), a white mark at each
+        spike; labelled with what the body wired it to. lit: a sensor to highlight, or None."""
         import pygame
         rows = [(f"S{k} {sensors[k]}", self.sensors[k], k == lit) for k in (0, 1)] + \
                [(f"M{k} {motors[k]}", self.motors[k], False) for k in (0, 1)] + \
@@ -91,7 +91,7 @@ class CircuitBrain:
             pts = [(x * side // TRACE, top + h // 2 - int(v[n] * h / 10)) for x, (v, _) in enumerate(self.history)
                    if n < len(v)]                       # (a neuron grown in the life has no history before it)
             if len(pts) > 1:
-                pygame.draw.lines(screen, (160, 160, 160), False, pts, 1)
+                pygame.draw.lines(screen, (86, 180, 233), False, pts, 1)
             for x, (_, sp) in enumerate(self.history):
                 if n < len(sp) and sp[n]:
                     pygame.draw.line(screen, (255, 255, 255), (x * side // TRACE, top + 8), (x * side // TRACE, top + h - 8), 2)

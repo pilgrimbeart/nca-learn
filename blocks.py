@@ -1,4 +1,6 @@
-"""The block view: a circuit brain at level 1, its motifs as blocks, found from the netlist and drawn live, in greys.
+"""The block view: a circuit brain at level 1, its motifs as blocks, found from the netlist and drawn live. Nodes in
+greys (brightness is voltage); links in colour-blind-safe colours (Okabe-Ito), each paired with a line style, so
+colour is never the only cue: excitation sky blue and solid, inhibition vermilion and dashed, gates orange and dotted.
 Watching only: it reads the circuit and never writes it.
 
   Neurons (a node with its own feedback elements) are circles: their brightness is their voltage, and they flash
@@ -26,8 +28,15 @@ NEW = 300           # ticks a grown unit stays outlined
 SMOOTH = 0.8        # how much of an arrow's drawn current carries over from one frame to the next
 GAP = 30            # pixels between neighbouring meters
 LEGEND = ("E eligibility  W, P learned strength  H hold/hush  h help  x sprout  F frustration  D grown  |  "
-          "arrows: solid excites, dashed inhibits, thick = current")
+          "arrows: blue solid excites, vermilion dashed inhibits, thick = current")
 WHITE, LIGHT, MID, DARK, INK = (255, 255, 255), (190, 190, 190), (120, 120, 120), (55, 55, 55), (30, 30, 30)
+EXCITE, INHIBIT, GATE = (86, 180, 233), (213, 94, 0), (230, 159, 0)     # Okabe-Ito sky blue, vermilion, orange
+
+
+def link(excites: bool, active: bool):
+    """A link's colour: sky blue if it excites, vermilion if it inhibits (drawn solid and dashed), dimmed while idle."""
+    c = EXCITE if excites else INHIBIT
+    return c if active else tuple(int(0.5 * x) for x in c)
 
 
 def shade(x):
@@ -136,7 +145,7 @@ class BlockView:
             d /= max(np.linalg.norm(d), 1.0)
             a2, z2 = a + d * R, z - d * (R + 4)
             width = 2 + int(7 * min(self.current[e] * 3, 1.0))
-            colour = LIGHT if self.current[e] > 0.05 else MID
+            colour = link(gain[e] >= 0, self.current[e] > 0.05)
             if gain[e] >= 0:
                 pygame.draw.line(screen, colour, a2, z2, width)
                 tip = [z2, z2 - d * 10 + np.array([-d[1], d[0]]) * 6, z2 - d * 10 - np.array([-d[1], d[0]]) * 6]
@@ -199,7 +208,7 @@ class BlockView:
                     for k in range(0, int(L - ra - rz), 8):
                         pygame.draw.line(screen, DARK, a2 + d * k, a2 + d * min(k + 3, L - ra - rz), 1)
                     continue
-                colour = LIGHT if self.current[e] > 0.05 else MID
+                colour = link(gain[e] >= 0, self.current[e] > 0.05)
                 if gain[e] >= 0:
                     pygame.draw.line(screen, colour, a2, z2, w)
                 else:
@@ -321,13 +330,13 @@ class NodeView(BlockView):
                 out *= min(max(c.V[g], 0.0), 1.0)
             self.current[e] = SMOOTH * self.current.get(e, 0.0) + (1 - SMOOTH) * abs(gain[e] * out) / I_TYP   # nA
             width = 1 + int(6 * min(self.current[e] / 3, 1.0))
-            colour = LIGHT if self.current[e] > 0.05 else MID
+            colour = link(gain[e] >= 0, self.current[e] > 0.05)
             if t == f:                                  # its own node: a loop above it, marked + or -
                 k = loops.get(t, 0)
                 loops[t] = k + 1
                 centre = X(pos[t]) + np.array((-R + 2 * R * k, -R * 1.6))
                 pygame.draw.circle(screen, colour, centre.astype(int), int(R * 0.7), width)
-                mark = small.render("+" if gain[e] >= 0 else "-", True, LIGHT)
+                mark = small.render("+" if gain[e] >= 0 else "-", True, colour)
                 screen.blit(mark, (centre[0] - 3, centre[1] - R * 0.7 - 14))
                 continue
             a, z = X(pos[f]), X(pos[t])
@@ -351,8 +360,8 @@ class NodeView(BlockView):
                 Lg = max(np.linalg.norm(dg), 1.0)
                 dg /= Lg
                 for k in range(int(R), int(Lg), 7):
-                    pygame.draw.circle(screen, MID, (gm + dg * k).astype(int), 1)
-                pygame.draw.circle(screen, MID, mid.astype(int), 3)
+                    pygame.draw.circle(screen, GATE, (gm + dg * k).astype(int), 1)
+                pygame.draw.circle(screen, GATE, mid.astype(int), 3)
         for n in range(len(c.V)):
             p = X(pos[n]).astype(int)
             flash = life.t - self.last_spike.get(n, -10 ** 9) < SPIKE_FLASH
@@ -368,6 +377,7 @@ class NodeView(BlockView):
             screen.blit(label, (p[0] + R + 4, p[1] + R - 6))
         self.contacts(screen, rect, life, small, {k: tuple(v) for k, v in pos.items()}, R, inj, b.taste_node)
         screen.blit(font.render("node view (level 0): every node and element", True, MID), (rect.x + 8, rect.y + 4))
-        screen.blit(small.render("circle node, square memory, brightness = voltage, white = spike  |  arrows: solid "
-                                 "excites, dashed inhibits, thick = current, dotted = gate, loop = own feedback",
+        screen.blit(small.render("circle node, square memory, brightness = voltage, white = spike  |  arrows: blue solid"
+                                 " excites, vermilion dashed inhibits, thick = current, orange dotted = gate, loop ="
+                                 " own feedback",
                                  True, MID), (rect.x + 8, rect.bottom - 16))

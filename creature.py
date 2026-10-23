@@ -153,7 +153,7 @@ def measure(lives: int, seconds: float = 100.0, brains=tuple(BRAINS), all_food: 
 
 def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until: float = 100.0,
           all_food: bool = False) -> None:
-    """A life, live. Left, the brain's own panel, in greys. Right, the world: red and blue blocks, lettered R and B,
+    """A life, live. Left, the brain's own panel. Right, the world: red and blue blocks, lettered R and B,
     the creature a triangle with its point marked, and what its eyes see. It runs FAST ticks a frame, but SLOW while the
     brain wires itself and until a little after the creature starts moving; up and down take over the speed (down, past
     a tick a frame, waits 2, 4 ... 32 frames between ticks, so single spikes can be followed). The window can be
@@ -428,7 +428,8 @@ def rules() -> list:
         (1, "Searches choose on seeds of their own, fresh each generation: the polish from 10,000, pruning"
             " 15,000-15,031, the open search from 20,000."),
         (1, "Held out: seeds 100-163 judge what a search produced and are never used to choose."),
-        (1, "Headline claims are confirmed once on seeds 500-563, never used before, then retired."),
+        (1, "Headline claims are confirmed once on a block of 64 seeds never used to choose anything (500-563,"
+            " 600-663, ...), each block then retired for choosing."),
         (1, f"Judged with the noise of {', '.join(spec.JUDGED)}, the worst counting, the job required with each"
             " (polish, pruning, open search and held-out judging alike): a design must work as built in silicon too."),
         (0, "Judging: the job and the score"),

@@ -55,24 +55,26 @@ class SheetBrain:
         self.sheet.damage((rows - fy * SIZE) ** 2 + (cols - fx * SIZE) ** 2 < DAMAGE ** 2)
 
     def draw(self, screen, side: int, font, sensors: list, motors: list, lit) -> None:
-        """Its panel, side x side at the top left, in greys: the cells' coordinates as a faint checkerboard; paths to M1
-        light grey and to M2 mid grey, pulses white; the organs labelled beside their cells with their own names and
-        what the body wired them to (sensors and motors: labels by number). lit: a sensor to highlight, or None."""
+        """Its panel, side x side at the top left: the cells' coordinates as a faint grey checkerboard; paths to M1 sky
+        blue and to M2 orange (Okabe-Ito; each also ends at its labelled actuator, so colour is never the only cue),
+        pulses white; the organs labelled beside their cells with their own names and what the body wired them to
+        (sensors and motors: labels by number). lit: a sensor to highlight, or None."""
         import pygame
         scale = side // SIZE
         view = self.sheet.view
         cols = np.floor((view("x") + 1) / 2 * (SIZE - 1) / BAND + 0.5)     # the cells' coordinates, in bands of cells
         rows = np.floor((view("y") + 1) / 2 * (SIZE - 1) / BAND + 0.5)
-        shade = 0.06 + 0.08 * ((cols + rows) % 2)
-        for c, level in (("2", 0.45), ("1", 0.75)):
+        grey = 0.06 + 0.08 * ((cols + rows) % 2)
+        rgb = np.stack([grey] * 3, axis=-1)
+        for c, colour in (("2", (0.90, 0.62, 0.0)), ("1", (0.34, 0.71, 0.91))):     # orange to M2, sky blue to M1
             on = view(f"on_{c}") > 0.5
-            shade = np.where(on, np.maximum(shade, level), shade)
-            shade = np.where(on & (np.round(view(f"timer_{c}")) > wiring.REST), 1.0, shade)
+            rgb = np.where(on[..., None], np.array(colour), rgb)
+            rgb = np.where((on & (np.round(view(f"timer_{c}")) > wiring.REST))[..., None], 1.0, rgb)   # a pulse
         names = np.round(view("name"))
         taste = names == NAME["T"]
-        shade = np.where(taste, np.where(np.round(view("tshow")) != 0, 1.0, 0.3), shade)   # tasting: white
-        grey = (255 * shade).astype(np.uint8).T.repeat(scale, 0).repeat(scale, 1)
-        screen.blit(pygame.surfarray.make_surface(np.stack([grey] * 3, axis=-1)), (0, 0))
+        rgb = np.where(taste[..., None], np.where((np.round(view("tshow")) != 0)[..., None], 1.0, 0.3), rgb)
+        img = (255 * rgb).astype(np.uint8).transpose(1, 0, 2).repeat(scale, 0).repeat(scale, 1)
+        screen.blit(pygame.surfarray.make_surface(img), (0, 0))
         if taste.any():                                                 # the taste organ: one label, beside it
             r, c = np.argwhere(taste).mean(axis=0)
             label = font.render("T taste", True, (255, 255, 255), (60, 60, 60))

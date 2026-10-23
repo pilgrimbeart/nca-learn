@@ -1,8 +1,10 @@
 """Draws what runs inside one cell, as a block diagram: python diagram.py writes media/cell.svg (shown in the README).
 
 The rule's numbers, layers and stages, with what each reads from its neighbours' means and the body on the left, and
-what it shows its neighbours and gives the body on the right. In greys: kinds are told apart by fill, line weight and
-dash. The text is written by hand from rules/*.py, so redraw it when a rule changes.
+what it shows its neighbours and gives the body on the right. Colour-blind-safe colours (Okabe-Ito), each kind also
+told apart by line weight or dash, never by colour alone: a shared number blue and thin, the body vermilion and thick,
+a value kept inside the cell bluish green and dashed. The text is written by hand from rules/*.py, so redraw it when a
+rule changes.
 """
 
 from html import escape
@@ -19,14 +21,15 @@ LINK = 40                        # where the arrows between stages run, from SX0
 STYLE = """
 .bg { fill: #ffffff; }
 .cell { fill: #ffffff; stroke: #1b1c1d; stroke-width: 2.2; }
-.con { fill: #ececeb; stroke: #9a9d9f; stroke-width: 1; }
+.con { fill: #e8f3fa; stroke: #56b4e9; stroke-width: 1; }
 .sub, .nbox { fill: #ffffff; stroke: #1b1c1d; stroke-width: 1; }
 .bodybox { fill: #2a2c2e; stroke: #2a2c2e; }
-.a-sig { stroke: #1b1c1d; stroke-width: 1.2; }
-.a-body { stroke: #1b1c1d; stroke-width: 3; }
-.a-int { stroke: #5e6163; stroke-width: 1.2; stroke-dasharray: 4 3; }
-.ahf { fill: #1b1c1d; }
-.ahm { fill: #5e6163; }
+.a-sig { stroke: #0072b2; stroke-width: 1.4; }
+.a-body { stroke: #d55e00; stroke-width: 3; }
+.a-int { stroke: #009e73; stroke-width: 1.4; stroke-dasharray: 4 3; }
+.ahf { fill: #0072b2; }
+.ahb { fill: #d55e00; }
+.ahm { fill: #009e73; }
 text { fill: #1b1c1d; font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; }
 .colh { font-size: 13px; font-weight: 600; letter-spacing: 0.1em; }
 .colhs, .hd, .io, .lab, .nts { fill: #5e6163; }
@@ -278,7 +281,7 @@ H = ly + 16
 markers = "".join(
     f'<marker id="{name}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="{size}" markerHeight="{size}" '
     f'markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="{cls}"/></marker>'
-    for name, size, cls in (("ah", 9, "ahf"), ("ahb", 13, "ahf"), ("ahm", 8, "ahm")))
+    for name, size, cls in (("ah", 9, "ahf"), ("ahb", 13, "ahb"), ("ahm", 8, "ahm")))
 OUT.write_text(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" '
                f'aria-labelledby="t"><title id="t">What runs inside one cell</title><style>{STYLE}</style>'
                f'<defs>{markers}</defs><rect width="{W}" height="{H}" class="bg"/>' + "".join(svg) + "</svg>\n")

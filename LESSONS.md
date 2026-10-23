@@ -79,6 +79,10 @@ they were written with: the "grown brain" is the sheet brain, the "mixed-signal 
   it ate 2.1 food per 10 s at its worst; at half noise it ate 0.87 and stranded in a quarter of its lives). Its key
   also left out the body and the brain's interface, so a change there could have served stale lives. A test now
   checks that cached lives keep their substrates, and the key covers every file that shapes a life.
+- **Pruning one part at a time finds only what is spare as it stands.** Pruning HR_si tried taking away MB's slow
+  feedback and kept it: alone, its loss cost too much. An open search from HR_si took it away and retuned the rest,
+  and the 32-part circuit was as good as the 35 (minimal/NOTEBOOK.md, M13). A part can be needed only because the
+  others were tuned around it; search topology and values together, from a start that already works.
 - **Trace the mechanism, not just the score.** A hunger meant to make a creature travel did nothing: its drain leaked
   at rest exactly as fast as it charged, so a polish tuned a circuit that was never hungry, and only a trace of the
   node's voltage showed it (The minimal circuit search, below).

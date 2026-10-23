@@ -1,5 +1,5 @@
 """Draws the designed circuit (brains/designed.py) as a circuit: python schematic.py writes
-media/designed_circuit.svg, and media/designed_circuit.png (greys) for the live view's schematic button. Only for redrawing it,
+media/designed_circuit.svg, and media/designed_circuit.png for the live view's schematic button. Only for redrawing it,
 so not in requirements.txt: pip install schemdraw cairosvg pillow.
 
 Every input and output is a terminal on the brain's boundary: transconductance amplifiers (op-amp symbols), RC
@@ -28,6 +28,9 @@ def text(p, s, halign="left", size=FS, valign="center"):
 
 SEGMENTS = []                                               # every wire drawn, to check none run on top of another
 SHADE = "#e6e6e6"
+TINTS = {"NEURON": "#dceefa", "SYNAPSE": "#fbecd0", "LEARNING": "#d6f0e7", "HUSH": "#f8dccb", "TASTE": "#f1dce8"}
+                    # each kind of part a pale Okabe-Ito tint (sky blue, orange, bluish green, vermilion, reddish
+                    # purple), and titled too, so the colour is never the only cue (the user is colour-blind)
 
 
 class Part:
@@ -60,7 +63,8 @@ def shade_parts():
         x0 = max(min(b.xmin for b in boxes), p.xlim[0]) - 0.5
         x1 = min(max(b.xmax for b in boxes), p.xlim[1]) + 0.5
         y0, y1 = min(b.ymin for b in boxes) - 0.4, min(max(b.ymax for b in boxes), p.top) + 1.3
-        d.add(elm.Rect((x0, y0), (x1, y1), fill=SHADE).color(SHADE).at((0, 0)).theta(0).zorder(0))
+        tint = TINTS.get(p.title.split()[0].rstrip(":"), SHADE)
+        d.add(elm.Rect((x0, y0), (x1, y1), fill=tint).color(tint).at((0, 0)).theta(0).zorder(0))
         text((x0 + 0.3, y1 - 0.55), p.title, size=FS + 2)
 
 
@@ -487,5 +491,5 @@ import cairosvg                                                      # noqa: E40
 from PIL import Image                                                # noqa: E402
 cairosvg.svg2png(url=str(OUT / "designed_circuit.svg"), write_to=str(OUT / "designed_circuit.png"), output_width=4800,
                  background_color="white")
-Image.open(OUT / "designed_circuit.png").convert("L").save(OUT / "designed_circuit.png", optimize=True)
+Image.open(OUT / "designed_circuit.png").convert("RGB").save(OUT / "designed_circuit.png", optimize=True)
 print("wrote", OUT / "designed_circuit.svg", "and", OUT / "designed_circuit.png")

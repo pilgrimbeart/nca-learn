@@ -1,0 +1,8 @@
+HR_32p step 125 us: score +2.32 (the worst substrate), job True, food 4.80, poison 0.99, last third 5.53, stranded 0%, power 16.5 nW
+  silicon: score +2.78, last third 9.30, stranded 0%, job True
+  biology: score +2.32, last third 5.83, stranded 0%, job True
+  biology x2: score +2.46, last third 5.53, stranded 0%, job True
+HR_32p step 62.5 us: score +2.17 (the worst substrate), job True, food 5.00, poison 1.06, last third 5.35, stranded 0%, power 16.4 nW
+  silicon: score +3.09, last third 8.28, stranded 0%, job True
+  biology: score +2.74, last third 7.07, stranded 0%, job True
+  biology x2: score +2.17, last third 5.35, stranded 0%, job True
