@@ -31,14 +31,14 @@ def values(spec: dict) -> dict:
 
 
 def flags(spec: dict) -> list:
-    """What a chip couldn't easily do: each part past a limit."""
+    """What a chip couldn't easily do: each part past a limit (with the rules' rounding tolerance, minimal/spec.py)."""
     v, out = values(spec), []
-    out += [f"capacitor {k} {si(c, 'F')} above {si(C_MAX, 'F')}" for k, c in v["C"] if c > C_MAX]
+    out += [f"capacitor {k} {si(c, 'F')} above {si(C_MAX, 'F')}" for k, c in v["C"] if c > C_MAX * (1 + 1e-9)]
     out += [f"resistor {k} {si(r, 'Ω')} above {si(R_MAX, 'Ω')} (its bias current below {si(I_MIN, 'A')})"
-            for k, r in v["R"] if r > R_MAX]
+            for k, r in v["R"] if r > R_MAX * (1 + 1e-9)]
     out += [f"time constant {k} {si(t, 's')} above {si(TAU_MAX, 's')} (needs a floating gate)" for k, t in v["tau"]
-            if t > TAU_MAX]
-    out += [f"current {k} {si(i, 'A')} below {si(I_MIN, 'A')}" for k, i in v["I"] if i < I_MIN]
+            if t > TAU_MAX * (1 + 1e-9)]
+    out += [f"current {k} {si(i, 'A')} below {si(I_MIN, 'A')}" for k, i in v["I"] if i < I_MIN * (1 - 1e-9)]
     return out
 
 

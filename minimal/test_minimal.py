@@ -77,6 +77,12 @@ if __name__ == "__main__":
     report("a sensor whose pulse would move it 6 kV/s is refused", refused(s))
     s = base(); s.pop("units")
     report("a circuit not in SI units (as before 2026-10-22) is refused", refused(s))
+    s = base(); s["nodes"][2][2] = 100 * Rt; s["nodes"][2][1] = -1.5 / s["nodes"][2][2]
+    report("a leak a chip can't set (100 GOhm, above units.R_MAX) is refused", refused(s))
+    s = base(); s["nodes"][2][3] = 60 * Ct
+    report("a capacitor a chip can't hold (150 pF, above units.C_MAX) is refused", refused(s))
+    s = base(); s["elements"][0][3] = 0.5e-12
+    report("a current a chip can't bias (0.5 pA, below units.I_MIN) is refused", refused(s))
     s = base(); s["elements"].append([9, 0, -1, 1 * nA, 0.0, 1.0, 0.0, True])
     report("an element naming no node is refused", refused(s))
     s = base(); s["taste"] = 0

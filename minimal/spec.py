@@ -31,8 +31,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from brains.circuit import CircuitBrain, TRACE  # noqa: E402
 from mixed_feedback import SUBSTRATES, Circuit  # noqa: E402
-from units import (C_TYP, CAP_DENSITY, MICRO, NANO, RAIL, SLEW, TAU_LEAK, TAU_LOOP, TICK, UNIT_AREA,  # noqa: E402
-                   si)
+from units import (C_MAX, C_TYP, CAP_DENSITY, I_MIN, MICRO, NANO, R_MAX, RAIL, SLEW, TAU_LEAK, TAU_LOOP,  # noqa: E402
+                   TAU_MAX, TICK, UNIT_AREA, si)
 
 # RAIL: the supply's rails, +-RAIL (V): no node can go beyond them (the user's question, 2026-10-20: the body's pulses
 # are a current source, and nothing stopped a pulse lifting a node 10 V); a clamp inside them is a part (two diodes),
@@ -163,7 +163,9 @@ def slew(spec: dict) -> float:
 
 def violations(spec: dict) -> list:
     """What breaks the rules (AGENTS.md, The minimal circuit search): wiring that names no node, the interface
-    misused, and the honesty limits against the integration step (SLEW, LOOP); and for a spec declaring
+    misused, the honesty limits against the integration step (SLEW, LOOP), and a chip's limits (units.py: no resistance
+    above R_MAX, capacitor above C_MAX, leak or filter slower than TAU_MAX, element current below I_MIN; the user's
+    decision, 2026-10-23: a design must be buildable); and for a spec declaring
     rules "mixed" (Sepulchre's rules, an experiment: MIXED_FEEDBACK.md), every node leaky but memory nodes, and no
     clamps. Sepulchre is silent on learning and non-volatile storage, so our own components for them, gates and
     memory nodes (floating gates), stay allowed under his rules (the user's decision, 2026-10-21). Empty: a legal
@@ -182,6 +184,18 @@ def violations(spec: dict) -> list:
             out.append(f"node {nd[0]}: capacitance and leak must be positive")
         if spec.get("rules") == "mixed" and ((nd[2] is None and not nd[7]) or nd[4] is not None or nd[5] is not None):
             out.append(f"mixed feedback's rules: node {nd[0]} must leak (unless a memory node), with no clamp")
+    for nd in spec["nodes"]:                            # a chip's limits
+        if nd[2] is not None and nd[2] > R_MAX * (1 + 1e-9):
+            out.append(f"node {nd[0]}: a leak of {si(nd[2], 'Ω')}, above the {si(R_MAX, 'Ω')} a chip can set")
+        if nd[3] > C_MAX * (1 + 1e-9):
+            out.append(f"node {nd[0]}: a capacitor of {si(nd[3], 'F')}, above the {si(C_MAX, 'F')} a chip can hold")
+        if nd[2] is not None and nd[2] * nd[3] > TAU_MAX * (1 + 1e-9):
+            out.append(f"node {nd[0]}: a leak slower than the {si(TAU_MAX, 's')} a chip can hold")
+    for e in spec["elements"]:
+        if 0 < abs(e[3]) < I_MIN * (1 - 1e-9):
+            out.append(f"element {e[:3]}: a current below the {si(I_MIN, 'A')} a chip can bias")
+        if e[6] > TAU_MAX * (1 + 1e-9):
+            out.append(f"element {e[:3]}: a filter slower than the {si(TAU_MAX, 's')} a chip can hold")
     if not out and slew(spec) > 1 + 1e-9:
         out.append(f"too fast for the step: {slew(spec):.0%} of the limits (units.py: SLEW, TAU_LEAK, TAU_LOOP)")
     return out

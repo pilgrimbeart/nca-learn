@@ -351,13 +351,14 @@ the notebook (`minimal/NOTEBOOK.md`) tells how they were found.
 
 What it has found so far:
 
-- **The simplest circuit that does the job, robustly, has 32 parts, and it is also among the best drivers.** Judged at
+- **The simplest circuit that does the job, robustly, has 30 parts, and it is also among the best drivers.** Judged at
   one noise level, circuits of about 22 parts seemed to do it: the bit a perfect integrator (a floating gate) written
   by a three-factor rule (what was seen, times the taste), the creature spinning until food is in view. But their
   rhythm came from noise: in silicon, about 280 times quieter, they never get moving. Only the hold-and-roam circuit,
   whose scan is an oscillator and whose roam is a timer, does the job in silicon, biology and at twice biology's noise
-  (35 parts: HR_si, `media/HR_si.svg`); an open search from it took one of its feedbacks away and retuned the rest
-  (HR_32p, `media/HR_32p.svg`), as good with 3 parts fewer (`minimal/NOTEBOOK.md`, M12, M13).
+  (35 parts: HR_si); open searches from it, within a chip's limits, took parts of its motor stage away and retuned the
+  rest, and a polish and pruning one more: HR_31p_pol_pruned (30 parts, `media/HR_31p_pol_pruned.svg`, its
+  signal-flow graph and schematic), with HR_31p_pol (31) the best driver yet (`minimal/NOTEBOOK.md`, M12-M14).
 - **Match the brain's speed to the body's.** Spinning sweeps the eyes' narrow corridor past far food faster than a
   brief reaction can catch it. A slow node that holds the course for some ticks after a sighting, and a timer that
   sends the creature off to roam after a long spell of seeing nothing (the hold-and-roam circuit), more than doubled
@@ -372,8 +373,7 @@ What it has found so far:
 - **Object persistence**: a creature that has just lost sight of food sweeps back for it (the body can turn both
   ways), the user's idea.
 - **Reversal**: every circuit so far learns only from food, so none unlearns when the poison colour swaps.
-- **A smaller robust circuit still**: the open search again, from HR_32p; and whether a chip's limits (`python -m
-  minimal.physical`) should bind the search.
+- **A smaller robust circuit still**: the open search again, from HR_31p_pol_pruned.
 - **Sepulchre's discipline**: do circuits of mixed-feedback components (every node leaky, events from positive
   feedback) do the job as simply? The first three-arm experiment settled nothing (`MIXED_FEEDBACK.md`): it needs a
   start built of his components.
@@ -432,6 +432,8 @@ What it has found so far:
   food per 10 s) and rarely stranding (at most 5% of lives), with every substrate judged.
 - **Stranding**: a life that eats, then finds nothing more (no food at all in its last third). A creature that
   travels only towards food it sees spins on the spot for ever once it has eaten what is near.
+- **Buildable**: within a chip's limits (`units.py`), a rule since 2026-10-23: no resistance above about 74 GOhm, no
+  capacitor above 50 pF, no time constant above about 3.7 s without a floating gate, no current below 1 pA.
 - **Polish**: tuning a circuit's values (CMA-ES), each generation on fresh lives. **Pruning**: trying every single
   simplification (an element, a filter, a gate, a leak, a clamp taken away) and keeping the best that costs no more
   than a little, until none does.
@@ -478,10 +480,11 @@ python -m minimal.search RESULTS.json 60   # the minimal search: polish a circui
                                     # (--by efficiency|gain: for one objective; default the score)
 python -m minimal.prune RESULTS.json  # prune alone
 python -m minimal.evolve 60 --start RESULTS.json ...  # the open search over topologies
+                                    # (--name NAME --resume: carry on after a stop, from its last save)
 python -m minimal.league            # its league table (minimal/LEAGUE.md)
 python -m minimal.check RESULTS.json  # a circuit in the real Life at two integration steps
 python -m minimal.physical RESULTS.json  # could it be built? its parts in real units against a chip's limits
-python -m minimal.draw RESULTS.json  # draw a circuit as a diagram (media/NAME.svg), in SI
+python -m minimal.draw RESULTS.json  # draw a circuit (media/NAME.svg): its signal-flow graph and its schematic
 python -m experiments.e1_oracle     # the rung-1 experiments, E1 to E7 (experiments/NOTEBOOK.md)
 python -m experiments.h_run 64 1000 "share*"  # the healing experiments (H series): named rules, on the leaderboard
 python measure_recruitment.py 32    # recruitment's local signals, neuron by neuron, watched from outside

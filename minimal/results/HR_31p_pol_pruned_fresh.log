@@ -1,0 +1,4 @@
+fresh seeds 800-863: score +2.36 [+1.96, +2.65], food 5.26, efficiency 1.79 [1.58, 1.95], gain 3.11 [2.74, 3.39], stranded 1% [0.001, 0.043], job True
+  silicon: score +3.25, efficiency 2.32, stranded 0%, job True
+  biology: score +3.01, efficiency 2.19, stranded 0%, job True
+  biology x2: score +2.36, efficiency 1.79, stranded 1%, job True

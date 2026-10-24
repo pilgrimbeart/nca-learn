@@ -1,0 +1,10 @@
+start: 31 parts, score +1.767 (keeping within 0.1 of it, and doing the job)
+  no leak on MA: 30 parts, score +2.708 (best of 21)
+  nothing more can go
+HR_31p_pol_pruned: parts {'C': 9, 'R': 7, 'D': 0, 'T': 14, 'total': 30, 'nodes': 8, 'elements': 9}; fastest 74% of the honesty limits
+  net +2.03 [+1.60, +2.41] (food - poison +3.20), food 5.03, poison 1.14, last third 5.22, stranded 0%, power 11.3 nW, thruster firings 336 per 10 s, efficiency 1.61 meals gained per meal spent
+  silicon: net +3.49, food 5.81, last third 7.99, stranded 0%, efficiency 2.48, job True
+  biology: net +2.78, food 5.28, last third 7.07, stranded 0%, efficiency 2.08, job True
+  biology x2: net +2.03, food 5.03, last third 5.22, stranded 0%, efficiency 1.61, job True
+  DOES THE JOB
+  (675 s)

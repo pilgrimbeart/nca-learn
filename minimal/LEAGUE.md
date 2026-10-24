@@ -25,42 +25,51 @@ Parts are counted exactly. Listed by parts, then efficiency.
 
 **The three objectives** (the user's, 2026-10-22), each among the designs doing the job:
 
-1. the simplest brain doing the job: HR_30p, 30 parts (doing it marginally: an interval crosses a limit; efficiency 0.38, gain rate 0.69).
-2. the best driver for energy: meals gained per meal spent resting, moving and thinking: the most efficient, HR_si (35 parts), 1.62 [1.49, 1.73]; tied within noise with HR_32p, HR_32p_pol, HR_35p_pol.
-3. the best driver for speed and accuracy, energy free: meals gained per 10 s: the fastest and most accurate, HR_32p_pol (32 parts), 2.86 [2.59, 3.10]; tied within noise with HR_32p, HR_si, HR_35p_pol.
+1. the simplest brain doing the job: HR_31p_pol_pruned, 30 parts (doing it surely; efficiency 1.61, gain rate 2.76).
+2. the best driver for energy: meals gained per meal spent resting, moving and thinking: the most efficient, HR_31p_pol (31 parts), 1.74 [1.56, 1.90]; tied within noise with HR_31p_pol_pruned, HR_32p_c, HR_32p_pol, HR_si_chip.
+3. the best driver for speed and accuracy, energy free: meals gained per 10 s: the fastest and most accurate, HR_31p_pol (31 parts), 3.00 [2.69, 3.27]; tied within noise with HR_31p_pol_pruned, HR_32p_c, HR_32p_pol.
 
 ## Doing the job
 
 | design | parts | area | efficiency [95%] | gain rate [95%] | food | poison | firings | power (nW) | score [95%] | thrift | food:poison, last third [95%] | stranded [95%] | job | place |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| HR_30p | 30 | 974 | 0.38 [0.27, 0.50] | 0.69 [0.48, 0.91] | 2.21 | 0.86 | 385 | 22.6 | -0.22 [-0.45, +0.01] | 5.6 | 3.42 [2.77, 4.19] | 2% [1%, 7%] | marginal | Pareto, sure |
-| HR_32p | 32 | 748 | 1.59 [1.47, 1.70] | 2.66 [2.46, 2.85] | 4.73 | 1.03 | 312 | 16.1 | +1.98 [+1.79, +2.16] | 14.3 | 5.89 [5.28, 6.48] | 0% [0%, 3%] | sure | Pareto, but tied with HR_32p_pol |
-| HR_32p_pol | 32 | 1127 | 1.57 [1.42, 1.70] | 2.86 [2.59, 3.10] | 5.20 | 1.17 | 383 | 42.9 | +2.02 [+1.75, +2.27] | 13.3 | 5.79 [5.16, 6.34] | 1% [0%, 4%] | sure | Pareto, but tied with HR_32p |
-| HR_si | 35 | 789 | 1.62 [1.49, 1.73] | 2.73 [2.52, 2.91] | 4.78 | 1.02 | 314 | 15.5 | +2.04 [+1.81, +2.22] | 14.4 | 6.24 [5.50, 7.00] | 0% [0%, 3%] | sure | Pareto, but tied with HR_32p, HR_32p_pol, HR_35p_pol |
-| HR_35p_pol | 35 | 1027 | 1.43 [1.24, 1.60] | 2.51 [2.18, 2.80] | 4.78 | 1.13 | 345 | 26.3 | +1.74 [+1.40, +2.05] | 13.2 | 4.85 [4.05, 5.77] | 1% [0%, 4%] | sure | surely beaten by HR_32p, HR_32p_pol |
-| HR_35p | 35 | 779 | 1.34 [1.18, 1.48] | 2.14 [1.88, 2.36] | 3.99 | 0.93 | 273 | 23.7 | +1.53 [+1.27, +1.76] | 14.0 | 6.15 [5.07, 6.74] | 2% [0%, 6%] | marginal | surely beaten by HR_32p, HR_32p_pol, HR_si |
+| HR_31p_pol_pruned | 30 | 1092 | 1.61 [1.37, 1.83] | 2.76 [2.33, 3.13] | 5.03 | 1.14 | 336 | 11.3 | +2.03 [+1.60, +2.41] | 14.4 | 5.22 [4.43, 6.12] | 0% [0%, 3%] | sure | Pareto, sure |
+| HR_31p_pol | 31 | 1094 | 1.74 [1.56, 1.90] | 3.00 [2.69, 3.27] | 5.12 | 1.06 | 343 | 11.6 | +2.28 [+1.96, +2.54] | 14.4 | 6.23 [5.40, 6.90] | 0% [0%, 3%] | sure | Pareto, but tied with HR_31p_pol_pruned |
+| HR_31p | 31 | 943 | 1.39 [1.27, 1.52] | 2.54 [2.32, 2.76] | 5.05 | 1.25 | 388 | 13.7 | +1.71 [+1.49, +1.93] | 12.4 | 4.77 [4.32, 5.28] | 0% [0%, 3%] | sure | surely beaten by HR_31p_pol_pruned, HR_31p_pol |
+| HR_31p_b | 31 | 923 | 1.33 [1.17, 1.47] | 2.43 [2.13, 2.70] | 5.19 | 1.38 | 387 | 13.3 | +1.60 [+1.28, +1.87] | 12.7 | 4.72 [4.17, 5.31] | 1% [0%, 4%] | sure | surely beaten by HR_31p_pol_pruned, HR_31p_pol |
+| HR_32p_c | 32 | 1123 | 1.62 [1.49, 1.72] | 2.95 [2.72, 3.16] | 5.16 | 1.11 | 383 | 42.3 | +2.12 [+1.89, +2.33] | 13.2 | 6.38 [5.70, 7.00] | 0% [0%, 3%] | sure | surely beaten by HR_31p_pol_pruned, HR_31p_pol |
+| HR_32p_pol | 32 | 1127 | 1.57 [1.42, 1.70] | 2.86 [2.59, 3.10] | 5.20 | 1.17 | 383 | 42.9 | +2.02 [+1.75, +2.27] | 13.3 | 5.79 [5.16, 6.34] | 1% [0%, 4%] | sure | surely beaten by HR_31p_pol_pruned, HR_31p_pol, HR_31p |
+| HR_32p_chip | 32 | 951 | 1.47 [1.29, 1.62] | 2.45 [2.16, 2.70] | 4.59 | 1.07 | 311 | 16.3 | +1.77 [+1.47, +2.02] | 14.0 | 5.58 [4.82, 6.31] | 1% [0%, 4%] | sure | surely beaten by HR_31p_pol_pruned, HR_31p_pol, HR_31p, HR_31p_b, HR_32p_c, HR_32p_pol |
+| HR_si_chip | 35 | 992 | 1.55 [1.40, 1.68] | 2.60 [2.36, 2.81] | 4.80 | 1.10 | 313 | 15.6 | +1.92 [+1.66, +2.13] | 14.5 | 5.70 [5.07, 6.39] | 0% [0%, 3%] | sure | surely beaten by HR_31p_pol_pruned, HR_31p_pol, HR_31p, HR_32p_c, HR_32p_pol, HR_32p_chip |
+| HR_35p | 35 | 779 | 1.34 [1.18, 1.48] | 2.14 [1.88, 2.36] | 3.99 | 0.93 | 273 | 23.7 | +1.53 [+1.27, +1.76] | 14.0 | 6.15 [5.07, 6.74] | 2% [0%, 6%] | marginal | surely beaten by HR_31p_pol_pruned, HR_31p_pol, HR_31p, HR_31p_b, HR_32p_c, HR_32p_pol, HR_32p_chip, HR_si_chip |
 
 ### Efficiency (meals gained per meal spent), design against design (paired)
 
-| efficiency: row against column | HR_30p | HR_32p | HR_32p_pol | HR_si | HR_35p_pol | HR_35p |
-|---|---|---|---|---|---|---|
-| HR_30p |  | below | below | below | below | below |
-| HR_32p | above |  | tied | tied | tied | above |
-| HR_32p_pol | above | tied |  | tied | tied | above |
-| HR_si | above | tied | tied |  | tied | above |
-| HR_35p_pol | above | tied | tied | tied |  | tied |
-| HR_35p | above | below | below | below | tied |  |
+| efficiency: row against column | HR_31p_pol_pruned | HR_31p_pol | HR_31p | HR_31p_b | HR_32p_c | HR_32p_pol | HR_32p_chip | HR_si_chip | HR_35p |
+|---|---|---|---|---|---|---|---|---|---|
+| HR_31p_pol_pruned |  | tied | tied | above | tied | tied | tied | tied | tied |
+| HR_31p_pol | tied |  | above | above | tied | tied | above | tied | above |
+| HR_31p | tied | below |  | tied | below | tied | tied | tied | tied |
+| HR_31p_b | below | below | tied |  | below | below | tied | below | tied |
+| HR_32p_c | tied | tied | above | above |  | tied | tied | tied | above |
+| HR_32p_pol | tied | tied | tied | above | tied |  | tied | tied | above |
+| HR_32p_chip | tied | below | tied | tied | tied | tied |  | tied | tied |
+| HR_si_chip | tied | tied | tied | above | tied | tied | tied |  | above |
+| HR_35p | tied | below | tied | tied | below | below | tied | below |  |
 
 ### Gain rate (meals gained per 10 s), design against design (paired)
 
-| gain rate: row against column | HR_30p | HR_32p | HR_32p_pol | HR_si | HR_35p_pol | HR_35p |
-|---|---|---|---|---|---|---|
-| HR_30p |  | below | below | below | below | below |
-| HR_32p | above |  | tied | tied | tied | above |
-| HR_32p_pol | above | tied |  | tied | tied | above |
-| HR_si | above | tied | tied |  | tied | above |
-| HR_35p_pol | above | tied | tied | tied |  | tied |
-| HR_35p | above | below | below | below | tied |  |
+| gain rate: row against column | HR_31p_pol_pruned | HR_31p_pol | HR_31p | HR_31p_b | HR_32p_c | HR_32p_pol | HR_32p_chip | HR_si_chip | HR_35p |
+|---|---|---|---|---|---|---|---|---|---|
+| HR_31p_pol_pruned |  | tied | tied | tied | tied | tied | tied | tied | above |
+| HR_31p_pol | tied |  | above | above | tied | tied | above | above | above |
+| HR_31p | tied | below |  | tied | below | tied | tied | tied | above |
+| HR_31p_b | tied | below | tied |  | below | below | tied | tied | tied |
+| HR_32p_c | tied | tied | above | above |  | tied | above | above | above |
+| HR_32p_pol | tied | tied | tied | above | tied |  | above | tied | above |
+| HR_32p_chip | tied | below | tied | tied | below | below |  | tied | tied |
+| HR_si_chip | tied | below | tied | tied | below | tied | tied |  | above |
+| HR_35p | below | below | below | tied | below | below | tied | below |  |
 
 ## Near misses (not doing the job)
 
@@ -96,41 +105,21 @@ Parts are counted exactly. Listed by parts, then efficiency.
 | EE_25p | 25 | 312 | -0.01 [-0.06, -0.01] | -0.01 [-0.09, -0.01] | 0.02 | 0.80 | 142 | 1.6 | -1.97 [-1.99, -1.95] | 7.2 | 2.48 [2.06, 2.89] | 100% [97%, 100%] | food 0.02, food:poison 2.48, stranded 100% (surely) |
 | EF_25p | 25 | 376 | -0.12 [-0.24, -0.03] | -0.20 [-0.41, -0.03] | 0.03 | 1.29 | 189 | 7.3 | -1.98 [-1.99, -1.97] | 6.9 | 2.13 [1.87, 2.40] | 100% [97%, 100%] | food 0.03, food:poison 2.13, stranded 100% (surely) |
 | E1_25p | 25 | 678 | -0.63 [-0.73, -0.53] | -1.02 [-1.19, -0.87] | 1.04 | 1.31 | 261 | 12.8 | -1.90 [-2.08, -1.73] | 4.5 | 1.26 [1.12, 1.42] | 20% [14%, 28%] | food:poison 1.26, stranded 20% (surely) |
-| FR_noise_pruned | 26 | 617 | 0.43 [0.33, 0.49] | 0.63 [0.47, 0.70] | 1.61 | 0.78 | 203 | 9.0 | +0.00 [-0.20, +0.11] | 8.6 | 3.29 [2.90, 3.70] | 18% [12%, 26%] | stranded 18% (surely) |
-| EF_26p | 26 | 626 | 0.37 [0.26, 0.46] | 0.53 [0.37, 0.64] | 1.50 | 0.75 | 187 | 11.1 | -0.11 [-0.30, +0.01] | 8.7 | 3.58 [3.12, 4.05] | 27% [20%, 35%] | stranded 27% (surely) |
-| T_HFT_E1_23p_pruned | 26 | 626 | 0.37 [0.26, 0.46] | 0.53 [0.37, 0.64] | 1.50 | 0.75 | 187 | 11.1 | -0.11 [-0.30, +0.01] | 8.7 | 3.58 [3.12, 4.05] | 27% [20%, 35%] | stranded 27% (surely) |
-| EE_34p_pol_pruned | 26 | 488 | 0.19 [0.03, 0.33] | 0.28 [0.05, 0.48] | 1.54 | 1.00 | 200 | 11.0 | -0.27 [-0.51, -0.11] | 9.2 | 2.64 [2.30, 3.04] | 16% [10%, 23%] | food:poison 2.64, stranded 16% (surely) |
-| EE_28p_pol_pruned | 26 | 497 | 0.10 [-0.03, 0.22] | 0.15 [-0.04, 0.33] | 1.48 | 0.95 | 206 | 9.9 | -0.43 [-0.63, -0.25] | 8.6 | 2.68 [2.28, 3.19] | 28% [21%, 36%] | food:poison 2.68, stranded 28% (surely) |
 | EE_26p | 26 | 397 | -0.02 [-0.06, -0.01] | -0.02 [-0.09, -0.01] | 0.03 | 1.31 | 167 | 4.8 | -1.98 [-1.99, -1.96] | 8.2 | 2.51 [2.24, 2.83] | 100% [97%, 100%] | food 0.03, food:poison 2.51, stranded 100% (surely) |
 | EV_26p | 26 | 392 | -0.02 [-0.14, -0.01] | -0.03 [-0.25, -0.01] | 0.02 | 1.32 | 189 | 5.3 | -1.98 [-1.99, -1.97] | 7.5 | 2.46 [2.18, 2.75] | 100% [97%, 100%] | food 0.02, food:poison 2.46, stranded 100% (surely) |
 | E1_26p | 26 | 722 | -0.52 [-0.63, -0.42] | -0.82 [-0.98, -0.65] | 0.80 | 1.28 | 218 | 13.1 | -1.58 [-1.75, -1.40] | 4.5 | 1.31 [1.16, 1.48] | 40% [32%, 49%] | food 0.80, food:poison 1.31, stranded 40% (surely) |
-| EE_27p | 27 | 600 | 0.40 [0.31, 0.46] | 0.55 [0.43, 0.64] | 1.43 | 0.78 | 211 | 11.9 | -0.26 [-0.44, -0.10] | 8.0 | 3.16 [2.67, 3.74] | 22% [16%, 30%] | stranded 22% (surely) |
-| MX_fg_pruned | 27 | 619 | 0.34 [0.21, 0.40] | 0.47 [0.30, 0.56] | 1.43 | 0.83 | 205 | 8.9 | -0.36 [-0.56, -0.18] | 8.3 | 2.97 [2.52, 3.43] | 23% [17%, 31%] | food:poison 2.97, stranded 23% (surely) |
-| EV_27p | 27 | 507 | 0.32 [0.22, 0.39] | 0.56 [0.37, 0.64] | 1.52 | 1.07 | 342 | 10.9 | -0.37 [-0.54, -0.24] | 5.4 | 3.32 [2.89, 3.53] | 16% [10%, 23%] | stranded 16% (surely) |
 | EF_27p | 27 | 559 | -0.29 [-0.41, -0.18] | -0.50 [-0.70, -0.31] | 0.03 | 1.44 | 190 | 7.2 | -1.98 [-1.99, -1.97] | 6.9 | 2.19 [1.92, 2.48] | 100% [97%, 100%] | food 0.03, food:poison 2.19, stranded 100% (surely) |
 | E1_27p | 27 | 750 | -0.71 [-0.83, -0.58] | -1.01 [-1.19, -0.82] | 0.55 | 1.14 | 151 | 12.1 | -2.00 [-2.15, -1.83] | 4.8 | 1.19 [1.06, 1.35] | 52% [43%, 60%] | food 0.55, food:poison 1.19, stranded 52% (surely) |
-| EE_28p | 28 | 633 | 0.42 [0.30, 0.50] | 0.60 [0.43, 0.68] | 1.48 | 0.75 | 182 | 11.0 | -0.19 [-0.40, -0.02] | 9.2 | 3.74 [3.20, 4.38] | 21% [15%, 29%] | stranded 21% (surely) |
-| T_HFT_E1_23p | 28 | 633 | 0.42 [0.30, 0.50] | 0.60 [0.43, 0.68] | 1.48 | 0.75 | 182 | 11.0 | -0.19 [-0.40, -0.02] | 9.2 | 3.74 [3.20, 4.38] | 21% [15%, 29%] | stranded 21% (surely) |
-| EF_28p | 28 | 635 | 0.35 [0.23, 0.45] | 0.50 [0.33, 0.63] | 1.49 | 0.74 | 187 | 11.0 | -0.17 [-0.37, -0.01] | 9.0 | 3.17 [2.68, 3.77] | 27% [20%, 35%] | stranded 27% (surely) |
-| FR_noise | 28 | 624 | 0.34 [0.21, 0.43] | 0.47 [0.30, 0.59] | 1.43 | 0.82 | 196 | 8.4 | -0.36 [-0.56, -0.18] | 8.3 | 3.44 [2.89, 4.13] | 23% [17%, 31%] | stranded 23% (surely) |
-| MX_fg | 28 | 624 | 0.34 [0.21, 0.43] | 0.47 [0.30, 0.59] | 1.43 | 0.82 | 196 | 8.4 | -0.36 [-0.56, -0.18] | 8.3 | 3.44 [2.89, 4.13] | 23% [17%, 31%] | stranded 23% (surely) |
-| EE_28p_pol | 28 | 504 | 0.34 [0.22, 0.46] | 0.51 [0.34, 0.67] | 1.60 | 0.94 | 217 | 10.8 | -0.06 [-0.26, +0.06] | 8.8 | 3.10 [2.72, 3.56] | 18% [12%, 26%] | stranded 18% (surely) |
-| HFT_E1_23p | 28 | 512 | 0.33 [0.20, 0.38] | 0.57 [0.34, 0.63] | 1.52 | 1.07 | 318 | 9.9 | -0.37 [-0.55, -0.23] | 5.4 | 3.07 [2.64, 3.56] | 16% [10%, 23%] | stranded 16% (surely) |
-| H_E1_23p | 28 | 831 | 0.29 [0.22, 0.36] | 0.42 [0.32, 0.51] | 1.35 | 0.53 | 202 | 7.6 | -0.30 [-0.49, -0.23] | 6.7 | 3.96 [3.39, 4.45] | 16% [10%, 23%] | stranded 16% (surely) |
+| HR_31p_pol_pruned_byscore | 28 | 1085 | 1.27 [1.09, 1.42] | 2.29 [1.96, 2.53] | 3.81 | 0.91 | 348 | 11.6 | +1.47 [+1.13, +1.70] | 10.5 | 5.64 [4.83, 6.58] | 35% [27%, 44%] | stranded 35% (surely) |
 | EV_28p | 28 | 453 | -0.03 [-0.04, -0.02] | -0.03 [-0.04, -0.02] | 0.03 | 1.41 | 241 | 18.5 | -1.99 [-2.00, -1.98] | 6.9 | 2.41 [2.22, 2.64] | 100% [97%, 100%] | food 0.03, food:poison 2.41, stranded 100% (surely) |
 | E1_28p | 28 | 754 | -0.72 [-0.81, -0.62] | -1.19 [-1.34, -1.03] | 0.98 | 1.39 | 268 | 15.5 | -2.02 [-2.18, -1.87] | 4.3 | 1.16 [1.03, 1.32] | 23% [16%, 31%] | food 0.98, food:poison 1.16, stranded 23% (surely) |
-| EF_29p | 29 | 638 | 0.35 [0.21, 0.46] | 0.50 [0.30, 0.64] | 1.40 | 0.76 | 182 | 10.6 | -0.26 [-0.46, -0.09] | 8.7 | 3.30 [2.83, 3.87] | 21% [15%, 29%] | stranded 21% (surely) |
 | E1_29p | 29 | 764 | -0.64 [-0.78, -0.51] | -1.01 [-1.22, -0.80] | 0.85 | 1.43 | 220 | 13.0 | -1.76 [-1.98, -1.55] | 4.7 | 1.29 [1.13, 1.46] | 40% [32%, 49%] | food 0.85, food:poison 1.29, stranded 40% (surely) |
-| EE_30p | 30 | 672 | 0.36 [0.24, 0.46] | 0.51 [0.34, 0.64] | 1.50 | 0.75 | 187 | 11.1 | -0.11 [-0.30, +0.00] | 8.7 | 3.48 [3.05, 3.96] | 27% [20%, 35%] | stranded 27% (surely) |
 | E1_30p | 30 | 792 | -0.73 [-0.85, -0.62] | -1.14 [-1.33, -0.96] | 0.78 | 1.43 | 217 | 13.7 | -1.91 [-2.10, -1.72] | 4.4 | 1.19 [1.05, 1.34] | 38% [30%, 46%] | food 0.78, food:poison 1.19, stranded 38% (surely) |
 | E1_31p | 31 | 802 | -0.71 [-0.83, -0.58] | -1.11 [-1.31, -0.91] | 0.85 | 1.49 | 220 | 13.0 | -1.85 [-2.05, -1.66] | 4.8 | 1.28 [1.14, 1.43] | 40% [32%, 49%] | food 0.85, food:poison 1.28, stranded 40% (surely) |
 | N_E1_32p | 32 | 399 | 0.23 [0.08, 0.29] | 0.33 [0.12, 0.41] | 1.42 | 0.77 | 196 | 5.0 | -0.53 [-0.77, -0.37] | 7.9 | 3.18 [2.57, 3.63] | 27% [20%, 35%] | stranded 27% (surely) |
 | P_E1_32p | 32 | 454 | 0.15 [0.01, 0.24] | 0.24 [0.02, 0.36] | 1.36 | 0.76 | 262 | 8.5 | -0.76 [-0.97, -0.63] | 5.4 | 3.08 [2.38, 3.64] | 30% [23%, 39%] | stranded 30% (surely) |
 | E1_32p | 32 | 794 | -0.26 [-0.37, -0.15] | -0.38 [-0.54, -0.22] | 0.80 | 1.05 | 184 | 11.1 | -1.20 [-1.41, -1.05] | 4.8 | 1.86 [1.65, 2.13] | 41% [33%, 49%] | food 0.80, food:poison 1.86, stranded 41% (surely) |
-| MX_latchP | 33 | 937 | -0.57 [-0.61, -0.55] | -0.70 [-0.75, -0.67] | 0.09 | 0.70 | 89 | 12.0 | -2.06 [-2.07, -2.04] | 1.3 | 1.00 [1.00, 1.00] | 91% [84%, 95%] | food 0.09, food:poison 1.00, stranded 91% (surely) |
 | E1_33p | 33 | 840 | -0.73 [-0.85, -0.61] | -1.15 [-1.34, -0.96] | 0.85 | 1.49 | 220 | 13.1 | -1.90 [-2.08, -1.71] | 4.7 | 1.28 [1.14, 1.44] | 41% [33%, 49%] | food 0.85, food:poison 1.28, stranded 41% (surely) |
-| EE_34p | 34 | 772 | 0.38 [0.24, 0.45] | 0.56 [0.35, 0.64] | 1.41 | 0.81 | 212 | 14.5 | -0.25 [-0.41, -0.10] | 7.9 | 3.13 [2.59, 3.83] | 19% [13%, 26%] | stranded 19% (surely) |
-| EE_34p_pol | 34 | 832 | 0.21 [0.05, 0.36] | 0.31 [0.08, 0.52] | 1.50 | 0.99 | 202 | 14.4 | -0.25 [-0.51, -0.09] | 8.9 | 2.96 [2.47, 3.49] | 21% [15%, 29%] | food:poison 2.96, stranded 21% (surely) |
 | E1_34p | 34 | 953 | -0.59 [-0.71, -0.47] | -0.92 [-1.10, -0.73] | 0.73 | 1.30 | 217 | 14.1 | -1.66 [-1.84, -1.47] | 4.1 | 1.39 [1.24, 1.56] | 45% [37%, 54%] | food 0.73, food:poison 1.39, stranded 45% (surely) |
 | E1_35p | 35 | 876 | -0.58 [-0.69, -0.48] | -0.88 [-1.04, -0.71] | 1.11 | 1.17 | 202 | 15.7 | -1.66 [-1.84, -1.49] | 6.1 | 1.35 [1.19, 1.54] | 30% [23%, 39%] | food:poison 1.35, stranded 30% (surely) |
 | E1_36p | 36 | 907 | -0.28 [-0.40, -0.17] | -0.41 [-0.58, -0.25] | 0.85 | 1.04 | 186 | 11.0 | -1.39 [-1.60, -1.18] | 5.0 | 1.87 [1.62, 2.15] | 41% [33%, 49%] | food 0.85, food:poison 1.87, stranded 41% (surely) |
@@ -146,5 +135,30 @@ Parts are counted exactly. Listed by parts, then efficiency.
 | C1f | 23 | too fast for the step: 306% of the limits (units.py: SLEW, TAU_LEAK, TAU_LOOP) |
 | C2b | 23 | too fast for the step: 7188% of the limits (units.py: SLEW, TAU_LEAK, TAU_LOOP) |
 | Cc1f | 25 | too fast for the step: 306% of the limits (units.py: SLEW, TAU_LEAK, TAU_LOOP) |
+| EE_28p_pol_pruned | 26 | node H: a leak of 337 GΩ, above the 73.9 GΩ a chip can set |
+| EE_34p_pol_pruned | 26 | node H: a leak of 411 GΩ, above the 73.9 GΩ a chip can set |
+| EF_26p | 26 | node H: a leak of 732 GΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| FR_noise_pruned | 26 | node H: a leak of 1 TΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| T_HFT_E1_23p_pruned | 26 | node H: a leak of 732 GΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
 | A | 27 | too fast for the step: 210% of the limits (units.py: SLEW, TAU_LEAK, TAU_LOOP) |
+| EE_27p | 27 | node H: a leak of 732 GΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| EV_27p | 27 | node H: a leak of 1 TΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| MX_fg_pruned | 27 | node H: a leak of 1 TΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| EE_28p | 28 | node H: a leak of 732 GΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| EE_28p_pol | 28 | node H: a leak of 337 GΩ, above the 73.9 GΩ a chip can set |
+| EF_28p | 28 | node H: a leak of 732 GΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| FR_noise | 28 | node H: a leak of 1 TΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| HFT_E1_23p | 28 | node H: a leak of 1 TΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| H_E1_23p | 28 | node H: a leak of 1 TΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| MX_fg | 28 | node H: a leak of 1 TΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| T_HFT_E1_23p | 28 | node H: a leak of 732 GΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
 | Cc2f | 29 | too fast for the step: 193% of the limits (units.py: SLEW, TAU_LEAK, TAU_LOOP) |
+| EF_29p | 29 | node H: a leak of 732 GΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| EE_30p | 30 | node H: a leak of 732 GΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| HR_30p | 30 | node G: a leak of 78.5 GΩ, above the 73.9 GΩ a chip can set |
+| HR_32p | 32 | node Rt: a leak of 129 GΩ, above the 73.9 GΩ a chip can set |
+| MX_latchP | 33 | node H: a leak of 1 TΩ, above the 73.9 GΩ a chip can set |
+| EE_34p | 34 | node H: a leak of 732 GΩ, above the 73.9 GΩ a chip can set; node H: a leak slower than the 3.69 s a chip can hold |
+| EE_34p_pol | 34 | node H: a leak of 411 GΩ, above the 73.9 GΩ a chip can set |
+| HR_35p_pol | 35 | node G: a leak of 78.5 GΩ, above the 73.9 GΩ a chip can set |
+| HR_si | 35 | node Rt: a leak of 129 GΩ, above the 73.9 GΩ a chip can set |

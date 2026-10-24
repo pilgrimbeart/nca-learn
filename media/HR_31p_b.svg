@@ -1,0 +1,200 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2140" height="1895" viewBox="0 0 2140 1895" font-family="Helvetica, Arial, sans-serif">
+<rect width="2140" height="1895" fill="#fff"/>
+<defs><marker id="in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0072B2"/></marker><marker id="out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#D55E00"/></marker><marker id="ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#111"/></marker></defs>
+<text x="20" y="34" font-size="22" fill="#111">HR_31p_b: 31 parts (8 nodes, 9 elements). The signal-flow graph: who drives whom</text>
+<text x="20" y="58" font-size="13" fill="#555">evolve_chip (2026-10-23): the 31-part circuit the user watched live; HR_32p less MB&#x27;s own feedback</text>
+<path d="M226,231 Q355,251 484,270" fill="none" stroke="#0072B2" stroke-width="1.8" marker-end="url(#in)"/>
+<line x1="200" y1="613" x2="355" y2="251" stroke="#E69F00" stroke-width="2" stroke-dasharray="2,4" stroke-linecap="round"/><circle cx="355" cy="251" r="4" fill="#E69F00"/>
+<text x="353" y="268" font-size="10.5" text-anchor="middle" fill="#fff" stroke="#fff" stroke-width="3">3.8 nA σ(8.36(V - 0.58)) × V(T)</text>
+<text x="353" y="268" font-size="10.5" text-anchor="middle" fill="#0072B2">3.8 nA σ(8.36(V - 0.58)) × V(T)</text>
+<path d="M224,409 Q355,348 486,288" fill="none" stroke="#D55E00" stroke-width="1.8" stroke-dasharray="7,5" marker-end="url(#out)"/>
+<line x1="200" y1="613" x2="355" y2="348" stroke="#E69F00" stroke-width="2" stroke-dasharray="2,4" stroke-linecap="round"/><circle cx="355" cy="348" r="4" fill="#E69F00"/>
+<text x="361" y="365" font-size="10.5" text-anchor="middle" fill="#fff" stroke="#fff" stroke-width="3">-1.12 nA σ(30(V - 0.36)) × V(T)</text>
+<text x="361" y="365" font-size="10.5" text-anchor="middle" fill="#D55E00">-1.12 nA σ(30(V - 0.36)) × V(T)</text>
+<path d="M537,286 Q681,319 799,407" fill="none" stroke="#0072B2" stroke-width="1.8" marker-end="url(#in)"/>
+<line x1="200" y1="227" x2="674" y2="333" stroke="#E69F00" stroke-width="2" stroke-dasharray="2,4" stroke-linecap="round"/><circle cx="674" cy="333" r="4" fill="#E69F00"/>
+<text x="680" y="324" font-size="10.5" text-anchor="middle" fill="#fff" stroke="#fff" stroke-width="3">4.99 nA tanh(30(V + 0.45)) × V(S0)</text>
+<text x="680" y="324" font-size="10.5" text-anchor="middle" fill="#0072B2">4.99 nA tanh(30(V + 0.45)) × V(S0)</text>
+<path d="M537,286 Q656,374 799,407" fill="none" stroke="#0072B2" stroke-width="1.8" marker-end="url(#in)"/>
+<line x1="200" y1="420" x2="662" y2="360" stroke="#E69F00" stroke-width="2" stroke-dasharray="2,4" stroke-linecap="round"/><circle cx="662" cy="360" r="4" fill="#E69F00"/>
+<text x="656" y="377" font-size="10.5" text-anchor="middle" fill="#fff" stroke="#fff" stroke-width="3">1.63 nA tanh(-20.2(V - 1.17)) × V(S1)</text>
+<text x="656" y="377" font-size="10.5" text-anchor="middle" fill="#0072B2">1.63 nA tanh(-20.2(V - 1.17)) × V(S1)</text>
+<path d="M1120.0,249.0 C1065.0,227.0 1065.0,271.0 1118.0,263.0" fill="none" stroke="#0072B2" stroke-width="1.8" marker-end="url(#in)"/>
+<text x="1060" y="255" font-size="10.5" text-anchor="end" fill="#fff" stroke="#fff" stroke-width="3">2.21 nA tanh(0.271(V + 1.23))</text>
+<text x="1060" y="255" font-size="10.5" text-anchor="end" fill="#0072B2">2.21 nA tanh(0.271(V + 1.23))</text>
+<path d="M1120.0,285.0 C1065.0,263.0 1065.0,307.0 1118.0,299.0" fill="none" stroke="#D55E00" stroke-width="1.8" stroke-dasharray="7,5" marker-end="url(#out)"/>
+<text x="1060" y="291" font-size="10.5" text-anchor="end" fill="#fff" stroke="#fff" stroke-width="3">-14 nA tanh(1.65(V + 1.28)), τ 92.9 ms</text>
+<text x="1060" y="291" font-size="10.5" text-anchor="end" fill="#D55E00">-14 nA tanh(1.65(V + 1.28)), τ 92.9 ms</text>
+<path d="M1140,301 Q1140,418 1140,535" fill="none" stroke="#0072B2" stroke-width="1.8" marker-end="url(#in)"/>
+<line x1="827" y1="420" x2="1140" y2="418" stroke="#E69F00" stroke-width="2" stroke-dasharray="2,4" stroke-linecap="round"/><circle cx="1140" cy="418" r="4" fill="#E69F00"/>
+<text x="1126" y="422" font-size="10.5" text-anchor="middle" fill="#fff" stroke="#fff" stroke-width="3">8.14 nA σ(6.86(V + 2.32)) × V(G)</text>
+<text x="1126" y="422" font-size="10.5" text-anchor="middle" fill="#0072B2">8.14 nA σ(6.86(V + 2.32)) × V(G)</text>
+<path d="M537,554 Q681,521 799,433" fill="none" stroke="#0072B2" stroke-width="1.8" marker-end="url(#in)"/>
+<text x="680" y="524" font-size="10.5" text-anchor="middle" fill="#fff" stroke="#fff" stroke-width="3">3.38 nA σ(11.1(V - 1.52))</text>
+<text x="680" y="524" font-size="10.5" text-anchor="middle" fill="#0072B2">3.38 nA σ(11.1(V - 1.52))</text>
+<path d="M803,431 Q659,464 541,552" fill="none" stroke="#D55E00" stroke-width="1.8" stroke-dasharray="7,5" marker-end="url(#out)"/>
+<text x="660" y="469" font-size="10.5" text-anchor="middle" fill="#fff" stroke="#fff" stroke-width="3">-20 nA σ(17.3(V - 2.56))</text>
+<text x="660" y="469" font-size="10.5" text-anchor="middle" fill="#D55E00">-20 nA σ(17.3(V - 2.56))</text>
+<circle cx="200.0" cy="226.66666666666669" r="26" fill="#F2F2F2" stroke="#111" stroke-width="2"/>
+<text x="200.0" y="231.66666666666669" font-size="15" text-anchor="middle" fill="#111">S0</text>
+<text x="200.0" y="267.6666666666667" font-size="10.5" text-anchor="middle" fill="#111">C 3.76 pF</text>
+<text x="200.0" y="280.6666666666667" font-size="10.5" text-anchor="middle" fill="#111">R 9.6 GΩ to -1.17 V</text>
+<circle cx="200.0" cy="420.0" r="26" fill="#F2F2F2" stroke="#111" stroke-width="2"/>
+<text x="200.0" y="425.0" font-size="15" text-anchor="middle" fill="#111">S1</text>
+<text x="200.0" y="461.0" font-size="10.5" text-anchor="middle" fill="#111">C 1.75 pF</text>
+<text x="200.0" y="474.0" font-size="10.5" text-anchor="middle" fill="#111">R 43 GΩ to -2.76 V</text>
+<circle cx="200.0" cy="613.3333333333333" r="26" fill="#F2F2F2" stroke="#111" stroke-width="2"/>
+<text x="200.0" y="618.3333333333333" font-size="15" text-anchor="middle" fill="#111">T</text>
+<text x="200.0" y="654.3333333333333" font-size="10.5" text-anchor="middle" fill="#111">C 1.21 pF</text>
+<text x="200.0" y="667.3333333333333" font-size="10.5" text-anchor="middle" fill="#111">R 1.47 GΩ to -1.09 V</text>
+<rect x="487.33333333333326" y="249.0" width="52" height="52" fill="#56B4E9" stroke="#111" stroke-width="2"/>
+<text x="513.3333333333333" y="280.0" font-size="15" text-anchor="middle" fill="#111">m</text>
+<text x="513.3333333333333" y="316.0" font-size="10.5" text-anchor="middle" fill="#111">C 6.44 pF</text>
+<text x="513.3333333333333" y="329.0" font-size="10.5" text-anchor="middle" fill="#111">born at 0.31 V</text>
+<circle cx="826.6666666666666" cy="420.0" r="26" fill="#F2F2F2" stroke="#111" stroke-width="2"/>
+<text x="826.6666666666666" y="425.0" font-size="15" text-anchor="middle" fill="#111">G</text>
+<text x="826.6666666666666" y="461.0" font-size="10.5" text-anchor="middle" fill="#111">C 3.96 pF</text>
+<text x="826.6666666666666" y="474.0" font-size="10.5" text-anchor="middle" fill="#111">R 38.5 GΩ to -1.20 V</text>
+<circle cx="1140.0" cy="275.0" r="26" fill="#F2F2F2" stroke="#111" stroke-width="2"/>
+<text x="1140.0" y="280.0" font-size="15" text-anchor="middle" fill="#111">MA</text>
+<text x="1140.0" y="316.0" font-size="10.5" text-anchor="middle" fill="#111">C 5.34 pF</text>
+<text x="1140.0" y="329.0" font-size="10.5" text-anchor="middle" fill="#111">R 16.3 GΩ to +0.50 V</text>
+<circle cx="1140.0" cy="565.0" r="26" fill="#F2F2F2" stroke="#111" stroke-width="2"/>
+<text x="1140.0" y="570.0" font-size="15" text-anchor="middle" fill="#111">MB</text>
+<text x="1140.0" y="606.0" font-size="10.5" text-anchor="middle" fill="#111">C 2.5 pF</text>
+<text x="1140.0" y="619.0" font-size="10.5" text-anchor="middle" fill="#111">R 1.24 GΩ to -2.73 V</text>
+<circle cx="513.3333333333333" cy="565.0" r="26" fill="#F2F2F2" stroke="#111" stroke-width="2"/>
+<text x="513.3333333333333" y="570.0" font-size="15" text-anchor="middle" fill="#111">Rt</text>
+<text x="513.3333333333333" y="606.0" font-size="10.5" text-anchor="middle" fill="#111">C 35.4 pF</text>
+<text x="513.3333333333333" y="619.0" font-size="10.5" text-anchor="middle" fill="#111">R 73.9 GΩ to +2.54 V</text>
+<rect x="20" y="214.66666666666669" width="120" height="24" fill="#fff" stroke="#555"/><text x="80" y="230.66666666666669" font-size="12" text-anchor="middle" fill="#111">eye (a colour)</text><line x1="140" y1="226.66666666666669" x2="174.0" y2="226.66666666666669" stroke="#555"/>
+<rect x="20" y="408.0" width="120" height="24" fill="#fff" stroke="#555"/><text x="80" y="424.0" font-size="12" text-anchor="middle" fill="#111">eye (the other)</text><line x1="140" y1="420.0" x2="174.0" y2="420.0" stroke="#555"/>
+<rect x="20" y="601.3333333333333" width="120" height="24" fill="#fff" stroke="#555"/><text x="80" y="617.3333333333333" font-size="12" text-anchor="middle" fill="#111">taste (±1)</text><line x1="140" y1="613.3333333333333" x2="174.0" y2="613.3333333333333" stroke="#555"/>
+<rect x="1360" y="263.0" width="120" height="24" fill="#fff" stroke="#555"/><text x="1420" y="279.0" font-size="12" text-anchor="middle" fill="#111">thruster 0</text><line x1="1360" y1="275.0" x2="1166.0" y2="275.0" stroke="#555"/>
+<rect x="1360" y="553.0" width="120" height="24" fill="#fff" stroke="#555"/><text x="1420" y="569.0" font-size="12" text-anchor="middle" fill="#111">thruster 1</text><line x1="1360" y1="565.0" x2="1166.0" y2="565.0" stroke="#555"/>
+<text x="20" y="784" font-size="12" fill="#555">circle: a state, a voltage held by a capacitor; square: a memory node (a floating gate); arrow: an amplifier, reading the voltage at its tail and pushing a current into the capacitor at its head (blue solid: in, vermilion dashed: out); orange dotted: its gate</text>
+<line x1="20" y1="806" x2="2120" y2="806" stroke="#555" stroke-dasharray="3,4"/>
+<line x1="360" y1="910" x2="1950" y2="910" stroke="#111" stroke-width="1.6"/>
+<text x="360" y="902" font-size="14" text-anchor="start" fill="#111" font-weight="bold">S0</text>
+<circle cx="520" cy="910" r="3.5" fill="#111"/><line x1="520" y1="910" x2="520" y2="924" stroke="#111"/><line x1="509" y1="924" x2="531" y2="924" stroke="#111" stroke-width="2.5"/><line x1="509" y1="929" x2="531" y2="929" stroke="#111" stroke-width="2.5"/><line x1="520" y1="929" x2="520" y2="942" stroke="#111"/><line x1="511" y1="942" x2="529" y2="942" stroke="#111" stroke-width="1.5"/><line x1="515" y1="946" x2="525" y2="946" stroke="#111" stroke-width="1.5"/><line x1="518" y1="950" x2="522" y2="950" stroke="#111" stroke-width="1.5"/>
+<text x="535" y="934" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">3.76 pF</text>
+<circle cx="440" cy="910" r="3.5" fill="#111"/><path d="M440,910 L440.0,917.6 L435.0,921.4 L445.0,925.2 L435.0,929.0 L445.0,932.8 L435.0,936.6 L440.0,940.4 L440,948" fill="none" stroke="#111" stroke-width="1.4"/>
+<line x1="432" y1="952" x2="448" y2="952" stroke="#111" stroke-width="2.5"/><line x1="436" y1="957" x2="444" y2="957" stroke="#111" stroke-width="1.5"/>
+<text x="449" y="936" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">9.6 GΩ</text><text x="449" y="959" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal">rest -1.17 V</text>
+<line x1="360" y1="1010" x2="1950" y2="1010" stroke="#111" stroke-width="1.6"/>
+<text x="360" y="1002" font-size="14" text-anchor="start" fill="#111" font-weight="bold">S1</text>
+<circle cx="520" cy="1010" r="3.5" fill="#111"/><line x1="520" y1="1010" x2="520" y2="1024" stroke="#111"/><line x1="509" y1="1024" x2="531" y2="1024" stroke="#111" stroke-width="2.5"/><line x1="509" y1="1029" x2="531" y2="1029" stroke="#111" stroke-width="2.5"/><line x1="520" y1="1029" x2="520" y2="1042" stroke="#111"/><line x1="511" y1="1042" x2="529" y2="1042" stroke="#111" stroke-width="1.5"/><line x1="515" y1="1046" x2="525" y2="1046" stroke="#111" stroke-width="1.5"/><line x1="518" y1="1050" x2="522" y2="1050" stroke="#111" stroke-width="1.5"/>
+<text x="535" y="1034" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">1.75 pF</text>
+<circle cx="440" cy="1010" r="3.5" fill="#111"/><path d="M440,1010 L440.0,1017.6 L435.0,1021.4 L445.0,1025.2 L435.0,1029.0 L445.0,1032.8 L435.0,1036.6 L440.0,1040.4 L440,1048" fill="none" stroke="#111" stroke-width="1.4"/>
+<line x1="432" y1="1052" x2="448" y2="1052" stroke="#111" stroke-width="2.5"/><line x1="436" y1="1057" x2="444" y2="1057" stroke="#111" stroke-width="1.5"/>
+<text x="449" y="1036" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">43 GΩ</text><text x="449" y="1059" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal">rest -2.76 V</text>
+<line x1="360" y1="1110" x2="1950" y2="1110" stroke="#111" stroke-width="1.6"/>
+<text x="360" y="1102" font-size="14" text-anchor="start" fill="#111" font-weight="bold">T</text>
+<circle cx="520" cy="1110" r="3.5" fill="#111"/><line x1="520" y1="1110" x2="520" y2="1124" stroke="#111"/><line x1="509" y1="1124" x2="531" y2="1124" stroke="#111" stroke-width="2.5"/><line x1="509" y1="1129" x2="531" y2="1129" stroke="#111" stroke-width="2.5"/><line x1="520" y1="1129" x2="520" y2="1142" stroke="#111"/><line x1="511" y1="1142" x2="529" y2="1142" stroke="#111" stroke-width="1.5"/><line x1="515" y1="1146" x2="525" y2="1146" stroke="#111" stroke-width="1.5"/><line x1="518" y1="1150" x2="522" y2="1150" stroke="#111" stroke-width="1.5"/>
+<text x="535" y="1134" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">1.21 pF</text>
+<circle cx="440" cy="1110" r="3.5" fill="#111"/><path d="M440,1110 L440.0,1117.6 L435.0,1121.4 L445.0,1125.2 L435.0,1129.0 L445.0,1132.8 L435.0,1136.6 L440.0,1140.4 L440,1148" fill="none" stroke="#111" stroke-width="1.4"/>
+<line x1="432" y1="1152" x2="448" y2="1152" stroke="#111" stroke-width="2.5"/><line x1="436" y1="1157" x2="444" y2="1157" stroke="#111" stroke-width="1.5"/>
+<text x="449" y="1136" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">1.47 GΩ</text><text x="449" y="1159" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal">rest -1.09 V</text>
+<line x1="360" y1="1210" x2="1950" y2="1210" stroke="#111" stroke-width="1.6"/>
+<text x="360" y="1202" font-size="14" text-anchor="start" fill="#111" font-weight="bold">m</text>
+<circle cx="520" cy="1210" r="3.5" fill="#111"/><line x1="520" y1="1210" x2="520" y2="1224" stroke="#111"/><rect x="505" y="1220" width="30" height="12" fill="#d8eefa" stroke="none"/><line x1="509" y1="1224" x2="531" y2="1224" stroke="#56B4E9" stroke-width="2.5"/><line x1="509" y1="1229" x2="531" y2="1229" stroke="#56B4E9" stroke-width="2.5"/><line x1="520" y1="1229" x2="520" y2="1242" stroke="#111"/><line x1="511" y1="1242" x2="529" y2="1242" stroke="#111" stroke-width="1.5"/><line x1="515" y1="1246" x2="525" y2="1246" stroke="#111" stroke-width="1.5"/><line x1="518" y1="1250" x2="522" y2="1250" stroke="#111" stroke-width="1.5"/>
+<text x="535" y="1234" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">6.44 pF  floating gate</text>
+<text x="360" y="1222" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal">born at 0.31 V</text>
+<line x1="360" y1="1310" x2="1950" y2="1310" stroke="#111" stroke-width="1.6"/>
+<text x="360" y="1302" font-size="14" text-anchor="start" fill="#111" font-weight="bold">G</text>
+<circle cx="520" cy="1310" r="3.5" fill="#111"/><line x1="520" y1="1310" x2="520" y2="1324" stroke="#111"/><line x1="509" y1="1324" x2="531" y2="1324" stroke="#111" stroke-width="2.5"/><line x1="509" y1="1329" x2="531" y2="1329" stroke="#111" stroke-width="2.5"/><line x1="520" y1="1329" x2="520" y2="1342" stroke="#111"/><line x1="511" y1="1342" x2="529" y2="1342" stroke="#111" stroke-width="1.5"/><line x1="515" y1="1346" x2="525" y2="1346" stroke="#111" stroke-width="1.5"/><line x1="518" y1="1350" x2="522" y2="1350" stroke="#111" stroke-width="1.5"/>
+<text x="535" y="1334" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">3.96 pF</text>
+<circle cx="440" cy="1310" r="3.5" fill="#111"/><path d="M440,1310 L440.0,1317.6 L435.0,1321.4 L445.0,1325.2 L435.0,1329.0 L445.0,1332.8 L435.0,1336.6 L440.0,1340.4 L440,1348" fill="none" stroke="#111" stroke-width="1.4"/>
+<line x1="432" y1="1352" x2="448" y2="1352" stroke="#111" stroke-width="2.5"/><line x1="436" y1="1357" x2="444" y2="1357" stroke="#111" stroke-width="1.5"/>
+<text x="449" y="1336" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">38.5 GΩ</text><text x="449" y="1359" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal">rest -1.20 V</text>
+<line x1="360" y1="1410" x2="1950" y2="1410" stroke="#111" stroke-width="1.6"/>
+<text x="360" y="1402" font-size="14" text-anchor="start" fill="#111" font-weight="bold">Rt</text>
+<circle cx="520" cy="1410" r="3.5" fill="#111"/><line x1="520" y1="1410" x2="520" y2="1424" stroke="#111"/><line x1="509" y1="1424" x2="531" y2="1424" stroke="#111" stroke-width="2.5"/><line x1="509" y1="1429" x2="531" y2="1429" stroke="#111" stroke-width="2.5"/><line x1="520" y1="1429" x2="520" y2="1442" stroke="#111"/><line x1="511" y1="1442" x2="529" y2="1442" stroke="#111" stroke-width="1.5"/><line x1="515" y1="1446" x2="525" y2="1446" stroke="#111" stroke-width="1.5"/><line x1="518" y1="1450" x2="522" y2="1450" stroke="#111" stroke-width="1.5"/>
+<text x="535" y="1434" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">35.4 pF</text>
+<circle cx="440" cy="1410" r="3.5" fill="#111"/><path d="M440,1410 L440.0,1417.6 L435.0,1421.4 L445.0,1425.2 L435.0,1429.0 L445.0,1432.8 L435.0,1436.6 L440.0,1440.4 L440,1448" fill="none" stroke="#111" stroke-width="1.4"/>
+<line x1="432" y1="1452" x2="448" y2="1452" stroke="#111" stroke-width="2.5"/><line x1="436" y1="1457" x2="444" y2="1457" stroke="#111" stroke-width="1.5"/>
+<text x="449" y="1436" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">73.9 GΩ</text><text x="449" y="1459" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal">rest +2.54 V</text>
+<line x1="360" y1="1510" x2="1950" y2="1510" stroke="#111" stroke-width="1.6"/>
+<text x="360" y="1502" font-size="14" text-anchor="start" fill="#111" font-weight="bold">MA</text>
+<circle cx="520" cy="1510" r="3.5" fill="#111"/><line x1="520" y1="1510" x2="520" y2="1524" stroke="#111"/><line x1="509" y1="1524" x2="531" y2="1524" stroke="#111" stroke-width="2.5"/><line x1="509" y1="1529" x2="531" y2="1529" stroke="#111" stroke-width="2.5"/><line x1="520" y1="1529" x2="520" y2="1542" stroke="#111"/><line x1="511" y1="1542" x2="529" y2="1542" stroke="#111" stroke-width="1.5"/><line x1="515" y1="1546" x2="525" y2="1546" stroke="#111" stroke-width="1.5"/><line x1="518" y1="1550" x2="522" y2="1550" stroke="#111" stroke-width="1.5"/>
+<text x="535" y="1534" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">5.34 pF</text>
+<circle cx="440" cy="1510" r="3.5" fill="#111"/><path d="M440,1510 L440.0,1517.6 L435.0,1521.4 L445.0,1525.2 L435.0,1529.0 L445.0,1532.8 L435.0,1536.6 L440.0,1540.4 L440,1548" fill="none" stroke="#111" stroke-width="1.4"/>
+<line x1="432" y1="1552" x2="448" y2="1552" stroke="#111" stroke-width="2.5"/><line x1="436" y1="1557" x2="444" y2="1557" stroke="#111" stroke-width="1.5"/>
+<text x="449" y="1536" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">16.3 GΩ</text><text x="449" y="1559" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal">rest +0.50 V</text>
+<line x1="360" y1="1610" x2="1950" y2="1610" stroke="#111" stroke-width="1.6"/>
+<text x="360" y="1602" font-size="14" text-anchor="start" fill="#111" font-weight="bold">MB</text>
+<circle cx="520" cy="1610" r="3.5" fill="#111"/><line x1="520" y1="1610" x2="520" y2="1624" stroke="#111"/><line x1="509" y1="1624" x2="531" y2="1624" stroke="#111" stroke-width="2.5"/><line x1="509" y1="1629" x2="531" y2="1629" stroke="#111" stroke-width="2.5"/><line x1="520" y1="1629" x2="520" y2="1642" stroke="#111"/><line x1="511" y1="1642" x2="529" y2="1642" stroke="#111" stroke-width="1.5"/><line x1="515" y1="1646" x2="525" y2="1646" stroke="#111" stroke-width="1.5"/><line x1="518" y1="1650" x2="522" y2="1650" stroke="#111" stroke-width="1.5"/>
+<text x="535" y="1634" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">2.5 pF</text>
+<circle cx="440" cy="1610" r="3.5" fill="#111"/><path d="M440,1610 L440.0,1617.6 L435.0,1621.4 L445.0,1625.2 L435.0,1629.0 L445.0,1632.8 L435.0,1636.6 L440.0,1640.4 L440,1648" fill="none" stroke="#111" stroke-width="1.4"/>
+<line x1="432" y1="1652" x2="448" y2="1652" stroke="#111" stroke-width="2.5"/><line x1="436" y1="1657" x2="444" y2="1657" stroke="#111" stroke-width="1.5"/>
+<text x="449" y="1636" font-size="10.5" text-anchor="start" fill="#111" font-weight="normal">1.24 GΩ</text><text x="449" y="1659" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal">rest -2.73 V</text>
+<line x1="310" y1="910" x2="360" y2="910" stroke="#111"/><circle cx="296" cy="910" r="12" fill="#fff" stroke="#111"/><line x1="289" y1="910" x2="303" y2="910" stroke="#111" marker-end="url(#ink)"/><text x="278" y="914" font-size="11" text-anchor="end" fill="#111" font-weight="normal">eye (a colour): current pulses</text>
+<line x1="310" y1="1010" x2="360" y2="1010" stroke="#111"/><circle cx="296" cy="1010" r="12" fill="#fff" stroke="#111"/><line x1="289" y1="1010" x2="303" y2="1010" stroke="#111" marker-end="url(#ink)"/><text x="278" y="1014" font-size="11" text-anchor="end" fill="#111" font-weight="normal">eye (the other): current pulses</text>
+<line x1="310" y1="1110" x2="360" y2="1110" stroke="#111"/><circle cx="296" cy="1110" r="12" fill="#fff" stroke="#111"/><line x1="289" y1="1110" x2="303" y2="1110" stroke="#111" marker-end="url(#ink)"/><text x="278" y="1114" font-size="11" text-anchor="end" fill="#111" font-weight="normal">taste (±1): current pulses</text>
+<rect x="1970" y="1498" width="150" height="24" fill="#fff" stroke="#555"/><line x1="1950" y1="1510" x2="1970" y2="1510" stroke="#111"/><text x="2045" y="1514" font-size="11" text-anchor="middle" fill="#111" font-weight="normal">thruster 0: its spikes</text>
+<rect x="1970" y="1598" width="150" height="24" fill="#fff" stroke="#555"/><line x1="1950" y1="1610" x2="1970" y2="1610" stroke="#111"/><text x="2045" y="1614" font-size="11" text-anchor="middle" fill="#111" font-weight="normal">thruster 1: its spikes</text>
+<circle cx="600" cy="910" r="3.5" fill="#111"/><line x1="600" y1="910" x2="600" y2="1748" stroke="#111"/>
+<line x1="600" y1="1748" x2="634" y2="1748" stroke="#111"/>
+<path d="M634,1732 L692,1760 L634,1788 Z" fill="#eef6fb" stroke="#0072B2" stroke-width="2"/><text x="638" y="1752" font-size="12" text-anchor="start" fill="#111" font-weight="normal">+</text><text x="638" y="1776" font-size="12" text-anchor="start" fill="#111" font-weight="normal">−</text>
+<line x1="624" y1="1772" x2="634" y2="1772" stroke="#111"/><text x="630" y="1788" font-size="9.5" text-anchor="end" fill="#555" font-weight="normal">+0.58 V</text>
+<line x1="692" y1="1760" x2="712" y2="1760" stroke="#111"/><line x1="712" y1="1760" x2="712" y2="1210" stroke="#0072B2" stroke-width="1.6"/><circle cx="712" cy="1210" r="3.5" fill="#111"/>
+<text x="634" y="1844" font-size="11" text-anchor="start" fill="#0072B2" font-weight="bold">3.8 nA</text><text x="634" y="1858" font-size="10" text-anchor="start" fill="#0072B2" font-weight="normal">σ, 8.36 per V</text><text x="634" y="1871" font-size="10" text-anchor="start" fill="#555" font-weight="normal">S0 → m</text>
+<line x1="655.0" y1="1776" x2="655.0" y2="1800" stroke="#111"/><rect x="648.0" y="1800" width="14" height="14" fill="#fff" stroke="#E69F00" stroke-width="2"/><line x1="662.0" y1="1807" x2="728" y2="1807" stroke="#E69F00" stroke-width="1.6"/><line x1="728" y1="1807" x2="728" y2="1110" stroke="#E69F00" stroke-width="1.6"/><circle cx="728" cy="1110" r="3.5" fill="#111"/><text x="665" y="1828" font-size="9.5" text-anchor="start" fill="#E69F00" font-weight="normal">× V(T)</text>
+<circle cx="750" cy="1010" r="3.5" fill="#111"/><line x1="750" y1="1010" x2="750" y2="1748" stroke="#111"/>
+<line x1="750" y1="1748" x2="784" y2="1748" stroke="#111"/>
+<path d="M784,1732 L842,1760 L784,1788 Z" fill="#eef6fb" stroke="#D55E00" stroke-width="2" stroke-dasharray="5,3"/><text x="788" y="1752" font-size="12" text-anchor="start" fill="#111" font-weight="normal">+</text><text x="788" y="1776" font-size="12" text-anchor="start" fill="#111" font-weight="normal">−</text>
+<line x1="774" y1="1772" x2="784" y2="1772" stroke="#111"/><text x="780" y="1788" font-size="9.5" text-anchor="end" fill="#555" font-weight="normal">+0.36 V</text>
+<line x1="842" y1="1760" x2="862" y2="1760" stroke="#111"/><line x1="862" y1="1760" x2="862" y2="1210" stroke="#D55E00" stroke-width="1.6" stroke-dasharray="5,3"/><circle cx="862" cy="1210" r="3.5" fill="#111"/>
+<text x="784" y="1844" font-size="11" text-anchor="start" fill="#D55E00" font-weight="bold">-1.12 nA</text><text x="784" y="1858" font-size="10" text-anchor="start" fill="#D55E00" font-weight="normal">σ, 30 per V</text><text x="784" y="1871" font-size="10" text-anchor="start" fill="#555" font-weight="normal">S1 → m</text>
+<line x1="805.0" y1="1776" x2="805.0" y2="1800" stroke="#111"/><rect x="798.0" y="1800" width="14" height="14" fill="#fff" stroke="#E69F00" stroke-width="2"/><line x1="812.0" y1="1807" x2="878" y2="1807" stroke="#E69F00" stroke-width="1.6"/><line x1="878" y1="1807" x2="878" y2="1110" stroke="#E69F00" stroke-width="1.6"/><circle cx="878" cy="1110" r="3.5" fill="#111"/><text x="815" y="1828" font-size="9.5" text-anchor="start" fill="#E69F00" font-weight="normal">× V(T)</text>
+<circle cx="900" cy="1210" r="3.5" fill="#111"/><line x1="900" y1="1210" x2="900" y2="1748" stroke="#111"/>
+<line x1="900" y1="1748" x2="934" y2="1748" stroke="#111"/>
+<path d="M934,1732 L992,1760 L934,1788 Z" fill="#eef6fb" stroke="#0072B2" stroke-width="2"/><text x="938" y="1752" font-size="12" text-anchor="start" fill="#111" font-weight="normal">+</text><text x="938" y="1776" font-size="12" text-anchor="start" fill="#111" font-weight="normal">−</text>
+<line x1="924" y1="1772" x2="934" y2="1772" stroke="#111"/><text x="930" y="1788" font-size="9.5" text-anchor="end" fill="#555" font-weight="normal">-0.45 V</text>
+<line x1="992" y1="1760" x2="1012" y2="1760" stroke="#111"/><line x1="1012" y1="1760" x2="1012" y2="1310" stroke="#0072B2" stroke-width="1.6"/><circle cx="1012" cy="1310" r="3.5" fill="#111"/>
+<text x="934" y="1844" font-size="11" text-anchor="start" fill="#0072B2" font-weight="bold">4.99 nA</text><text x="934" y="1858" font-size="10" text-anchor="start" fill="#0072B2" font-weight="normal">tanh, 30 per V</text><text x="934" y="1871" font-size="10" text-anchor="start" fill="#555" font-weight="normal">m → G</text>
+<line x1="955.0" y1="1776" x2="955.0" y2="1800" stroke="#111"/><rect x="948.0" y="1800" width="14" height="14" fill="#fff" stroke="#E69F00" stroke-width="2"/><line x1="962.0" y1="1807" x2="1028" y2="1807" stroke="#E69F00" stroke-width="1.6"/><line x1="1028" y1="1807" x2="1028" y2="910" stroke="#E69F00" stroke-width="1.6"/><circle cx="1028" cy="910" r="3.5" fill="#111"/><text x="965" y="1828" font-size="9.5" text-anchor="start" fill="#E69F00" font-weight="normal">× V(S0)</text>
+<circle cx="1050" cy="1210" r="3.5" fill="#111"/><line x1="1050" y1="1210" x2="1050" y2="1748" stroke="#111"/>
+<line x1="1050" y1="1748" x2="1084" y2="1748" stroke="#111"/>
+<path d="M1084,1732 L1142,1760 L1084,1788 Z" fill="#eef6fb" stroke="#0072B2" stroke-width="2"/><text x="1088" y="1752" font-size="12" text-anchor="start" fill="#111" font-weight="normal">+</text><text x="1088" y="1776" font-size="12" text-anchor="start" fill="#111" font-weight="normal">−</text>
+<line x1="1074" y1="1772" x2="1084" y2="1772" stroke="#111"/><text x="1080" y="1788" font-size="9.5" text-anchor="end" fill="#555" font-weight="normal">+1.17 V</text>
+<line x1="1142" y1="1760" x2="1162" y2="1760" stroke="#111"/><line x1="1162" y1="1760" x2="1162" y2="1310" stroke="#0072B2" stroke-width="1.6"/><circle cx="1162" cy="1310" r="3.5" fill="#111"/>
+<text x="1084" y="1844" font-size="11" text-anchor="start" fill="#0072B2" font-weight="bold">1.63 nA</text><text x="1084" y="1858" font-size="10" text-anchor="start" fill="#0072B2" font-weight="normal">tanh, -20.2 per V</text><text x="1084" y="1871" font-size="10" text-anchor="start" fill="#555" font-weight="normal">m → G</text>
+<line x1="1105.0" y1="1776" x2="1105.0" y2="1800" stroke="#111"/><rect x="1098.0" y="1800" width="14" height="14" fill="#fff" stroke="#E69F00" stroke-width="2"/><line x1="1112.0" y1="1807" x2="1178" y2="1807" stroke="#E69F00" stroke-width="1.6"/><line x1="1178" y1="1807" x2="1178" y2="1010" stroke="#E69F00" stroke-width="1.6"/><circle cx="1178" cy="1010" r="3.5" fill="#111"/><text x="1115" y="1828" font-size="9.5" text-anchor="start" fill="#E69F00" font-weight="normal">× V(S1)</text>
+<circle cx="1200" cy="1510" r="3.5" fill="#111"/><line x1="1200" y1="1510" x2="1200" y2="1748" stroke="#111"/>
+<line x1="1200" y1="1748" x2="1234" y2="1748" stroke="#111"/>
+<path d="M1234,1732 L1292,1760 L1234,1788 Z" fill="#eef6fb" stroke="#0072B2" stroke-width="2"/><text x="1238" y="1752" font-size="12" text-anchor="start" fill="#111" font-weight="normal">+</text><text x="1238" y="1776" font-size="12" text-anchor="start" fill="#111" font-weight="normal">−</text>
+<line x1="1224" y1="1772" x2="1234" y2="1772" stroke="#111"/><text x="1230" y="1788" font-size="9.5" text-anchor="end" fill="#555" font-weight="normal">-1.23 V</text>
+<line x1="1292" y1="1760" x2="1312" y2="1760" stroke="#111"/><line x1="1312" y1="1760" x2="1312" y2="1510" stroke="#0072B2" stroke-width="1.6"/><circle cx="1312" cy="1510" r="3.5" fill="#111"/>
+<text x="1234" y="1844" font-size="11" text-anchor="start" fill="#0072B2" font-weight="bold">2.21 nA</text><text x="1234" y="1858" font-size="10" text-anchor="start" fill="#0072B2" font-weight="normal">tanh, 0.271 per V</text><text x="1234" y="1871" font-size="10" text-anchor="start" fill="#555" font-weight="normal">MA → MA</text>
+<circle cx="1350" cy="1510" r="3.5" fill="#111"/><line x1="1350" y1="1510" x2="1350" y2="1748" stroke="#111"/>
+<path d="M1350,1748 L1356.8,1748.0 L1360.2,1753.0 L1363.6,1743.0 L1367.0,1753.0 L1370.4,1743.0 L1373.8,1753.0 L1377.2,1748.0 L1384,1748" fill="none" stroke="#111" stroke-width="1.4"/>
+<circle cx="1376" cy="1748" r="3.5" fill="#111"/><line x1="1376" y1="1748" x2="1376" y2="1752" stroke="#111"/>
+<text x="1346" y="1712" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal">τ 92.9 ms</text>
+<line x1="1366" y1="1800" x2="1386" y2="1800" stroke="#111" stroke-width="2.5"/><line x1="1366" y1="1805" x2="1386" y2="1805" stroke="#111" stroke-width="2.5"/><line x1="1376" y1="1805" x2="1376" y2="1816" stroke="#111"/><line x1="1367" y1="1816" x2="1385" y2="1816" stroke="#111" stroke-width="1.5"/><line x1="1371" y1="1820" x2="1381" y2="1820" stroke="#111" stroke-width="1.5"/><line x1="1374" y1="1824" x2="1378" y2="1824" stroke="#111" stroke-width="1.5"/><line x1="1376" y1="1748" x2="1376" y2="1800" stroke="#111" stroke-dasharray="1,0"/>
+<path d="M1384,1732 L1442,1760 L1384,1788 Z" fill="#eef6fb" stroke="#D55E00" stroke-width="2" stroke-dasharray="5,3"/><text x="1388" y="1752" font-size="12" text-anchor="start" fill="#111" font-weight="normal">+</text><text x="1388" y="1776" font-size="12" text-anchor="start" fill="#111" font-weight="normal">−</text>
+<line x1="1374" y1="1772" x2="1384" y2="1772" stroke="#111"/><text x="1380" y="1788" font-size="9.5" text-anchor="end" fill="#555" font-weight="normal">-1.28 V</text>
+<line x1="1442" y1="1760" x2="1462" y2="1760" stroke="#111"/><line x1="1462" y1="1760" x2="1462" y2="1510" stroke="#D55E00" stroke-width="1.6" stroke-dasharray="5,3"/><circle cx="1462" cy="1510" r="3.5" fill="#111"/>
+<text x="1384" y="1844" font-size="11" text-anchor="start" fill="#D55E00" font-weight="bold">-14 nA</text><text x="1384" y="1858" font-size="10" text-anchor="start" fill="#D55E00" font-weight="normal">tanh, 1.65 per V</text><text x="1384" y="1871" font-size="10" text-anchor="start" fill="#555" font-weight="normal">MA → MA</text>
+<circle cx="1500" cy="1510" r="3.5" fill="#111"/><line x1="1500" y1="1510" x2="1500" y2="1748" stroke="#111"/>
+<line x1="1500" y1="1748" x2="1534" y2="1748" stroke="#111"/>
+<path d="M1534,1732 L1592,1760 L1534,1788 Z" fill="#eef6fb" stroke="#0072B2" stroke-width="2"/><text x="1538" y="1752" font-size="12" text-anchor="start" fill="#111" font-weight="normal">+</text><text x="1538" y="1776" font-size="12" text-anchor="start" fill="#111" font-weight="normal">−</text>
+<line x1="1524" y1="1772" x2="1534" y2="1772" stroke="#111"/><text x="1530" y="1788" font-size="9.5" text-anchor="end" fill="#555" font-weight="normal">-2.32 V</text>
+<line x1="1592" y1="1760" x2="1612" y2="1760" stroke="#111"/><line x1="1612" y1="1760" x2="1612" y2="1610" stroke="#0072B2" stroke-width="1.6"/><circle cx="1612" cy="1610" r="3.5" fill="#111"/>
+<text x="1534" y="1844" font-size="11" text-anchor="start" fill="#0072B2" font-weight="bold">8.14 nA</text><text x="1534" y="1858" font-size="10" text-anchor="start" fill="#0072B2" font-weight="normal">σ, 6.86 per V</text><text x="1534" y="1871" font-size="10" text-anchor="start" fill="#555" font-weight="normal">MA → MB</text>
+<line x1="1555.0" y1="1776" x2="1555.0" y2="1800" stroke="#111"/><rect x="1548.0" y="1800" width="14" height="14" fill="#fff" stroke="#E69F00" stroke-width="2"/><line x1="1562.0" y1="1807" x2="1628" y2="1807" stroke="#E69F00" stroke-width="1.6"/><line x1="1628" y1="1807" x2="1628" y2="1310" stroke="#E69F00" stroke-width="1.6"/><circle cx="1628" cy="1310" r="3.5" fill="#111"/><text x="1565" y="1828" font-size="9.5" text-anchor="start" fill="#E69F00" font-weight="normal">× V(G)</text>
+<circle cx="1650" cy="1410" r="3.5" fill="#111"/><line x1="1650" y1="1410" x2="1650" y2="1748" stroke="#111"/>
+<line x1="1650" y1="1748" x2="1684" y2="1748" stroke="#111"/>
+<path d="M1684,1732 L1742,1760 L1684,1788 Z" fill="#eef6fb" stroke="#0072B2" stroke-width="2"/><text x="1688" y="1752" font-size="12" text-anchor="start" fill="#111" font-weight="normal">+</text><text x="1688" y="1776" font-size="12" text-anchor="start" fill="#111" font-weight="normal">−</text>
+<line x1="1674" y1="1772" x2="1684" y2="1772" stroke="#111"/><text x="1680" y="1788" font-size="9.5" text-anchor="end" fill="#555" font-weight="normal">+1.52 V</text>
+<line x1="1742" y1="1760" x2="1762" y2="1760" stroke="#111"/><line x1="1762" y1="1760" x2="1762" y2="1310" stroke="#0072B2" stroke-width="1.6"/><circle cx="1762" cy="1310" r="3.5" fill="#111"/>
+<text x="1684" y="1844" font-size="11" text-anchor="start" fill="#0072B2" font-weight="bold">3.38 nA</text><text x="1684" y="1858" font-size="10" text-anchor="start" fill="#0072B2" font-weight="normal">σ, 11.1 per V</text><text x="1684" y="1871" font-size="10" text-anchor="start" fill="#555" font-weight="normal">Rt → G</text>
+<circle cx="1800" cy="1310" r="3.5" fill="#111"/><line x1="1800" y1="1310" x2="1800" y2="1748" stroke="#111"/>
+<line x1="1800" y1="1748" x2="1834" y2="1748" stroke="#111"/>
+<path d="M1834,1732 L1892,1760 L1834,1788 Z" fill="#eef6fb" stroke="#D55E00" stroke-width="2" stroke-dasharray="5,3"/><text x="1838" y="1752" font-size="12" text-anchor="start" fill="#111" font-weight="normal">+</text><text x="1838" y="1776" font-size="12" text-anchor="start" fill="#111" font-weight="normal">−</text>
+<line x1="1824" y1="1772" x2="1834" y2="1772" stroke="#111"/><text x="1830" y="1788" font-size="9.5" text-anchor="end" fill="#555" font-weight="normal">+2.56 V</text>
+<line x1="1892" y1="1760" x2="1912" y2="1760" stroke="#111"/><line x1="1912" y1="1760" x2="1912" y2="1410" stroke="#D55E00" stroke-width="1.6" stroke-dasharray="5,3"/><circle cx="1912" cy="1410" r="3.5" fill="#111"/>
+<text x="1834" y="1844" font-size="11" text-anchor="start" fill="#D55E00" font-weight="bold">-20 nA</text><text x="1834" y="1858" font-size="10" text-anchor="start" fill="#D55E00" font-weight="normal">σ, 17.3 per V</text><text x="1834" y="1871" font-size="10" text-anchor="start" fill="#555" font-weight="normal">G → Rt</text>
+<text x="20" y="850" font-size="18" text-anchor="start" fill="#111" font-weight="normal">The schematic: every part (9 capacitors, 8 resistors, 0 diodes, 14 transistors: 31 parts)</text>
+<text x="20" y="872" font-size="11.5" text-anchor="start" fill="#555" font-weight="normal">each net a wire, its capacitor, leak and rest voltage at its left; each amplifier a column below, wired up from the net it reads (+) and back to the net it drives; a dot is a joint, wires crossing without one don&#x27;t connect; a gate: a transistor in the amplifier&#x27;s tail (orange)</text>
+</svg>

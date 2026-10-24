@@ -83,6 +83,10 @@ they were written with: the "grown brain" is the sheet brain, the "mixed-signal 
   feedback and kept it: alone, its loss cost too much. An open search from HR_si took it away and retuned the rest,
   and the 32-part circuit was as good as the 35 (minimal/NOTEBOOK.md, M13). A part can be needed only because the
   others were tuned around it; search topology and values together, from a start that already works.
+- **A tolerance on the score is not a guarantee of the job.** Pruning kept any step within 0.1 of the score it started
+  from, and took the best circuit to 28 parts that stranded in a third of silicon lives: the score counted the
+  stranded lives, but the others' extra meals made up for them. Keep the hard constraints (the job) as constraints at
+  every step; let the tolerance govern only what is left (minimal/NOTEBOOK.md, M14).
 - **Trace the mechanism, not just the score.** A hunger meant to make a creature travel did nothing: its drain leaked
   at rest exactly as fast as it charged, so a polish tuned a circuit that was never hungry, and only a trace of the
   node's voltage showed it (The minimal circuit search, below).

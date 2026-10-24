@@ -10,7 +10,7 @@ preferring the higher score within a front), so the first front answers all thre
 Every generation scores parents and children together on fresh seeds, with the simulator's own noise and mismatch,
 so nothing survives on one lucky evaluation.
 
-    python -m minimal.evolve [GENERATIONS] [--pop 48] [--seed 0] [--name evolve0]
+    python -m minimal.evolve [GENERATIONS] [--pop 48] [--seed 0] [--name evolve0] [--start ...] [--resume]
 """
 
 from __future__ import annotations
@@ -156,17 +156,27 @@ def fronts(objs):
     return out
 
 
-def evolve(gens=200, pop=48, seed=0, seeds=8, seconds=LIFE, name="evolve0", log=print, start=None):
-    """start: specs to begin from (the population their copies and mutants), else random circuits."""
+def evolve(gens=200, pop=48, seed=0, seeds=8, seconds=LIFE, name="evolve0", log=print, start=None, resume=False):
+    """start: specs to begin from (the population their copies and mutants), else random circuits. resume: carry on
+    from the state last saved under this name (every 10 generations), on the same seeds as if never stopped (the
+    mutations' random numbers differ: a machine that rebooted, 2026-10-23)."""
     rng = np.random.default_rng(seed)
-    if start:
-        P = [copy.deepcopy(s) for s in start] + [mutate(start[i % len(start)], rng) for i in range(pop - len(start))]
-    else:
-        P = [tidy(born(rng)) for _ in range(pop)]
     archive = {}                                        # parts -> (best score in one generation, spec)
     best_by = {"efficiency": {}, "gain": {}}            # parts -> (best in one generation, spec), doing the job
     path = os.path.join(RESULTS, f"{name}.json")
-    for g in range(gens):
+    first = 0
+    if resume:
+        saved = json.load(open(path))
+        P, first = saved["population"], saved["gen"] + 1
+        archive = {int(k): tuple(v) for k, v in saved["archive"].items()}
+        best_by = {key: {int(k): tuple(v) for k, v in saved.get(f"best_{key}", {}).items()} for key in best_by}
+        rng = np.random.default_rng([seed, first])
+        log(f"resumed from generation {first - 1}")
+    elif start:
+        P = [copy.deepcopy(s) for s in start] + [mutate(start[i % len(start)], rng) for i in range(pop - len(start))]
+    else:
+        P = [tidy(born(rng)) for _ in range(pop)]
+    for g in range(first, gens):
         kids = []
         for _ in range(pop):                            # tournament of two on score, then mutate
             a, b = rng.integers(len(P), size=2)
@@ -209,6 +219,7 @@ if __name__ == "__main__":
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--name", default="evolve0")
     ap.add_argument("--start", nargs="*", help="tuned designs' results files to begin from")
+    ap.add_argument("--resume", action="store_true", help="carry on from the state last saved under --name")
     ap.add_argument("--substrates", nargs="+", help="an experiment: judge with these substrates' noise"
                                                     " (mixed_feedback.SUBSTRATES), the worst counting (default spec.JUDGED)")
     a = ap.parse_args()
@@ -217,5 +228,5 @@ if __name__ == "__main__":
         minimal.spec.JUDGED = tuple(a.substrates)       # (lives are scored in this process, with these)
     start = [json.load(open(path))["spec"] for path in a.start] if a.start else None
     t0 = time.time()
-    evolve(a.gens, a.pop, a.seed, name=a.name, start=start)
+    evolve(a.gens, a.pop, a.seed, name=a.name, start=start, resume=a.resume)
     print(f"({time.time() - t0:.0f} s)")

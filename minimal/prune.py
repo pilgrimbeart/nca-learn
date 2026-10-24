@@ -1,10 +1,11 @@
 """Pruning, a standard step after every polish (minimal/NOTEBOOK.md, M7): the polish (CMA-ES) tunes values and cannot
 remove a part, so parts that have stopped mattering stay (N_E1_32p carried 7). Here every single simplification is
-tried, each a part or more fewer: delete an element (and any node then read by nothing), take away an element's filter
-or gate, a node's leak or a clamp. All are scored on the same lives (paired), lives of their own (neither the
+tried, each a part or more fewer: delete an element (and any node then read by nothing), take away an element's
+filter or gate, a node's leak or a clamp. All are scored on the same lives (paired), lives of their own (neither the
 search's nor the held-out ones), and the best that scores within TOL of where pruning started is kept; then again,
-until none is. Held to the start, not to the last step, so that small losses can't add up. Judged by the objective
-the polish maximised (--by: the score, efficiency or gain rate), so a part kept for speed isn't pruned for its cost.
+until none is; a circuit doing the job must go on doing it. Held to the start, not to the last step, so that small
+losses can't add up. Judged by the objective the polish maximised (--by: the score, efficiency or gain rate), so a
+part kept for speed isn't pruned for its cost.
 
     python -m minimal.prune RESULTS.json [--name NAME] [--by score|efficiency|gain]   (NAME: the file's, with _pruned)
 """
@@ -20,7 +21,7 @@ import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from minimal.spec import LIFE, OBJECTIVES, objective, parts, score, tidy, violations  # noqa: E402
+from minimal.spec import LIFE, OBJECTIVES, does_job, objective, parts, score, tidy, violations  # noqa: E402
 
 SEEDS = range(15000, 15032)     # pruning's own lives (the polish's start at 10000, the open search's at 20000, the
                                 # held-out are 100-163 and 200-231)
@@ -67,17 +68,22 @@ def simpler(spec: dict) -> list:
 
 
 def prune(spec: dict, seeds=SEEDS, tol: float | None = None, seconds: float = LIFE, log=print, by: str = "score"):
-    """(the pruned circuit, the steps taken as [(what, parts, the objective)])."""
+    """(the pruned circuit, the steps taken as [(what, parts, the objective)]). A circuit that does the job on
+    pruning's lives must go on doing it after every step (2026-10-23: pruning by the score alone, within its
+    tolerance, took HR_31p_pol to 28 parts that stranded in 35% of silicon lives)."""
     tol = TOL[by] if tol is None else tol
-    start = objective(score([spec], seeds=seeds, seconds=seconds)[0], by)
-    log(f"start: {parts(spec)['total']} parts, {by} {start:+.3f} (keeping within {tol} of it)")
+    lives = score([spec], seeds=seeds, seconds=seconds)[0]
+    start, job = objective(lives, by), does_job(lives)
+    log(f"start: {parts(spec)['total']} parts, {by} {start:+.3f} (keeping within {tol} of it"
+        + (", and doing the job)" if job else ")"))
     steps = []
     while True:
         options = simpler(spec)
         if not options:
             break
-        scores = [objective(l, by) for l in score([s for _, s in options], seeds=seeds, seconds=seconds)]
-        ok = [(f, k) for k, f in enumerate(scores) if f >= start - tol]
+        lived = score([s for _, s in options], seeds=seeds, seconds=seconds)
+        scores = [objective(l, by) for l in lived]
+        ok = [(f, k) for k, (f, l) in enumerate(zip(scores, lived)) if f >= start - tol and (does_job(l) or not job)]
         if not ok:
             log("  nothing more can go")
             break

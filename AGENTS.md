@@ -119,6 +119,11 @@ minimal.test_minimal` tests it); add a rule to `check` and a case to the test wh
   than 4 kV/s (0.5 V a step), whether an element (gain / C) or the body's pulse into an input (3 nA / C); no leak
   faster than a time constant of 0.25 ms; and an unfiltered element on its own node acts no faster than gain x slope
   / C = 1 / 1.25 ms (10 steps: a device fed back to itself must not be infinitely fast).
+- **Buildable on a chip** (the user's decision, 2026-10-23; `units.py`'s chip limits): no resistance above what a chip
+  can set (about 74 GOhm, an amplifier biased at 1 pA), no capacitor above 50 pF, no leak or filter slower than the
+  time constant those allow (about 3.7 s; slower is a memory node, a floating gate), no element current below 1 pA.
+  `python -m minimal.physical` shows a design's parts against them; `minimal.designs.on_chip` refits a leak that is
+  too large, keeping its time constant.
 - **Judged honestly**: on seeds the search never saw, with the simulator's mismatch, with the noise of silicon,
   biology and twice biology's, the worst counting and the job required with each (the user's decisions, 2026-10-22:
   judged at one level, pruning traded mechanism for noise; then silicon, so that a design must work as built in

@@ -12,7 +12,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from units import C_TYP, I_TYP, R_TYP, RAIL, T_TYP  # noqa: E402
+from units import C_MAX, C_TYP, I_TYP, R_MAX, R_TYP, RAIL, T_TYP, TAU_MAX  # noqa: E402
 
 
 def from_brain(cls, seed: int = 0) -> dict:
@@ -84,10 +84,25 @@ def hold_roam(senses: dict, p: dict = HOLD_ROAM) -> dict:
     return {"nodes": nodes, "elements": elements, "sensors": [iS0, iS1], "motors": [iA, iB], "taste": iT, "units": "SI"}
 
 
-BOUNDS = {"C": (0.05 * C_TYP, 100 * C_TYP), "R": (0.1 * R_TYP, 1000 * R_TYP), "gain": 20 * I_TYP,
-          "slope": (0.5, 30.0), "tau": (0.5 * T_TYP, 300 * T_TYP), "rest": RAIL - 0.1, "offset": 3.0}
-                    # where a search may take a circuit's values: about the typical sizes (units.py), the rests and
-                    # offsets in volts, within the rails
+BOUNDS = {"C": (0.05 * C_TYP, C_MAX), "R": (0.1 * R_TYP, R_MAX), "gain": 20 * I_TYP,
+          "slope": (0.5, 30.0), "tau": (0.5 * T_TYP, min(300 * T_TYP, TAU_MAX)), "rest": RAIL - 0.1, "offset": 3.0}
+                    # where a search may take a circuit's values: about the typical sizes (units.py), within a chip's
+                    # limits (C_MAX, R_MAX, TAU_MAX), the rests and offsets in volts, within the rails
+
+
+def on_chip(spec: dict) -> dict:
+    """A copy of spec with every leak above R_MAX brought down to it, its node's capacitance, bias and the currents into
+    it raised by the same factor: the same voltages and time constants (the node only quieter, being bigger), so a
+    design from before the chip's limits became a rule (2026-10-23) can carry on from where it was."""
+    s = copy.deepcopy(spec)
+    for i, nd in enumerate(s["nodes"]):
+        if nd[2] is not None and nd[2] > R_MAX:
+            k = nd[2] / R_MAX
+            nd[1], nd[2], nd[3] = nd[1] * k, R_MAX, nd[3] * k
+            for e in s["elements"]:
+                if e[0] == i:
+                    e[3] *= k
+    return s
 
 
 def raw(spec: dict):

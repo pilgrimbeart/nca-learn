@@ -418,6 +418,8 @@ def rules() -> list:
         (1, f"Not faster than the step: nothing may move a node faster than {u.si(u.SLEW, 'V/s')}"
             f" ({u.STEP_MOVE:g} V a step), and a device fed back to itself acts no faster than a time constant of"
             f" {u.si(u.TAU_LOOP, 's')} (10 steps)."),
+        (1, f"Buildable on a chip: no resistance above {u.si(u.R_MAX, 'Ω')}, no capacitor above {u.si(u.C_MAX, 'F')},"
+            f" no leak or filter slower than {u.si(u.TAU_MAX, 's')}, no current below {u.si(u.I_MIN, 'A')}."),
         (1, "An illegal circuit can't be built or lived (minimal/spec.py, check)."),
         (1, "Sepulchre's rules, when a circuit declares them: every node leaks except memory nodes, no clamps; gates"
             " and memory nodes (floating gates) allowed, as Sepulchre is silent on learning and storage."),
