@@ -13,9 +13,9 @@ Nothing else: no program runs beside the circuit. Nothing is recruited yet.
 
 from __future__ import annotations
 
-from brains.circuit import SIDE, CircuitBrain
+from brains.circuit import I_TYP, SIDE, CircuitBrain
 from mixed_feedback import Circuit
-from units import C_TYP, I_TYP, T_TYP
+from units import C_TYP, T_TYP
 
 ELIGIBLE = 0.1      # s over which eligibility fades
 RANGE = 1.4 * I_TYP # A: the most current a full knob takes out of its neuron: its bias from -1.6 nA down to -3 nA

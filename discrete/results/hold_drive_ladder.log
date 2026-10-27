@@ -1,0 +1,71 @@
+whole: 14 parts, robust +6.82
+  open  R9 h a 1e+09                             robust +6.14
+  be    Q0 vdd e h Q0M                           robust +5.81
+  ce    Q0 vdd e h Q0M                           robust +2.92
+  open  C1 h 0 1.26e-09                          robust +2.77
+  short R13 h m1 7.77e+06                        robust +1.25
+  short R9 h a 1e+09                             robust -0.40
+    open  R9 h a 1e+09                           re-screened: robust +5.01
+    open  R9 h a 1e+09                           re-screened: robust +5.03
+    be    Q0 vdd e h Q0M                         re-screened: robust +4.76
+    be    Q0 vdd e h Q0M                         re-screened: robust +5.81
+    ce    Q0 vdd e h Q0M                         re-screened: robust +1.11
+    ce    Q0 vdd e h Q0M                         re-screened: robust +1.77
+cut (9, 'open'): R9 h a 1e+09  (-1.19, -0.08); now 13 parts, robust +6.14, efficiency 6.18, gain 16.75
+  values: rt=1.56e+08 ct=3.04e-10 rg1=3.65e+08 rg2=8.04e+07 rsh=2.79e+07 rp=7.77e+06 ch=1.26e-09 rf=1e+09
+  be    Q0 vdd e h Q0M                           robust +5.25
+  open  C1 h 0 1.26e-09                          robust +3.01
+  ce    Q0 vdd e h Q0M                           robust +2.70
+  short R13 h m1 7.77e+06                        robust +0.77
+  open  R8 b 0 2.79e+07                          robust -1.54
+  open  Q0 vdd e h Q0M                           robust -1.96
+    be    Q0 vdd e h Q0M                         re-screened: robust +5.21
+    be    Q0 vdd e h Q0M                         re-screened: robust +5.16
+    open  C1 h 0 1.26e-09                        re-screened: robust +3.48
+    open  C1 h 0 1.26e-09                        re-screened: robust +3.32
+    ce    Q0 vdd e h Q0M                         re-screened: robust +1.37
+    ce    Q0 vdd e h Q0M                         re-screened: robust +0.98
+cut (0, 'be'): Q0 vdd e h Q0M  (-2.25, -0.85); now 12 parts, robust +5.25, efficiency 5.25, gain 13.88
+  values: rt=1.56e+08 ct=3.04e-10 rg1=3.65e+08 rg2=8.04e+07 rsh=2.79e+07 rp=7.77e+06 ch=1.26e-09 rf=1e+09
+  open  C1 h 0 1.26e-09                          robust +2.62
+  short R13 h m1 7.77e+06                        robust +0.46
+  open  R8 b 0 2.79e+07                          robust -1.74
+  open  R13 h m1 7.77e+06                        robust -1.96
+  short C1 h 0 1.26e-09                          robust -1.96
+  open  R2 vdd a 1.56e+08                        robust -2.00
+    open  C1 h 0 1.26e-09                        re-screened: robust -2.00
+    open  C1 h 0 1.26e-09                        re-screened: robust -2.00
+    short R13 h m1 7.77e+06                      re-screened: robust +0.42
+    short R13 h m1 7.77e+06                      re-screened: robust -1.78
+    open  R8 b 0 2.79e+07                        re-screened: robust +2.64
+    open  R8 b 0 2.79e+07                        re-screened: robust +2.37
+cut (8, 'open'): R8 b 0 4.52626e+07  (-4.59, -3.76); now 11 parts, robust +2.64, efficiency 2.65, gain 4.05
+  values: rt=1.76e+08 ct=7.75e-10 rg1=1.22e+08 rg2=3.83e+07 rsh=4.53e+07 rp=6.16e+06 ch=7.9e-10 rf=1e+09
+  open  C1 h 0 7.90479e-10                       robust +2.64
+  short R13 h m1 6.16193e+06                     robust +1.56
+  open  R13 h m1 6.16193e+06                     robust -1.45
+  short C1 h 0 7.90479e-10                       robust -1.96
+  open  R2 vdd a 1.75546e+08                     robust -2.00
+  short R2 vdd a 1.75546e+08                     robust -2.00
+    open  C1 h 0 7.90479e-10                     re-screened: robust +1.20
+    open  C1 h 0 7.90479e-10                     re-screened: robust -0.35
+    short R13 h m1 6.16193e+06                   re-screened: robust +1.85
+    short R13 h m1 6.16193e+06                   re-screened: robust -1.03
+    open  R13 h m1 6.16193e+06                   re-screened: robust -2.00
+    open  R13 h m1 6.16193e+06                   re-screened: robust -2.00
+cut (1, 'open'): C1 h 0 7.90479e-10  (-4.81, -3.55); now 10 parts, robust +2.64, efficiency 2.67, gain 4.05
+  values: rt=1.76e+08 ct=7.75e-10 rg1=1.22e+08 rg2=3.83e+07 rsh=4.53e+07 rp=6.16e+06 ch=7.9e-10 rf=1e+09
+  short R13 h m1 6.16193e+06                     robust +2.72
+  open  R13 h m1 6.16193e+06                     robust -1.73
+  open  R5 g 0 3.82821e+07                       robust -1.95
+  open  R2 vdd a 1.75546e+08                     robust -2.00
+  short R2 vdd a 1.75546e+08                     robust -2.00
+  open  C3 a 0 7.7508e-10                        robust -2.00
+    short R13 h m1 6.16193e+06                   re-screened: robust +1.48
+    short R13 h m1 6.16193e+06                   re-screened: robust -0.39
+    open  R13 h m1 6.16193e+06                   re-screened: robust -2.00
+    open  R13 h m1 6.16193e+06                   re-screened: robust -2.00
+    open  R5 g 0 3.82821e+07                     re-screened: robust -2.00
+    open  R5 g 0 3.82821e+07                     re-screened: robust -2.00
+the best cut no longer does the job (efficiency 2.82): stop
+written discrete/results/hold_drive_ladder.json

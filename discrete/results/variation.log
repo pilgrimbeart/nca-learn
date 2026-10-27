@@ -1,0 +1,20 @@
+standard      best {'scan': 16, 'drive': 160, 'hold': 0.05} eff 8.25 gain 21.0
+weak          best {'scan': 32, 'drive': 80, 'hold': 0.1} eff 5.25 gain 13.9
+strong        best {'scan': 8, 'drive': 160, 'hold': 0.05} eff 11.22 gain 25.6
+left-strong   best {'scan': 32, 'drive': 160, 'hold': 0.05} eff 5.71 gain 16.3
+right-strong  best {'scan': 32, 'drive': 80, 'hold': 0.05} eff 6.66 gain 15.2
+dim eyes      best {'scan': 8, 'drive': 160, 'hold': 0.05} eff 6.67 gain 12.5
+bright eyes   best {'scan': 16, 'drive': 80, 'hold': 0.05} eff 9.01 gain 21.1
+slippery      best {'scan': 16, 'drive': 160, 'hold': 0.05} eff 8.92 gain 23.0
+sticky        best {'scan': 16, 'drive': 160, 'hold': 0.05} eff 7.04 gain 18.0
+
+the standard body's best, {'scan': 16, 'drive': 160, 'hold': 0.05}, on each body, against that body's own best (efficiency):
+  standard       8.25 against  8.25 ({'scan': 16, 'drive': 160, 'hold': 0.05}):   0% lost
+  weak           5.04 against  5.25 ({'scan': 32, 'drive': 80, 'hold': 0.1}):   4% lost
+  strong        11.02 against 11.22 ({'scan': 8, 'drive': 160, 'hold': 0.05}):   2% lost
+  left-strong    5.29 against  5.71 ({'scan': 32, 'drive': 160, 'hold': 0.05}):   7% lost
+  right-strong   4.70 against  6.66 ({'scan': 32, 'drive': 80, 'hold': 0.05}):  29% lost
+  dim eyes       6.64 against  6.67 ({'scan': 8, 'drive': 160, 'hold': 0.05}):   0% lost
+  bright eyes    8.48 against  9.01 ({'scan': 16, 'drive': 80, 'hold': 0.05}):   6% lost
+  slippery       8.92 against  8.92 ({'scan': 16, 'drive': 160, 'hold': 0.05}):   0% lost
+  sticky         7.04 against  7.04 ({'scan': 16, 'drive': 160, 'hold': 0.05}):   0% lost

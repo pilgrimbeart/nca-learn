@@ -9,10 +9,13 @@ A spec is a dict, in SI units (units.py; "units": "SI", which check requires, so
   sensors: the two nodes the body stimulates; motors: the two whose spikes fire the thrusters (any nodes, the same
   node allowed); taste: the node taste is injected into.
 
-Parts, counted as an analogue circuit would be built (mixed_feedback's docstring): a node is a capacitor, plus a
-resistor to a rail if it leaks (its bias sets which rail: no extra part), plus a diode per clamp inside the supply's
-rails (every node is within them, RAIL); an element is a
-transistor (a transconductor), plus one in series if gated, plus a resistor and capacitor if its input is filtered.
+A spec is drawn at a typical voltage ("volt", units.V_TYP; check requires the current one, and load converts an
+older design, minimal/designs.py's rescale: those before 2026-10-26 were drawn at 1 V).
+
+Parts, counted as the circuit is built in transistors (the user's decision, 2026-10-26: the minimal analogue circuit is
+counted in real devices, so that designs at other levels, op-amps or Sepulchre's blocks, can be compared with it):
+chip.py's blocks, as minimal/spice.py writes them, counted there (count): transistors, resistors, capacitors, diodes,
+and bias sources (each a bias generator's output).
 """
 
 from __future__ import annotations
@@ -32,7 +35,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from brains.circuit import CircuitBrain, TRACE  # noqa: E402
 from mixed_feedback import SUBSTRATES, Circuit  # noqa: E402
 from units import (C_MAX, C_TYP, CAP_DENSITY, I_MIN, MICRO, NANO, R_MAX, RAIL, SLEW, TAU_LEAK, TAU_LOOP,  # noqa: E402
-                   TAU_MAX, TICK, UNIT_AREA, si)
+                   TAU_MAX, T_TYP, TICK, UNIT_AREA, V_TYP, si)
 
 # RAIL: the supply's rails, +-RAIL (V): no node can go beyond them (the user's question, 2026-10-20: the body's pulses
 # are a current source, and nothing stopped a pulse lifting a node 10 V); a clamp inside them is a part (two diodes),
@@ -105,19 +108,25 @@ def make(spec: dict, substrate: str = "biology"):
     return functools.partial(SpecBrain, spec=spec, substrate=substrate)
 
 
+def load(path: str) -> dict:
+    """The spec stored in a results file, at the current typical voltage (converted if drawn at another)."""
+    import json
+    from minimal.designs import rescale
+    spec = json.load(open(path))["spec"]
+    return spec if math.isclose(spec.get("volt", 1.0), V_TYP) else rescale(spec)
+
+
 def parts(spec: dict) -> dict:
-    """The parts an analogue build would need: capacitors, resistors, diodes, transistors, and their total."""
-    C = R = D = T = 0
-    for _, _, r, _, lo, hi, _, _ in spec["nodes"]:
-        C += 1
-        R += r is not None
-        D += (lo is not None and math.isfinite(lo)) + (hi is not None and math.isfinite(hi))
-    for _, _, gate, _, _, _, tau, _ in spec["elements"]:
-        T += 1 + (gate >= 0)
-        if tau > 0:
-            R, C = R + 1, C + 1
-    return {"C": C, "R": R, "D": D, "T": T, "total": C + R + D + T,
-            "nodes": len(spec["nodes"]), "elements": len(spec["elements"])}
+    """The parts the circuit takes in transistors (minimal/spice.py's count): transistors, resistors, capacitors,
+    diodes, bias sources, and their total; a clamp inside the rails is two diodes more (only where the body's pulses
+    enter does the build have clamps; elsewhere the amplifiers can't pass the rails)."""
+    from minimal.spice import count
+    n = count(spec)
+    pulsed = set(spec["sensors"]) | {spec["taste"]}
+    n["D"] += sum((lo is not None and math.isfinite(lo)) + (hi is not None and math.isfinite(hi))
+                  for i, (_, _, _, _, lo, hi, _, _) in enumerate(spec["nodes"]) if i not in pulsed)
+    return {**n, "total": n["T"] + n["R"] + n["C"] + n["D"] + n["sources"], "nodes": len(spec["nodes"]),
+            "elements": len(spec["elements"])}
 
 
 AREA = {"element": 5, "gate": 3, "leak": 2, "clamp": 1, "memory": 5}
@@ -151,7 +160,8 @@ def slew(spec: dict) -> float:
     (|gain| / C) or the body's pulse into a sensor or the taste node, against SLEW; the fastest leak (1 / RC) against
     1 / TAU_LEAK; and the fastest unfiltered element on its own node (gain x its f's steepest slope / C: a device fed
     back to itself must not be infinitely fast, the user's question, 2026-10-20) against 1 / TAU_LOOP."""
-    from brains.circuit import STIMULUS, TASTE
+    from brains.circuit import PULSES
+    STIMULUS = TASTE = PULSES * C_TYP * V_TYP / T_TYP        # (the body's pulses, in the chip's typical currents)
     C = [n[3] for n in spec["nodes"]]
     out = [abs(e[3]) / C[e[0]] / SLEW for e in spec["elements"]]
     out += [TAU_LEAK / (n[2] * n[3]) for n in spec["nodes"] if n[2] is not None]
@@ -173,6 +183,8 @@ def violations(spec: dict) -> list:
     n, out = len(spec["nodes"]), []
     if spec.get("units") != "SI":
         return ["not in SI units (a design from before 2026-10-22, in ticks: convert it)"]
+    if not math.isclose(spec.get("volt", 1.0), V_TYP):
+        return [f"drawn at {spec.get('volt', 1.0):g} V typical, not {V_TYP:.4g} (minimal/designs.py's rescale, or load)"]
     for e in spec["elements"]:
         if not (0 <= e[0] < n and 0 <= e[1] < n and -1 <= e[2] < n):
             out.append(f"element {e[:3]} names no node")
@@ -302,8 +314,8 @@ COST = 2.0          # a poison meal counts as this many food meals lost: eating 
 NEED = METABOLISM * SPAN / MEAL     # meals per SPAN a creature needs, in every third of every life (1): each meal
                     # short of it costs COST (starving) ...
 THRUST = FIRING / MEAL  # meals a firing costs (0.002)
-ENERGY = SPAN / MEAL    # meals per SPAN per watt of the circuit's mean power (mixed_feedback._step: what each device
-                        # dissipates, its current times the voltage across it)
+ENERGY = SPAN / MEAL    # meals per SPAN per watt of the circuit's mean power (mixed_feedback._step: what the supply
+                        # delivers to its transistors, chip.py)
 JOB = (1.0, 3.0, 0.05)  # ... and the job: at least this much food per SPAN, this food:poison in the last third, and at
                     # most this share of lives stranded (no food at all in the last third; a creature eating 1.4 per
                     # SPAN goes a last third without food by chance about 1% of the time)

@@ -27,10 +27,10 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from minimal.designs import BOUNDS  # noqa: E402
+from minimal.designs import BOUNDS, rescale  # noqa: E402
 from minimal.spec import (LIFE, does_job, efficiency, gain, interface, net, parts, remove_node, score, tidy,  # noqa: E402
                           worst)
-from units import C_TYP, I_TYP, R_TYP, T_TYP  # noqa: E402
+from units import C_TYP, I_TYP, R_TYP, T_TYP, V_TYP  # noqa: E402
 
 RESULTS = os.path.join(os.path.dirname(__file__), "results")
 
@@ -44,15 +44,16 @@ def random_element(rng, n, taste):
     to = int(rng.choice([i for i in range(n) if i != taste]))
     tau = T_TYP * float(math.exp(rng.uniform(math.log(0.5), math.log(50.0)))) if rng.random() < 0.3 else 0.0
     return [to, int(rng.integers(n)), int(rng.integers(n)) if rng.random() < 0.5 else -1,
-            I_TYP * float(rng.choice((-1, 1)) * rng.uniform(0.5, 5.0)), float(rng.uniform(-1.5, 1.5)),
-            float(rng.uniform(1.0, 20.0)), tau, bool(rng.random() < 0.7)]
+            I_TYP * float(rng.choice((-1, 1)) * rng.uniform(0.5, 5.0)), V_TYP * float(rng.uniform(-1.5, 1.5)),
+            float(rng.uniform(1.0, 20.0)) / V_TYP, tau, bool(rng.random() < 0.7)]
 
 
 def random_node(rng, name):
     if rng.random() < 0.4:                              # a memory
-        return [name, 0.0, None, C_TYP * float(rng.uniform(0.5, 5.0)), 0.0, 1.0, float(rng.uniform(0.0, 1.0)), True]
+        return [name, 0.0, None, C_TYP * float(rng.uniform(0.5, 5.0)), 0.0, V_TYP, V_TYP * float(rng.uniform(0.0, 1.0)),
+                True]
     R = R_TYP * float(math.exp(rng.uniform(math.log(0.5), math.log(20.0))))
-    return [name, float(rng.uniform(-1.5, 0.5)) / R, R,
+    return [name, V_TYP * float(rng.uniform(-1.5, 0.5)) / R, R,
             C_TYP * float(math.exp(rng.uniform(math.log(0.2), math.log(5.0)))), None, None, None, False]
 
 
@@ -63,7 +64,8 @@ def born(rng) -> dict:
         if nodes[i][7]:
             nodes[i] = [nodes[i][0], -0.5 * I_TYP, R_TYP, C_TYP, None, None, None, False]
     nodes.append(random_node(rng, "m"))
-    spec = {"nodes": nodes, "elements": [], "sensors": [0, 1], "motors": [2, 3], "taste": 4, "units": "SI"}
+    spec = {"nodes": nodes, "elements": [], "sensors": [0, 1], "motors": [2, 3], "taste": 4, "units": "SI",
+            "volt": V_TYP}
     for _ in range(int(rng.integers(2, 7))):
         spec["elements"].append(random_element(rng, len(nodes), 4))
     return spec
@@ -81,14 +83,14 @@ def mutate(spec, rng) -> dict:
                     if nd[2] is not None:
                         rest = nd[1] * nd[2]
                         nd[2] = clip(nd[2] * math.exp(0.3 * rng.normal()), *BOUNDS["R"])
-                        nd[1] = clip(rest + 0.2 * rng.normal(), -BOUNDS["rest"], BOUNDS["rest"]) / nd[2]
+                        nd[1] = clip(rest + 0.2 * V_TYP * rng.normal(), -BOUNDS["rest"], BOUNDS["rest"]) / nd[2]
                     nd[3] = clip(nd[3] * math.exp(0.3 * rng.normal()), *BOUNDS["C"])
                     if nd[7]:
-                        nd[6] = clip((nd[6] or 0.0) + 0.1 * rng.normal(), 0.0, 1.0)
+                        nd[6] = clip((nd[6] or 0.0) + 0.1 * V_TYP * rng.normal(), 0.0, V_TYP)
             for e in s["elements"]:
                 if rng.random() < 0.3:
                     e[3] = clip(e[3] * math.exp(0.3 * rng.normal()), -BOUNDS["gain"], BOUNDS["gain"])
-                    e[4] = clip(e[4] + 0.2 * rng.normal(), -BOUNDS["offset"], BOUNDS["offset"])
+                    e[4] = clip(e[4] + 0.2 * V_TYP * rng.normal(), -BOUNDS["offset"], BOUNDS["offset"])
                     e[5] = clip(e[5] * math.exp(0.3 * rng.normal()), *BOUNDS["slope"])
                     if e[6] > 0:
                         e[6] = clip(e[6] * math.exp(0.3 * rng.normal()), *BOUNDS["tau"])
@@ -167,9 +169,10 @@ def evolve(gens=200, pop=48, seed=0, seeds=8, seconds=LIFE, name="evolve0", log=
     first = 0
     if resume:
         saved = json.load(open(path))
-        P, first = saved["population"], saved["gen"] + 1
-        archive = {int(k): tuple(v) for k, v in saved["archive"].items()}
-        best_by = {key: {int(k): tuple(v) for k, v in saved.get(f"best_{key}", {}).items()} for key in best_by}
+        at = lambda s: s if math.isclose(s.get("volt", 1.0), V_TYP) else rescale(s)     # (drawn at another voltage)
+        P, first = [at(s) for s in saved["population"]], saved["gen"] + 1
+        archive = {int(k): (v[0], at(v[1])) for k, v in saved["archive"].items()}
+        best_by = {key: {int(k): (v[0], at(v[1])) for k, v in saved.get(f"best_{key}", {}).items()} for key in best_by}
         rng = np.random.default_rng([seed, first])
         log(f"resumed from generation {first - 1}")
     elif start:
@@ -226,7 +229,7 @@ if __name__ == "__main__":
     if a.substrates:
         import minimal.spec
         minimal.spec.JUDGED = tuple(a.substrates)       # (lives are scored in this process, with these)
-    start = [json.load(open(path))["spec"] for path in a.start] if a.start else None
+    start = [load(path) for path in a.start] if a.start else None
     t0 = time.time()
     evolve(a.gens, a.pop, a.seed, name=a.name, start=start, resume=a.resume)
     print(f"({time.time() - t0:.0f} s)")

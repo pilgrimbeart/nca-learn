@@ -61,11 +61,11 @@ from __future__ import annotations
 
 import numpy as np
 
-from brains.circuit import INHIBIT, STRONG
+from brains.circuit import INHIBIT, I_TYP, STRONG
 from brains.knowing import KnowingBrain
 from brains.recruiting import PAINFUL, QUIET, RecruitingBrain
 from mixed_feedback import Circuit
-from units import C_TYP, I_TYP, R_TYP, T_TYP
+from units import C_TYP, R_TYP, T_TYP
 
 FRUSTRATION = 30.0  # s over which frustration fades
 FRUSTRATE = 0.5     # how far one anticipated pain raises F, with the unit fully eligible

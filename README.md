@@ -5,7 +5,7 @@ its parts, no unit sees the whole, and no god decides. Useful means capable of l
 its lifetime: here, which of two colours is food and which is poison.
 
 It is an open-ended exploration, learning by doing, and it has gone beyond the cellular automata of its name; it may
-yet loop back to them. Three lines of work so far:
+yet loop back to them. Four lines of work so far:
 
 - **The sheet brain** builds itself before it acts. A sheet of identical cells, each running one local rule and
   seeing nothing of its neighbours but the average of each number they share, works out where each cell is, grows
@@ -20,9 +20,71 @@ yet loop back to them. Three lines of work so far:
 - **The minimal circuit search** drops every architectural constraint (no neurons, locality or growth) and asks how
   simple a circuit can be that learns the bit, and how well a circuit can drive the body, searching by hand and by
   optimisation.
+- **Discrete circuits** ask the same of common parts (transistors, resistors, capacitors, diodes) on a coin cell,
+  living closed loop in SPICE: first the simplest that forages, then one that learns the bit.
 
 ![A life with the sheet brain: the brain (left) builds a coordinate frame, names its organs and grows its wiring,
 then the creature (right) learns which colour is food](media/life.gif)
+
+## What we've learned
+
+The findings that changed the direction of the work, each told in full in the notebook named.
+
+- **The body must never do the brain's job.** Early on the body was changed to give food or poison only to the
+  sensor whose colour was eaten. It looked like a simplification, since four mechanisms in the brain could go, but
+  those mechanisms were the brain working out which sensor a taste was about (credit assignment), the hardest part
+  of the task. The body was doing it instead. So whenever a change to the body lets the brain drop machinery, we ask
+  where that machinery's job went (`NOTEBOOK.md`, Lessons).
+- **Rules kept only in prose drift, so the code enforces them.** The sheet brain's central rule is that a cell sees
+  only the average of what its neighbours show. Earlier experiments quietly broke it (reading one neighbour on its
+  own), and nothing stopped them. Now each rule is built into the code's structure and tested, so breaking it fails
+  loudly: the sheet's engine, the circuit brains' circuits, the minimal search's `check` (`NOTEBOOK.md`, Lessons).
+- **In a circuit brain, nothing may happen outside the circuit.** The first recruitment rules were small programs
+  running beside the circuit (keeping traces, thresholds, writing its settings from outside), so the program, not
+  the circuit, did part of the work. The test now is: for every number that affects behaviour, which node holds it
+  and which elements move it? If the answer is "the program", it isn't the circuit (`experiments/NOTEBOOK.md`,
+  Lessons).
+- **Find what the body allows before blaming the brain.** A scripted policy that is told the answer from birth and
+  sees only what a brain would see shows the best any brain could do with that body. Twice this showed that the body,
+  not the brain, was the limit: an early square body capped every brain, and the best circuits were driving the body
+  badly (`NOTEBOOK.md`, The body; `minimal/NOTEBOOK.md`, M11).
+- **Match the brain's speed to the body's.** A far block shows up as about one flash as the creature's narrow gaze
+  sweeps past it, and the body keeps spinning for a while after a thruster stops. A brain that reacts briefly to each
+  flash has lost the block before it can act. What works is a slow memory of the sighting that keeps the creature
+  driving towards it for a fraction of a second (a *hold*), plus a timer that sends it off to explore after a long
+  spell of seeing nothing (a *roam*). That more than doubled the best energy efficiency (`minimal/NOTEBOOK.md`, M11).
+- **An average over lives hides the lives that fail.** The best circuits of one search ate plenty on average, yet in
+  a fifth of their lives the creature ate what was near, then spun on the spot for the rest of its life (*stranding*);
+  the other lives' meals hid it. It was found only by watching one life. Now each third of each life is charged for
+  its own shortfall, the job limits stranded lives to 5%, and a behaviour is watched live before it is reported
+  (`minimal/NOTEBOOK.md`, M8).
+- **Noise costs no parts, so a search will use it.** Searching for the fewest parts, twice a part's job was handed to
+  noise instead: a rhythm or an urge to explore that came from random jitter, not a clock. Such circuits work only
+  at the noise level they were tuned at. So every circuit is judged with three noises: silicon's (about 280 times
+  quieter than biology's at these currents, where any design that leans on noise fails), biology's, and twice
+  biology's (`minimal/NOTEBOOK.md`, M7 and M12).
+- **A perfect symmetry in the simulation is a free gift to an optimiser.** The body's two thrusters were identical to
+  the last digit. A tuned 9-part circuit that ignores its eyes, firing both thrusters 300 times a second, used that
+  to drive dead straight and eat four times as fast as any sighted circuit. With the thrusters 1% unequal, as any
+  real pair would be, it drives in circles. For every perfect symmetry in the simulation, ask whether a real body
+  would have it (`discrete/NOTEBOOK.md`, D5).
+- **Check the simulator, not just the circuit.** A circuit simulator chooses its own time steps, within error limits.
+  With ngspice's default limits, a transistor sitting right at its switch-on point turned on or not depending on
+  where the steps happened to land, so results seemed to change with the step size. With the limits tightened,
+  every step size agrees. Check that results converge in both step and error tolerance, on the first design that
+  works, and distrust any design whose behaviour hangs on a knife-edge (`discrete/NOTEBOOK.md`, D7).
+- **Real units show what abstract ones hide.** Written in seconds, amperes and farads, the circuits turned out to
+  have a chip's sizes but biology's noise, a contradiction invisible while the units were abstract. Real units also
+  give quick sanity checks (a chip can't make a resistance above about 100 GOhm) and a meaning to every number
+  (`NOTEBOOK.md`, Lessons; `units.py`).
+- **Count the cost as built.** The simulator first counted a circuit's power as the currents reaching its nodes. Built
+  in real transistors, the same circuit drew 150 times as much, because every amplifier's bias and every mirrored copy
+  of a current also flows from the supply. An optimiser told the wrong price buys the wrong things, so the price now
+  comes from the transistor build, checked against SPICE (`minimal/NOTEBOOK.md`, M15).
+- **Compare designs on the same lives, with an interval on the difference.** Lives vary a lot by luck. Two designs are
+  compared on the same worlds (the same seeds), and one counts as better only if the 95% interval of their
+  difference excludes zero; otherwise they are tied, and no order is claimed (`experiments/NOTEBOOK.md`, E0;
+  `minimal/NOTEBOOK.md`, M9).
 
 ## The ground rules, for every brain
 
@@ -157,7 +219,7 @@ neighbours, with noise of about 0.03.
 - **Waves.** An excitable flag (excited for a moment, then resting): a cell that sees an excited neighbour is excited
   in turn, so a wave runs outwards from wherever it starts, and dies at the edges and where waves meet.
 - **Not the smallest.** A mean can't give the smallest of the neighbours' numbers (an earlier version cheated the
-  noise rule to get it: `LESSONS.md`). Distances are counted mod 5 instead (below).
+  noise rule to get it: `NOTEBOOK.md`). Distances are counted mod 5 instead (below).
 - **Whole numbers.** What a cell keeps to itself is not limited: it keeps counts and timers as whole numbers,
   re-rounded at each update so its own small noise can't move them.
 
@@ -243,11 +305,11 @@ eats per 10 s and how many food blocks for each poison (set by the brain's behav
 | learning off | none | 0, 0, 0 | 1.0 | both 0.50 |
 
 Lives learn from taste alone: the brain works out which sensor a taste is about. An earlier version had the body hand
-the taste to the eaten colour's sensor, which did that work for it (withdrawn: see `LESSONS.md`). Now a taste after
+the taste to the eaten colour's sensor, which did that work for it (withdrawn: see `NOTEBOOK.md`). Now a taste after
 both colours were seen at once is sometimes credited to the wrong sensor, so p wanders a little near its target.
 Learning is slow because meals are few, about 1.5 per 10 s: in 8 lives of 32 the sensors had not both come
 right by 100 s. With p set perfect from birth by hand the creature eats 3.6, 2.7 and 4.8 food for each poison
-by thirds (32 lives): the limit of this body with a brain this slow (earlier bodies capped it lower: `LESSONS.md`).
+by thirds (32 lives): the limit of this body with a brain this slow (earlier bodies capped it lower: `NOTEBOOK.md`).
 Once learned, the thirds differ much by noise: poison meals are few, and even 32 lives are few for this score.
 
 ### Damage
@@ -292,7 +354,7 @@ moment of its own within the tick. Compiled with numba, with the world, a life o
 
 **Under biological noise every hand-built circuit brain falls to about 1 food for each poison** (2026-10-20): 10%
 mismatch pushes a share of their excitable neurons into firing on their own or missing pulses, and none was built to
-survive it (`LESSONS.md`, Noise as biology makes it). The results in this section were measured with the earlier
+survive it (`NOTEBOOK.md`, Noise as biology makes it). The results in this section were measured with the earlier
 noise (a fixed noise per node, no mismatch), and stand only for it until these brains are rebuilt on a neuron that
 survives mismatch.
 
@@ -338,7 +400,8 @@ all-food lives.
 
 How simple can a circuit be that learns the bit, and how well can a circuit drive the body? No neurons, locality or
 growth are required: a circuit is any nodes and elements of `mixed_feedback.py`, written as a plain description (a
-spec, `minimal/spec.py`), its parts counted as an analogue build would need them. The task, body, interface and noise
+spec, `minimal/spec.py`), its parts counted as it is built in transistors on a 1.8 V supply (`chip.py`; SPICE checks
+the build, `minimal/spice.py`). The task, body, interface and noise
 are every brain's, and the rules against cheating the simulator are enforced in code (`AGENTS.md`). Circuits are
 designed by hand, tuned (a polish, `minimal/search.py`), pruned part by part (`minimal/prune.py`) and searched by
 evolution over topologies (`minimal/evolve.py`), all judged on fresh seeds with the noise of silicon, biology and
@@ -351,7 +414,14 @@ the notebook (`minimal/NOTEBOOK.md`) tells how they were found.
 
 What it has found so far:
 
-- **The simplest circuit that does the job, robustly, has 30 parts, and it is also among the best drivers.** Judged at
+- **Built in transistors, a circuit costs what its supply delivers, 150 times what reached its nodes.** Lived closed
+  loop in SPICE as SKY130 transistors, HR_31p_pol behaved as in the simulator, but its +-3 V supply delivered 1.76 uW,
+  where the simulator had counted 12 nW: thinking cost more than moving. Now the simulator reckons the build's power
+  (`chip.py`: element by element within 1% of SPICE, and a closed-loop life at 1.8 V 131 nW in SPICE against 130 in
+  the simulator, behaviour tied) on SKY130's own 1.8 V supply, the memory is a SONOS cell that
+  holds its bit (a capacitor written by transistors leaked it away in seconds), and parts are counted in transistors
+  (`minimal/NOTEBOOK.md`, M15).
+- **The simplest circuit that does the job, robustly, had 30 parts (counted as elements, before M15), and it is also among the best drivers.** Judged at
   one noise level, circuits of about 22 parts seemed to do it: the bit a perfect integrator (a floating gate) written
   by a three-factor rule (what was seen, times the taste), the creature spinning until food is in view. But their
   rhythm came from noise: in silicon, about 280 times quieter, they never get moving. Only the hold-and-roam circuit,
@@ -359,14 +429,28 @@ What it has found so far:
   (35 parts: HR_si); open searches from it, within a chip's limits, took parts of its motor stage away and retuned the
   rest, and a polish and pruning one more: HR_31p_pol_pruned (30 parts, `media/HR_31p_pol_pruned.svg`, its
   signal-flow graph and schematic), with HR_31p_pol (31) the best driver yet (`minimal/NOTEBOOK.md`, M12-M14).
-- **Match the brain's speed to the body's.** Spinning sweeps the eyes' narrow corridor past far food faster than a
-  brief reaction can catch it. A slow node that holds the course for some ticks after a sighting, and a timer that
-  sends the creature off to roam after a long spell of seeing nothing (the hold-and-roam circuit), more than doubled
-  the best efficiency.
-- **Noise costs no parts, so a search judged at one noise level buys it**: pruning twice replaced a mechanism (a clock,
-  a hunger) by noise doing the job at the nominal level only. Hence judging with three noises: silicon's (about 280
-  times quieter than biology's at these currents, so a design that needs noise fails there), biology's, and twice
-  biology's.
+
+## Discrete circuits
+
+Before getting clever about food and poison, what is the simplest circuit of common parts (2N3904 and 2N3906
+transistors, resistors, capacitors, low-leakage diodes) that drives the body to food, and then the simplest that also
+learns the bit? Each circuit is a netlist living closed loop in ngspice beside the body (`discrete/life.py`), each
+seed with its own parts' tolerances, judged as the minimal search judges (`discrete/judge.py`, `discrete/poison.py`).
+The notebook (`discrete/NOTEBOOK.md`) tells how they were found.
+
+- **All food, 14 parts**: hold and drive (`media/hold_drive_14.svg`): an oscillator of a PNP and an NPN scans with
+  one thruster; each pulse from an eye charges a hold capacitor through an emitter follower, and while it is charged
+  the second thruster fires too, straight at the block. Efficiency 6.9, 72 nW. Fewer parts cost: 12 parts 6.6, 10
+  parts (counter-turning, no hold) 4.3.
+- **Blind, 9 parts**: an oscillator firing both thrusters 300 times a second eats four times as fast, as efficiently,
+  but only because the simulated thrusters are identical (What we've learned).
+- **A circuit doesn't need to tune itself to its body**, as far as tried: across bodies built differently (strength,
+  eyes, drag, unequal thrusters) the best settings hardly move, except for unequal thrusters, and a trim for those
+  can't be learned from a life's 200 meals more cheaply than it costs. Driving only while the eyes still see the
+  block copes with them instead.
+- **One bit, 49 parts** (`learn_hold`): the eyes gated by a latch that two poisons in quick succession flip, and a
+  slow oscillator that sends the creature roaming. Held out it learns the bit (efficiency 1.17, food:poison 3.4 in
+  the last third, surely above 3) at 174 nW, but 3 lives in 64 strand, too many to be sure of the job.
 
 ## Next
 
@@ -389,8 +473,14 @@ What it has found so far:
 - **Tick**: the body's step, 10 ms: the eyes look, the thrusters fire and the body moves once a tick (a reaction in 2
   to 4 ticks is an insect's). The circuit is integrated in steps of 0.125 ms, 80 to a tick. The live view shows real
   time at about 3 ticks a frame (it says how fast it runs against real time).
-- **Typical sizes**: what circuits are built around, as in subthreshold analogue silicon: a current of 1 nA, a
-  capacitor of 2.5 pF (which 1 nA moves 1 V in 2.5 ms, the body's pulse) and a resistor of 1 GOhm.
+- **Supply**: the chip's, 1.8 V across (SKY130's core devices), analogue ground halfway. The **rails** a node stays
+  within are the supply's, +-0.9 V; an output's current fades within a few hundredths of a volt of them.
+- **Typical voltage**: a third of a rail, 0.3 V: the unit a design's voltages are reckoned in (a gate is open at it, a
+  spike resets below minus it). The designs before 2026-10-26 were drawn at 1 V and +-3 V rails, and are converted.
+- **Typical sizes**: what circuits are built around, as in subthreshold analogue silicon: a capacitor of 2.5 pF, a
+  current of 0.3 nA (which moves it a typical voltage in 2.5 ms, the body's pulse) and a resistor of 1 GOhm. The body's
+  pulses are 3 typical currents. The recruitment line's circuits keep a typical voltage of 1 V and a current of 1 nA:
+  not yet built in transistors.
 
 **Circuits and noise** (the model: `mixed_feedback.py`'s docstring)
 
@@ -402,7 +492,8 @@ What it has found so far:
   is membrane area, whose channels flicker even at rest: noise in proportion to the capacitance, so a node k times
   bigger is quieter only by the square root of k. In silicon, a leak's thermal noise (kT/C). A memory node has none:
   still until written, then rough by the square root of what is written.
-- **Mismatch**: no two parts are alike: every part off by about 10% of itself (offsets by 0.1 V), drawn at birth, so
+- **Mismatch**: no two parts are alike: every part off by about 10% of itself (offsets by a tenth of a typical
+  voltage), drawn at birth, so
   no design can lean on exact values or exact cancellations.
 - **Substrate**: whose noise a circuit lives with, never none: **biology** (shot noise in events of 12.5 fC, between
   an ion channel's and a vesicle's, and membrane noise), **silicon** (single electrons and a leak's thermal noise:
@@ -427,20 +518,28 @@ What it has found so far:
 
 **The minimal circuit search** (the rules: `AGENTS.md`)
 
-- **Parts**: capacitors, resistors, diodes and transistors, counted as an analogue build would need them.
+- **Parts**: as the circuit is built in transistors (`chip.py`'s blocks: an element a differential pair, its mirrored
+  tail and outputs, a gate, preamplifier, level shifter or filter where it needs one): transistors, resistors,
+  capacitors, diodes and bias sources.
+- **Power**: what the supply delivers to the transistors: every bias, mirror copy and auxiliary amplifier, not only
+  the currents into nodes (before 2026-10-26 only those were counted, 150 times too few).
+- **Analogue ground**: 0 V, halfway between the rails: one buffer for the chip, to which every leak's resistor runs.
+- **Memory node**: a SONOS cell (SKY130's flash transistor: charge trapped in nitride, held for years), its threshold
+  the stored value, written by tunnelling through a pulse driver that fires only above 1% of the write's full current.
+  Writing needs 10.5 V across the cell, from charge pumps or extra supplies: not yet in the power (a known anomaly).
 - **The job**: learning the bit well enough (food:poison at least 3 in the last third of a life), eating enough (1
   food per 10 s) and rarely stranding (at most 5% of lives), with every substrate judged.
 - **Stranding**: a life that eats, then finds nothing more (no food at all in its last third). A creature that
   travels only towards food it sees spins on the spot for ever once it has eaten what is near.
-- **Buildable**: within a chip's limits (`units.py`), a rule since 2026-10-23: no resistance above about 74 GOhm, no
-  capacitor above 50 pF, no time constant above about 3.7 s without a floating gate, no current below 1 pA.
+- **Buildable**: within a chip's limits (`units.py`), a rule since 2026-10-23: no resistance above about 77 GOhm, no
+  capacitor above 50 pF, no time constant above about 3.9 s without a floating gate, no current below 1 pA.
 - **Polish**: tuning a circuit's values (CMA-ES), each generation on fresh lives. **Pruning**: trying every single
   simplification (an element, a filter, a gate, a leak, a clamp taken away) and keeping the best that costs no more
   than a little, until none does.
 - **Meals gained**: food, less 2 for each poison (as in the score).
 - **Body efficiency**: meals gained per meal's worth of energy spent (a meal being worth 10 uJ): resting (1 uW, a
-  meal every 10 s, whatever a creature does), moving (20 nJ a thruster firing) and thinking (the circuit's power, a few
-  nW, for today's circuits a hundredth of moving). Above 1 a creature gains. Haste wastes fuel and dawdling the resting cost,
+  meal every 10 s, whatever a creature does), moving (20 nJ a thruster firing) and thinking (the circuit's power, tens
+  of nW: for HR_31p_pol about a sixth of what moving costs). Above 1 a creature gains. Haste wastes fuel and dawdling the resting cost,
   so a careful creature has a best speed.
 - **Gain rate**: meals gained per 10 s, energy free: speed and accuracy.
 - **The three objectives**: the simplest brain doing the job (fewest parts), the best driver for energy (body
@@ -485,6 +584,16 @@ python -m minimal.league            # its league table (minimal/LEAGUE.md)
 python -m minimal.check RESULTS.json  # a circuit in the real Life at two integration steps
 python -m minimal.physical RESULTS.json  # could it be built? its parts in real units against a chip's limits
 python -m minimal.draw RESULTS.json  # draw a circuit (media/NAME.svg): its signal-flow graph and its schematic
+python -m minimal.spice RESULTS.json --check  # build it in SKY130 transistors; each element against its formula
+python -m minimal.sheets RESULTS.json  # its transistor schematics, sheet by sheet (media/NAME_transistors/)
+python -m minimal.spice_life RESULTS.json --seeds 100:116  # live it in SPICE, closed loop, against the simulator
+python -m discrete.watch           # discrete circuits live, ngspice beside the body (--circuit learn_hold --poison)
+python -m discrete.life hold_drive  # discrete circuits closed loop in SPICE (--set k=v: other values)
+python -m discrete.tune hold_drive 20   # tune a discrete circuit's values (--poison: for one that learns)
+python -m discrete.judge discrete/results/hold_drive_tuned.json  # on held-out seeds (--motors X: unequal thrusters)
+python -m discrete.poison learn_hold  # a learning circuit, each seed red then blue as poison
+python -m discrete.policies         # rules, not circuits, on the real body (and discrete.variation: bodies that differ)
+python -m discrete.draw             # redraw media/hold_drive_14.svg and .png
 python -m experiments.e1_oracle     # the rung-1 experiments, E1 to E7 (experiments/NOTEBOOK.md)
 python -m experiments.h_run 64 1000 "share*"  # the healing experiments (H series): named rules, on the leaderboard
 python measure_recruitment.py 32    # recruitment's local signals, neuron by neuron, watched from outside
@@ -516,9 +625,11 @@ python creature.py --record frames  # save a life's frames as PNGs, headless (me
 | `brains/healing.py` | the healing circuit and cascade: rung 1 by a generic recruit that knows nothing of the circuit |
 | `measure_recruitment.py` | recruitment's local signals, watched from outside a circuit brain |
 | `blocks.py` | the block view: a circuit brain at level 1 (neurons, synapses, the states they hold), live; and the node view, level 0, for circuits without neurons |
-| `minimal/` | the minimal circuit search: `spec.py` (circuits as descriptions, the rules, scoring), `fastlife.py` (a whole life in one compiled call), `designs.py` (hand designs), `search.py` (polish), `prune.py`, `evolve.py` (open search), `league.py`, `check.py` (the real `Life` at two steps), `test_minimal.py`; its notebook `NOTEBOOK.md`, league table `LEAGUE.md`, results in `results/` |
+| `minimal/` | the minimal circuit search: `spec.py` (circuits as descriptions, the rules, scoring), `fastlife.py` (a whole life in one compiled call), `designs.py` (hand designs), `search.py` (polish), `prune.py`, `evolve.py` (open search), `league.py`, `check.py` (the real `Life` at two steps), `spice.py` (a circuit as SKY130 transistors, for ngspice), `sheets.py` (their schematics), `spice_life.py` (lives in SPICE, closed loop), `test_minimal.py`; its notebook `NOTEBOOK.md`, league table `LEAGUE.md`, results in `results/` |
+| `discrete/` | discrete circuits: `life.py` (netlists of common parts, lives closed loop in ngspice, the bench), `circuits.py` (the designs), `policies.py` (rules, not circuits), `bodies.py` (bodies built differently), `variation.py`, `screen.py` (bench screening), `tune.py`, `prune.py` (pruning and the ladder), `judge.py` (held-out, paired), `poison.py` (lives with poison), `draw.py` (the schematic), `watch.py` (live); its notebook `NOTEBOOK.md`, results in `results/` |
 | `experiments/` | the recruitment experiments (E series: the recruiting circuit; H series: the healing circuit), their lab notebook (`NOTEBOOK.md`) and leaderboard (`LEADERBOARD.md`) |
 | `mixed_feedback.py` | the mixed-feedback element and circuit every circuit brain is built from |
+| `chip.py` | how each part of a circuit is built in transistors: the blocks an element takes, and so the power the supply delivers |
 | `sheet.py` | the engine: the only code that knows the grid |
 | `rules/organs.py` | where am I: the race, handedness, edge labels, coordinates, names |
 | `rules/wiring.py` | growing paths and running pulses, built on `rules/organs.py` |
@@ -531,7 +642,7 @@ python creature.py --record frames  # save a life's frames as PNGs, headless (me
 | `diagram.py` | draws `media/cell.svg`, the diagram above (by hand from the rules: redraw it when one changes) |
 | `schematic.py` | draws `media/designed_circuit.svg` and `.png`, the designed circuit's schematic (by hand: redraw it when it changes) |
 | `AGENTS.md` | the rules, for agents and people: principles, honesty, every brain's constraints, how to work here |
-| `LESSONS.md` | how it got here: what was tried, what failed and why |
+| `NOTEBOOK.md` | the lab notebook of the sheet brain, the body and the circuit simulator: what was tried, what failed and why |
 | `MIXED_FEEDBACK.md` | the mixed-feedback approach (Sepulchre and colleagues): what is new in it, the literature, and what it suggests here |
 | `RECRUITMENT.md` | how a brain might recruit more computational power locally, with no god: the literature, insights and plan |
 

@@ -1,8 +1,22 @@
 # Lab notebook: rung 1 of recruitment
 
 *Run under the simulator before 2026-10-20 (a fixed noise per node, no mismatch): the results stand only for it
-(`LESSONS.md`, Noise as biology makes it). Older entries keep the names they were written with (`LESSONS.md`, the
+(`NOTEBOOK.md`, Noise as biology makes it). Older entries keep the names they were written with (`NOTEBOOK.md`, the
 opening); the printed results in `results/` call the baseline circuit "minimal".*
+
+## Where it stands
+
+- **A brain can grow, in its life and by local means, the link that lets its knowledge act** (rung 1, E1-E7): the
+  recruiting circuit grows exactly the structure an oracle would place in about 62 of 64 poison lives, and nothing in
+  all-food lives.
+- **A recruit that knows nothing of the circuit can find that link too** (the H series): the healing circuit chooses
+  from a menu of actions by win-stay lose-shift and matched the guided bridge; when the first recruit can't reach the
+  cure, a cascade grows a second one step further out (best: +0.66 net food over the knowing circuit, H11).
+- **All of it under the earlier noise.** Under noise and mismatch as biology makes them, these hand-built neurons fire
+  on their own or miss pulses, and every circuit brain falls to about 1 food for each poison: the results stand only
+  for the earlier simulator until the brains are rebuilt on a neuron that survives mismatch.
+- Open: recruitment under biological noise; de-recruitment (retiring a recruit failed in every form, H11); a recruit
+  that walks (`RECRUITMENT.md`).
 
 Rung 1 (RECRUITMENT.md): the knowing circuit (brains/knowing.py) learns what predicts pain in its taste neuron T, but T
 has no outputs. Can it grow, in its life and by local means only, the link that lets that knowledge change behaviour?
@@ -35,7 +49,7 @@ the creature starts moving. Scripts: `python -m experiments.e<N>_...`; raw recor
   tau circuit ticks wanders by about 0.2 sqrt(tau / 2) / C in steady state: about 1.5 for F, against a range of 0..1,
   and the clamp at 0 turns the walk into a drift upward. A slow integrator needs a capacitance that grows as the square
   root of its time; each slow node now gets the C that holds its wander near 0.02 (F: C = 775), with R and its input
-  gains scaled to keep its time and rates. Physics, not tuning: the same disease as the knobs' drift (LESSONS), cured
+  gains scaled to keep its time and rates. Physics, not tuning: the same disease as the knobs' drift (below: Before E0), cured
   differently because F must fade.
 - **Frustration's trigger moved off the noise.** The taste node's own noise (about 0.1) sometimes dipped toward the
   "bad taste" threshold (-0.5), and F integrated those leaks over thousands of ticks (F about 0.08 in all-food lives);
@@ -314,7 +328,7 @@ Pooled over both sets (128 lives): grown, local against T hold +0.11 [+0.03, +0.
 No growth and no cost in all-food lives for either.
 
 *Findings.* The local hold is better as well as more local. Working: T fires by itself and through the food sensor's
-weak synapse (false alarms before about half of food meals, `LESSONS.md`), and each time the T hold makes the creature
+weak synapse (false alarms before about half of food meals, below: Before E0), and each time the T hold makes the creature
 veer from food; the local hold fires only with the poison sensor itself, so its veers are specific (E1's O5 failed
 for the same reason, T firing too often). Last-third food:poison 4.9-5.7, as good as the designed circuit's (5.3).
 Adopted: the local hold is the default; the growth rule now needs nothing beyond the synapses of the neuron it grows
@@ -673,3 +687,319 @@ name ...`, `--seed 100` for held-out lives); H1 ran from `experiments/h1_rules.p
 rows slightly if rerun: the rivalry's steeper slope (from H5) and power gating (from H10); both were checked on the
 leader (+1.12, +1.14, +1.16, +1.17 across versions, within the 0.04 a new noise realisation moves a row). H2's
 smoke-test script was superseded by `h_run.py` and removed.
+
+## Lessons from this line, in full (moved from the old LESSONS.md)
+
+- **Machinery beside the thing studied does its work: the rules were not circuits** (the user's question, 2026-10-18). The net's unit rules (`net_rules/adjust.py`) are compiled
+  programs layered on the circuit: per-tick traces, event bookkeeping ("pending", a peak over two ticks, an estimate
+  of rest), a hard-coded threshold, and a knob that writes the circuit's bias from outside it. The locality checks
+  stopped a rule seeing other units, but inside a unit it was free digital computation: functionality beyond the
+  literal circuit, which the mixed-feedback track promises not to have ("everything, learning too, is nodes and
+  elements"). It should have been said when the engine was proposed. What stands: the measurements (watching may
+  compute anything) and the rung-0 findings as a specification of which local signals are needed; what doesn't: rung
+  0's behaviour as a mixed-feedback result. The same kind of mistake as "reward at contact": machinery outside the
+  thing being studied doing its work. Rule of thumb: for every number that affects behaviour, ask "which node holds
+  it, and which elements move it?"; if the answer is "the program", it isn't the circuit.
+- **Enough lives, paired, with intervals on differences.** 16 lives are too few to rank variants (with perfect p from
+  birth, net food came out +0.38 in one run of 32 and the oracle's +0.47); run the oracle in the same batch. Pair
+  lives (the same seeds and, with per-node noise streams, the same noise), so a difference is caused by the variant;
+  a league ordered by point estimates claimed orders it couldn't back, so compare designs on the same seeds, with a
+  95% interval on the difference, and call the rest ties.
+- **Sigmoid tails are constant currents.** Twice: a dozen resting rivals' tails summed past an enable's rise, so none
+  ever won; and a pain input's resting tail, cancelled by the good-taste input's while the steps were equal, charged
+  tiredness once they weren't. Summed over many inputs or a long time constant, "almost zero" isn't.
+
+## Before E0: the baseline, rung 0 and the generic recruit (moved from the old LESSONS.md)
+
+The ideas and plan are in `RECRUITMENT.md`, the full record in `experiments/NOTEBOOK.md` (the E and H series). All
+of it ran under the earlier noise (a fixed noise per node, no mismatch); under biological noise these hand-built brains
+fall to about 1 food for each poison (`NOTEBOOK.md`, Noise as biology makes it), so their results stand only for that
+simulator. The lessons here are about mechanisms.
+
+### Recruitment, step 0: the baseline (2026-10-18)
+
+The plan (`RECRUITMENT.md`, agreed with the user): keep the one-bit task, start from a brain with no machinery for
+telling food from poison, and let it discover in its life that it needs more. The control, agreed too: all-food lives
+(`--all-food`), where tastes are never bad and nothing should be recruited.
+
+- **The baseline circuit** (`brains/baseline.py`): the designed circuit's four neurons, each sensor driving both motors
+  through a synapse that relays every spike, taste into a node connected to nothing. Both circuit brains now share
+  `CircuitBrain` (neurons, taste node, running, drawing); 32 recorded lives were unchanged, every meal and firing.
+- **64 lives of 10,000 ticks:**
+
+  | | poison lives: food:poison by third | meals per 1,000 ticks | all-food lives: food per 1,000 ticks by third |
+  |---|---|---|---|
+  | baseline circuit | 1.0, 1.0, 1.0 | 3.14 (half poison) | 3.09, 3.38, 2.97 |
+  | designed circuit, learning | 2.3, 6.4, 5.3 (55 of 64 learned) | 1.66 | 2.17, 2.54, 2.80 |
+
+- **Machinery costs food when there is nothing to learn.** In all-food lives the learner eats a fifth less than the
+  baseline circuit: its sensors hush each other, and with p at 1/2 half its sightings become veers. Even in poison lives
+  it eats less food (about 1.3 against 1.6 per 1,000 ticks); what it gains is avoiding poison (about 0.3 against 1.6).
+  That cost is what makes recruiting machinery only when needed worth anything.
+- **Why non-learners score exactly 1.0:** lives are paired, each seed run once with red as poison and once with blue,
+  and a brain that ignores taste behaves identically in both, so its food and poison counts mirror exactly.
+- **Agreed for step 0.2** (the user): no detector hand-placed where it will be needed (design smuggled in). Instead
+  every unit gets the same generic essential variable (Ashby): here, its own disturbance by bad tastes; the unit taste
+  enters is generic, merely the one disturbed. Spare units are generic and identical, sparsely or locally connected,
+  and connections grow toward a signal the disturbed unit sends out (as the sheet's paths grow toward a sink's
+  field), under one rule that knows nothing of roles.
+
+### Recruitment: where the pain goes, and what a unit can ask (2026-10-18)
+
+- **Flooding every unit with "pain" was a ground-rule question.** It wouldn't move credit assignment into the body
+  (every unit gets the same signal, saying nothing about which sensor earned it; each unit's own eligibility does the
+  credit assignment). But the sheet had ruled a sheet-wide taste "magic", and routed it through the T organ. In real
+  brains the broadcast is brain structure: dopamine neurons receive the reward signal and project widely, a fan-out
+  that costs wiring and energy and that evolution built. Two options: (A) taste enters at one unit and spreading it
+  is the brain's job, grown or recruited at a cost; (B) the starting brain is born with a declared, generic modulator
+  projection from the taste unit to every unit (as evolution gave us a dopamine system), costing energy like any
+  connection. **Decided (the user): B for now**, declared openly; A is the harder version for later. A third,
+  local variant, pain reaching only the sensors (taste sits beside them, as the sheet's T organ does), is under
+  discussion below.
+- **Three local questions a unit can ask**, each pointing somewhere different:
+  1. *Am I involved?* (eligibility): was I active shortly before the pain? A unit that wasn't ignores it. This is
+     the standard three-factor rule (a widely spread signal changes only units with a recent activity trace), and
+     the designed circuit already learns this way.
+  2. *Am I implicated?* Does my activity predict pain, over many events, more than my activity in general does?
+  3. *Can I fix it myself?* (frustration): implicated, and adjusting myself doesn't stop it (nothing adjustable,
+     or at its limit), so I need help: recruit.
+
+  In the baseline circuit, in a red-poison life: the red sensor is involved and implicated (it was stimulated within
+  10 ticks before 85% of red meals, the other sensor before 17%: "What a sensor can know", above) but can change
+  nothing, so it is frustrated: recruitment should start there. The motors fire before bad *and* good tastes:
+  involved but conflicted, which shows the colours were merged upstream. In all-food lives there is no pain, so
+  nothing is implicated, frustrated or recruited.
+- **Recruited units as bridges (the user's idea), and the decisions on it.** The poison sensor is reliable but
+  powerless: it knows (its activity predicts pain) but cannot act. The motors act but cannot know (they fire before
+  good and bad meals alike). A recruited unit is the learnable link between them: a wire with a memory rather than a
+  new neuron (in level-0 terms the distinction dissolves), much as NEAT's "add node" splits a connection, but
+  triggered by local frustration instead of random mutation. Decided:
+  - **pain reaches only the sensors** (taste sits beside them, as the sheet's T organ does), replacing B; so the
+    bridge is one-sided: the frustrated sensor's signal travels down its own outputs, the sheet's path growth
+    reversed (there the target sent the field; here the source signals, along wiring it already has);
+  - **a new, generic unit is created on demand**, placed by the local rule (equivalent to a reserve of spare cells);
+  - **a ladder, measured from the bottom:** rung 0, adjust myself (intrinsic) while that still helps; rung 1, recruit
+    a bridge when I am reliable but powerless; rung 2, recruit a feature (a conjunction detector) when nothing
+    upstream predicts reliably. **Recruit only when self-adjustment is exhausted**: for a simple unit, roughly "my
+    knobs are at their best on average, and the pain continues", cascade-correlation's trigger (add a unit when the
+    error stops falling) made local; or, with synapses that track their own uncertainty, "confidently settled and
+    still implicated".
+  - Principles: insert transparently (a new bridge first passes the signal unchanged); exactly one bridge per need
+    (the sheet's handshake, or mutual inhibition); hold what was learned when the pain stops (it stopped *because* of
+    the bridge).
+- **Locality, stated strictly (the user's corrections).**
+  - *No coin toss between units.* A unit may draw a random number from its own noise (the sheet's sensors tossing
+    for their side happened inside one cell), but a choice *among* units must come out of their local competition;
+    nothing may compare them from outside. So recruitment starts at both sensors (the food sensor too was active
+    before some poison meals, about 17% of them, against 85% for the poison sensor); the poison sensor's stronger
+    evidence most likely forms its bridge first, the pain falls for everyone, and the other's recruitment dies away.
+    Likewise between a sensor's two output wires: bridges start on both, noise decides which forms first, and the
+    other dies away when the creature starts to veer.
+  - *No unit can know it is optimally tuned*: that would need how the creature's success varies with its
+    parameters, which no unit has. A unit knows its own activity, the signals on its connections, and pain only if
+    pain reaches it. With pain only at the sensors, the motors have no information about success: they can't tune
+    for the task, only regulate their own activity (homeostasis) or stay fixed. A unit that feels pain can only
+    correlate ("when I was active, pain followed") or perturb a knob and keep changes after which pain falls. So
+    "finished adjusting" means *my own adjustment has stalled (a knob at its limit, or a slow trace of its change near
+    zero) while my own discomfort persists*: both observable by the unit itself.
+  - *Every parameter is declared a constant (fixed at birth, with noise) or a plastic knob with a local rule.* The
+    baseline circuit has constants only; rung 0 adds one knob, the sensors' excitability.
+  - *Make it the structure*, as `sheet.py` does: each unit's rule sees only its own state, the signals on its own
+    connections and what is delivered to it; the engine creates units and connections only when a unit's rule asks,
+    attached locally to it; and a test checks that no rule reaches further.
+- **De-recruitment (open).** A bridge that is no longer needed costs energy, so it should go, but not merely because
+  the pain stopped. Proposed criterion: remove a bridge once it has been *transparent* (passing its signal unchanged,
+  as if absent) for a long time; one holding a closed gate keeps a memory, however rarely used. Failed recruits (no
+  fall in the frustration that summoned them) go too, as in ultrastability.
+- **For later:** pain felt by the motors instead of the sensors. Nothing in the mechanism should depend on which end
+  feels it; the bridge would then grow from the other end.
+
+### Recruitment, step 0.2: what a unit can sense (2026-10-18)
+
+First built as compiled rules beside the circuit (`net.py`, `net_rules/`: locality as structure, as `sheet.py` is for
+the sheet), and withdrawn because they were programs, not circuit (Lessons that cut across the project); rung 0 was
+rebuilt as circuit (next). What stands is the specification of the local signals a unit needs:
+
+- **A knob is a memory: its noise comes with writing, not with time.** Noised every tick, a knob clamped at its top
+  walked down; the never-tasted motors ended less excitable and explored less (all-food lives ate 2.27 per 1,000
+  ticks against the baseline circuit's 3.12). With noise only on writes the adjusting circuit eats exactly as the
+  baseline circuit where nothing is learned. Likewise slow averages refreshed only at events need a fade.
+- **Rung 0 helps, but far from enough**: every unit's excitability a knob moved by eligibility x taste cut poison by a
+  third (food:poison 1.5 against the baseline circuit's 1.0; the designed circuit 5.3 in the last third): the case for
+  rung 1.
+- **Confidence**: how reliably a unit's activity predicts pain (+1) or a good taste (-1), counted only with evidence:
+  poison's sensor +0.46 on what it received, food's sensor -0.85, all-food sensors -0.96; the motors never taste, so
+  they have no evidence.
+- **Self-adjustment blinds a unit's own-spike evidence, so judge frustration on what a unit receives.** Lowering its
+  excitability, the poison sensor's own involvement fell into the noise, while what it received still predicted pain;
+  its knob stalled short of its limit (it moves only while the unit fires) and the pain went on.
+- **Decision confidence** (the user's comparator idea): how decisively a unit decides, by *firing consistency* (the
+  share of input events that made it fire: near 0 or 1 decided) and *misses* (how far a peak that didn't fire stayed
+  below threshold). The poison sensor stalls exactly at the edge: firing almost never (consistency 0.03), with near
+  misses (0.03). So frustration, by three local conditions: decided (the knob can't change what I do), what I receive
+  predicts pain, and the pain goes on: the poison sensor, and nothing else.
+
+### Recruitment, rung 0 rebuilt as circuit (2026-10-18)
+
+- **Decided (the user): in the circuit brains everything is explicit circuit**, so that at any point the whole
+  brain can be drawn as a circuit diagram. The rule layer (`net.py`, `net_rules/`) is retired. In a circuit locality
+  is built in: a node feels only the elements attached to it. The one exception, for rung 1: *growth*. A recruited
+  unit doesn't exist until it is recruited, then appears suddenly, by a declared primitive triggered entirely locally
+  (by a node's own voltage) and attached locally.
+- **Memory nodes** (`mixed_feedback.py`): no leak, and noise only when written (WRITE, 10% of each change), so a knob
+  holds its value exactly while nothing writes it. `test_compiled.py` checks it.
+- **Rung 0 in circuit** (`brains/adjusting.py`): every neuron has the same motif, an eligibility node charged by its
+  own spikes and a memory node (the knob) driving a current of up to 1.4 out of the neuron (an amplifier whose bias
+  current the knob sets: a gated element reading the knob, gated by it); for the sensors only, two amplifiers from the
+  taste node into the knob, gated by eligibility (bad charges it, good empties it), as the designed circuit's P.
+- **Measurement watches from outside** (`measure_recruitment.py`): the brain logs what went in and what each neuron did;
+  the observer computes the local quantities (involvement, confidence, firing consistency, misses) over the second
+  half of each life. 64 lives of 10,000 ticks:
+
+  | | poison lives: food, poison per 1,000 (food:poison) | poison's sensor: excitability, fires, confidence (received), miss | all-food lives: food per 1,000 |
+  |---|---|---|---|
+  | baseline circuit | 1.57, 1.57 (1.0) | 1.00, 0.70, +0.73, 0.22 | 3.14 |
+  | adjusting (circuit) | 1.46, 1.05 (1.4) | 0.34, 0.18, +0.57, 0.03 | 3.15 |
+
+  The rule version's result (1.5) holds in circuit form: rung 0 cuts poison by a third, and the poison sensor again
+  stalls at the edge (near misses, miss 0.03). The food sensor stays calm (excitability 0.98, confidence -0.89); in
+  all-food lives nothing changes.
+- **Rung 0 is itself one-bit learning in a life**, by intrinsic plasticity alone (no synapse changes): the poison
+  sensor's knob fills, it becomes less excitable, and the creature stops driving at poison. It learns which colour to
+  *ignore*, a weaker thing than the designed circuit's veering *away* (an ignored poison block is still eaten beside
+  food or by drift): 1.4 food per poison against about 5. And it costs nothing when there is nothing to learn: in
+  all-food lives no knob ever charges and it eats exactly as the baseline circuit, where the designed learner, its
+  machinery always on, eats a fifth less. Paying only when there is something to learn is already rung 0's property.
+- **Not yet tried: a knob that also makes a unit keener.** The knobs start empty (as excitable as a neuron can be
+  without firing by itself, about 0.2 of bias short of that), so good tastes can't push further. A knob starting
+  mid-range could move both ways: keener on what tastes good, which might help even in all-food lives.
+- **The motors' conflict, seen from outside.** In the baseline circuit the motors are involved before every taste
+  (involvement 1.00) with confidence exactly 0.00: equally before good and bad (exactly, as lives are paired). The
+  motors can't know this themselves (they feel no taste); the observer can.
+
+### Recruitment: a starting animal that may know but can't act (2026-10-18)
+
+- **A cleaner test (the user's).** In the rung-0 animal each sensor could change its own behaviour (ignore what
+  predicts pain), so the starting animal could already learn a little. Instead: the baseline circuit plus a taste
+  neuron T that can *learn* what predicts pain but has *no outputs*. It may know, and must recruit in order to act.
+  What it learns is a prediction, available before contact, which is what avoiding needs; its frustration is crisp
+  ("I predict pain confidently and it still comes"); and one "danger" signal serves any poison colour. The sensors'
+  own knobs (rung 0) go; pain reaches only T, the taste organ. Rung 0 stays on record as the earlier variant.
+- **The knowing circuit** (`brains/knowing.py`), all circuit: T fires innately at a bad taste (an amplifier from the
+  taste node), and through a plastic synapse from each sensor whose strength is a memory node, charged by a bad
+  taste and emptied by a good one while that sensor was recently active (the designed circuit's P motif, on the
+  sensor-to-T synapses). 64 lives of 10,000 ticks (`python measure_recruitment.py 64 10000 knowing`):
+
+  | | poison lives | all-food lives |
+  |---|---|---|
+  | behaviour | food 1.58, poison 1.58 per 1,000 (1.0, as the baseline circuit) | food 3.16 per 1,000 (as the baseline circuit) |
+  | T's synapses | from poison's sensor 0.87, from food's 0.13 | 0.00 |
+  | T anticipates (a spike within 10 ticks before the taste) | 96% of poison meals; 51% of food meals | (no poison); 19% of meals |
+  | T's confidence (when it fired before a meal, the meal was poison) | 0.66 | 0.00 |
+
+  Knowledge leaks nowhere (behaviour as the baseline circuit's). T learns the association, and anticipates nearly every
+  poison meal; its false alarms are about chance at its rate (about 50 spikes per 1,000 ticks, against 18 in all-food
+  lives, which is its own spontaneous firing): red blocks are often in view on the way to a blue one, so T has become
+  a "danger in view" detector, which is arguably the right signal for avoiding. Frustrated by the test (confident,
+  pain going on) in poison lives; calm in all-food lives.
+
+### Recruitment, rung 1: growing the link that lets knowledge act (2026-10-18)
+
+The full record, with methods, tables and working, is `experiments/NOTEBOOK.md` (E0-E6); in brief:
+
+- **It works.** The recruiting circuit (`brains/recruiting.py`) starts as the knowing circuit: its taste neuron T learns
+  what predicts pain but has no outputs. Circuit only, plus one growth primitive: frustration F at T ("I predicted
+  this pain and it came anyway"); help routed back along T's input synapses, only to a sensor whose synapse predicts
+  pain and only while frustrated; competing sprouts on each sensor's output synapses; and, when a sprout passes its
+  level, a bridge splitting that synapse (a relay held down while T has fired lately, so the creature veers from
+  danger). On held-out lives it grows exactly the oracle's structure in 61 of 64 poison lives, nets +1.00 food per
+  1,000 ticks over the knowing circuit (oracle at birth +1.15; the gap is only the time before growth, about 1,700
+  ticks: a time-matched oracle does no better), and grows nothing in all-food lives, where a built-in bridge costs.
+- **Essential**: routing by what each synapse onto T learned (without it, bridges land on the food sensor: veering
+  from food); competition among a neuron's sprouts (without it every sprout grows); help as a logical AND (predicts
+  pain, and frustrated); a sprouted neuron stays changed (one bridge per neuron). Frustration needs both knowledge and
+  unprevented pain, so chance frustration grows nothing.
+- **Methods**: oracle structures as ceilings; paired lives with per-node noise streams (`Circuit(streams=True)`):
+  before them, two variants of different sizes differed by chance as much as by design; quiet slow nodes (a slow
+  integrator's capacitance must grow as the square root of its time, or noise swamps it); held-out lives to confirm
+  choices; and every script pinned to the settings it ran.
+- **Power, corrected**: by the worst case (every amplifier fully biased) the recruiting circuit seemed to need half the
+  designed circuit's static power; by the more physical gated average (a gated amplifier's bias set by its gate) it
+  needs about 1.7 times as much, and nearly half of that is the one-bridge-per-neuron inhibitor holding a losing sprout
+  at 0 with an ungated, full-strength current for ever. Fix to test: growth closes that sprout's charging gate instead.
+  Big currents go with big quiet capacitors (current = C x rate), and gating is what makes them affordable.
+- **A bug found and fixed**: `start = moving or ticks` treated a creature that moved at tick 0 as never moving
+  (measurement only; no earlier result was affected).
+- **The bridge's link to the taste neuron was a non-local shortcut** (the user noticed it looked unconnected in the
+  block view): the growth rule attached the bridge's hold to `self.T`, knowledge the circuit didn't have. Replaced
+  (E7) by a local hold, charged by the sensor's own spikes gated by its synapse onto T; better as well as more local
+  (+0.11 [+0.03, +0.19] net food, pooled over 128 lives; last-third food:poison about 5), because the creature now
+  veers only when the poison sensor fires, not at T's false alarms. The growth rule now needs to know only where the
+  winning sprout is. Lesson: when a growth or wiring rule names a part ("connect to T"), ask how the circuit itself
+  would find it.
+- **Found on the way: the neuron is fragile to mismatch.** 5% random error in every gain and bias costs both the recruiting
+  circuit and the designed circuit most of what they learn. All of it comes from the neuron's own fast and slow elements and its
+  bias; mismatch in the whole recruitment machinery costs nothing. The neuron cancels two equal elements at rest and
+  sits 0.38 V below threshold, so 5% moves its rest by up to 70% of the margin: a precise-parts design, to be
+  redesigned for margin.
+
+### Recruitment: a generic recruit that knows nothing (the healing circuit, 2026-10-19)
+
+`brains/healing.py`; the H series in `experiments/NOTEBOOK.md`; `experiments/LEADERBOARD.md`. The user's design: a
+frustrated unit grows a recruit that attaches to it and its one-edge neighbours, sees their signals, learns which
+connection, treated how, reduces frustration, and if it fails is frustrated itself, so the next recruit reaches one
+edge further: "an inflammation/healing response". The recruit knows nothing of what the circuit does: it gets a
+menu (inhibit or excite each attached neuron, turn down a synapse) and a local rule for choosing.
+
+- **A recruit that knows nothing matches the guided bridge.** Win-stay lose-shift in circuit (enables that latch,
+  pairwise rivalry, tiredness that knocks an option out), listening to everything attached, a menu of inhibiting and
+  gating: +1.16 net food per 1,000 ticks against +1.16 for rung 1's guided bridge (held out, paired -0.06 [-0.13,
+  +0.03]), choosing "gate the poison eye's synapse to a motor" out of seven options in every life.
+- **Judge an option by the share of bad tastes after it, not their rate.** Judged by rates (tiredness fading with
+  time), an option was still being switched at tick 70,000-90,000, and anything that made the creature do less looked
+  like a cure. Judged by share (tiredness that hardly fades while the option is on, a step up per pain, half a step
+  down per good taste), it settles by tick 8,000-13,000 after 3-5 switches, and the last third's food:poison doubles
+  (4.4 to 7.0, held out; the guided bridge 3.7). But a share can't judge an option followed by no tastes at all.
+- **Choosing is the slow part, not waiting for frustration.** T is frustrated 1,000 ticks into a life. The user's
+  idea of recruiting early and learning "in shadow mode" moved nothing measurably: a shadow can learn what to listen to,
+  not which action helps, which needs acting. And a shadow gated by the parent's frustration withdraws the recruit as
+  soon as its help calms the parent (a fix that undoes itself); commissioning it for good (a memory node) fixes that.
+  Passing knowledge forward does help: a recruit whose listening is gated by its parent's own learned memories
+  ("inherit") beats one learning from scratch (+0.92 to +1.05).
+- **Doing nothing well beats doing something precisely.** Listening to everything attached beat learned listening: R
+  then acts constantly, so win-stay lose-shift gets many trials; and for a gating action, firing too often costs
+  nothing. The action's target gives the selectivity (the local hold's lesson again). Committing to one option beat
+  graded blending (a REINFORCE-like rule kept harmful options on beside good ones: +0.16 at best).
+- **Wireheading is real.** Recruits learning from anticipated pain only chose to silence T five times as often:
+  recruits must learn from pain itself.
+- **The cascade works when the cure is one edge further.** With a menu of the synapses arriving at attached neurons,
+  wave 1 (on T and the eyes) can do nothing useful; still frustrated 10,000 ticks later, it is frustrated itself, and
+  wave 2, reaching the motors, gates the poison eye's synapse in about 60% of lives. Its failures: a neuron-level
+  cure (inhibit a motor while the poison eye fires) is a real veer but costs half the meals (turning needs the motor
+  off for 10 ticks, and a shorter hold loses the veer); with full listening it froze the creature; and wave 1's last
+  option stays on after wave 2 cures the poison, and then looks good, even when harmful (credit leaking between waves).
+  Best so far (+0.66, last third 4.9): every wave frustrated by the first unit's own flag, and "starve" (while an
+  option is on its tiredness creeps up, eased only by good tastes, so a freeze is knocked out within 20,000 ticks).
+- **De-recruitment by retiring failed in every form.** A recruit frustrated enough to recruit stood down for good;
+  but while the pain lasts every recruit reaches that point, the last one too, and then no one acts. What standing
+  down should mean (may the last recruit? a cap on waves would be a hidden size) is open; a recruit that walks would
+  release its old action as it moves (`RECRUITMENT.md`, future work).
+- **Power: choosing cost more than acting.** A generic recruit added about 1,200 units of gated static power (the
+  guided bridge about 200), most of it the enables' pairwise rivalry: n(n-1) ungated elements, fully biased for ever.
+  Gating each latch, rivalry and knock-out element by its own source cut it to about the guided bridge's (gated
+  average 550 against 528), with behaviour unchanged. Gate every element by the node whose state it reports.
+- **Open: level 1 has no rules (the user's question, 2026-10-20).** Level 0 is strict (nodes and elements only), but
+  the parts built from them are invented as needed. A grown healing circuit has 48 nodes and 128 elements, of which 6
+  are neurons; the other 42 are about eight unnamed kinds (eligibility trace, weight, pulse, slow level, comparator,
+  latch, resting-open gate, hold). The block view draws them all as the same meter, though some are states belonging
+  to a neuron or synapse and others are functional units in their own right. And half the recruit (21 nodes, about
+  60 elements) is machinery for choosing among 7 options, while its choice of where to connect is trivial: the
+  decisions sit inside complicated parts, not in how simple parts connect. A proposal: a small catalogue of level-1
+  parts, each with named ports, a glyph and rules for what may connect to what. The parts: a neuron, with its own
+  adaptation; a synapse, with its weight, eligibility and an optional gate (presynaptic inhibition); and a modulator,
+  a diffuse signal like ouch and yum. The rules, for example: only neurons send spikes, and a weight changes only when
+  eligibility and a modulator coincide (three-factor learning). Growth would add only catalogue parts, connected port
+  to port. Win-stay lose-shift would become 7 mutually inhibiting neurons whose adaptation is the tiredness
+  (winner-take-all with adaptation, the textbook rivalry circuit). The test: rebuild the healing circuit from the
+  catalogue and check it still learns, then redraw the block view to match, before a harder test bed makes the
+  structural choices real.

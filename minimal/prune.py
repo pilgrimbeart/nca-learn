@@ -110,7 +110,8 @@ if __name__ == "__main__":
     found = json.load(open(a.results))
     name = a.name or os.path.basename(a.results)[:-5] + "_pruned"
     t0 = time.time()
-    spec, steps = prune(found["spec"], by=a.by)
+    from minimal.spec import load
+    spec, steps = prune(load(a.results), by=a.by)
     if not steps:
         print("nothing pruned")
         sys.exit()

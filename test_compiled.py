@@ -14,9 +14,10 @@ import numpy as np
 import mixed_feedback as mf
 import world
 from brains.designed import DesignedBrain
-from units import C_TYP, E, I_TYP, K_B, MILLI, PULSE, Q_BIO, R_TYP, T, T_TYP, TICK
+from brains.circuit import I_TYP, VOLT
+from units import C_TYP, E, K_B, MILLI, PULSE, Q_BIO, R_TYP, T, T_TYP, TICK, V_TYP
 
-nA, Ct, Rt = I_TYP, C_TYP, R_TYP        # (a typical current, capacitor and resistor: 1 nA, 2.5 pF, 1 GOhm)
+nA, Ct, Rt = I_TYP, C_TYP, R_TYP        # (a typical current, capacitor and resistor at 1 V typical: 1 nA, 2.5 pF, 1 GOhm)
 
 
 def plain_tick(c, V, Vx, armed, drive, z):
@@ -25,23 +26,34 @@ def plain_tick(c, V, Vx, armed, drive, z):
     bias, leak, cap, lo, hi, memory = c.node_arr
     gain, offset, slope, tau, sig = c.el_arr
     to, frm, gate = c.link
+    volt, _, half, kp, kn, dead = c.cfg
+    fade = lambda d, knee: 1.0 - np.exp(-np.maximum(d, 0.0) / knee) if knee > 0 else np.ones_like(d)
     spikes = np.zeros(len(V), dtype=np.int64)
     for k in range(len(z)):
         slow = tau > 0
         Vx = np.where(slow, Vx + mf.DT * (V[frm] - Vx) / np.where(slow, tau, 1.0), V[frm])
         x = slope * (Vx - offset)
         f = np.where(sig > 0.5, 1.0 / (1.0 + np.exp(-x)), np.tanh(x))
-        f = np.where(gate >= 0, f * np.clip(V[gate], 0.0, 1.0), f)
-        I = bias - leak * V
+        f = np.where(gate >= 0, f * np.clip(V[gate] / volt, 0.0, 1.0), f)
+        up, down = fade(half - V, kp), fade(V + half, kn)        # an output's current near the rail it comes from
+        b = bias * np.where(bias > 0, up, down)
+        I = b - leak * V
         dV = I + drive[k]
         gross = np.abs(I) + np.abs(drive[k])
-        np.add.at(dV, to, gain * f)
-        np.add.at(gross, to, np.abs(gain * f))
+        full = np.abs(gain) * np.where(gate >= 0, np.clip(V[gate] / volt, 0.0, 1.0), 1.0)
+        w = np.where(full > 0, gain * f / np.where(full > 0, full, 1.0), 0.0)
+        vo = np.where(memory > 0, 0.0, V)                       # (a memory's writes sit at analogue ground)
+        uo, do = fade(half - vo, kp), fade(vo + half, kn)
+        Iel = np.where(sig > 0.5, gain * f * np.where(gain > 0, uo[to], do[to]),
+                       full * (1 + w) / 2 * uo[to] - full * (1 - w) / 2 * do[to])
+        Iel = np.where(memory[to] > 0, np.sign(Iel) * np.maximum(np.abs(Iel) - dead * np.abs(gain), 0.0), Iel)
+        np.add.at(dV, to, Iel)
+        np.add.at(gross, to, np.abs(Iel))
         var = (c.q * gross + c.rest) * mf.DT                # the charge's variance over the step
         V = np.clip(V + (mf.DT * dV + np.sqrt(var) * z[k]) / cap, lo, hi)
         up = armed & (V > mf.SPIKE)
         spikes += up
-        armed = (armed & ~up) | (V < mf.RESET)
+        armed = (armed & ~up) | (V < -volt)
     return V, Vx, armed, spikes
 
 
@@ -51,18 +63,21 @@ def plain_pulse(buf, node, current, at, length=PULSE):
     buf[:, node] += current * np.clip(np.minimum(t0 + mf.DT, at + length) - np.maximum(t0, at), 0.0, None) / mf.DT
 
 
-def random_circuit(rng):
-    """Neurons, leaky and clamped nodes, and elements of every kind between them, some gated."""
-    c = mf.Circuit(seed=int(rng.integers(1 << 30)))
-    nodes = [c.neuron(f"n{i}", bias=rng.uniform(-1.8, -1.2) * nA, tau=rng.uniform(2, 20) * T_TYP) for i in range(4)]
-    nodes += [c.node(f"m{i}", R=rng.choice([None, rng.uniform(0.5, 10) * Rt]), C=rng.uniform(1, 50) * Ct, lo=0.0,
-                     hi=1.0, start=rng.choice([None, 0.5])) for i in range(3)]
-    nodes += [c.node(f"k{i}", R=None, lo=0.0, hi=1.0, start=0.5, memory=True) for i in range(2)]
+def random_circuit(rng, on_chip=False):
+    """Neurons, leaky and clamped nodes, and elements of every kind between them, some gated; at 1 V typical (the
+    recruitment line's), or on the chip's supply (units.V_TYP, outputs fading near the rails)."""
+    v = V_TYP if on_chip else VOLT
+    i = Ct * v / T_TYP                                          # a typical current at that voltage
+    c = mf.Circuit(seed=int(rng.integers(1 << 30)), volt=v, on_chip=on_chip)
+    nodes = [c.neuron(f"n{k}", bias=rng.uniform(-1.8, -1.2) * i, tau=rng.uniform(2, 20) * T_TYP) for k in range(4)]
+    nodes += [c.node(f"m{k}", R=rng.choice([None, rng.uniform(0.5, 10) * Rt]), C=rng.uniform(1, 50) * Ct, lo=0.0,
+                     hi=v, start=rng.choice([None, 0.5 * v])) for k in range(3)]
+    nodes += [c.node(f"k{k}", R=None, lo=0.0, hi=v, start=0.5 * v, memory=True) for k in range(2)]
     for _ in range(12):
         to, frm = rng.choice(nodes, 2)
-        c.element(int(to), int(frm), rng.uniform(-3, 3) * nA, rng.uniform(-1, 1),
+        c.element(int(to), int(frm), rng.uniform(-3, 3) * i, rng.uniform(-1, 1) * v,
                   tau=rng.choice([0.0, rng.uniform(0.2, 5) * T_TYP]),
-                  slope=rng.uniform(0.5, 10), sigmoid=bool(rng.integers(2)),
+                  slope=rng.uniform(0.5, 10) / v, sigmoid=bool(rng.integers(2)),
                   gate=int(rng.choice([-1, *nodes[4:]])))
     return c
 
@@ -99,7 +114,7 @@ def spread(build, seconds, dt, lives=100, substrate="biology"):
     mf.DT, mf.MISMATCH = dt, 0.0
     try:
         for s in range(lives):
-            c = mf.Circuit(seed=1000 + s, substrate=substrate)
+            c = mf.Circuit(seed=1000 + s, substrate=substrate, volt=VOLT, on_chip=False)
             n = build(c)
             c.run(seconds)
             out.append(c.V[n])
@@ -131,7 +146,7 @@ def check_noise():
     want_si = np.sqrt(E * 0.05 * nA * 0.5) / Ct
     out["silicon, memory written: sd, expected about %.1e V (single electrons)" % want_si] = (
         ws, 0.75 < ws / want_si < 1.33)
-    c = mf.Circuit(seed=1)
+    c = mf.Circuit(seed=1, volt=VOLT, on_chip=False)
     written(c)
     c.run(0.5)
     out["memory idle: held exactly"] = (c.V[1], c.V[1] == 0.3)
@@ -153,7 +168,7 @@ def check_noise():
 
 def check_mismatch():
     """Every part is off by about MISMATCH, each by draws of its own, also when grown in a life."""
-    c = mf.Circuit(seed=3)
+    c = mf.Circuit(seed=3, volt=VOLT, on_chip=False)
     for i in range(200):
         c.node(f"n{i}", bias=nA, R=Rt, C=Ct)
         c.element(i, i, nA, 0.0, tau=T_TYP, slope=1.0)
@@ -173,7 +188,7 @@ def check_pulse(rng):
     share of the charge)."""
     worst, early = 0.0, False
     for _ in range(200):
-        c = mf.Circuit(seed=0)
+        c = mf.Circuit(seed=0, volt=VOLT, on_chip=False)
         c.node("x")
         c.element(0, 0, 0.0, 0.0)
         at, length = rng.uniform(0, 4) * T_TYP, rng.uniform(0.3, 2) * T_TYP
@@ -186,7 +201,7 @@ def check_pulse(rng):
 def check_growth():
     """Growth during a life: splitting a synapse with a relay neuron keeps every existing node's state, and the relay
     passes spikes on (a stimulated neuron still drives its target, now through the relay)."""
-    c = mf.Circuit(seed=7)
+    c = mf.Circuit(seed=7, volt=VOLT, on_chip=False)
     a, b = c.neuron("a"), c.neuron("b")
     e = c.synapse(b, a, nA)
     before = 0
@@ -279,14 +294,15 @@ if __name__ == "__main__":
           f"{worst:.1e}: {'ok' if ok else 'FAILED'}")
     failed |= not ok
     for i in range(20):
-        c = random_circuit(rng)
+        c = random_circuit(rng, on_chip=i % 2 == 1)
         worst, same = check_circuit(c, list(range(4)), 300, rng)
         ok = worst < 1e-9 and same
         failed |= not ok
         if not ok:
             print(f"circuit, random {i}: spikes {'the same' if same else 'DIFFER'}, voltages within {worst:.1e}:"
                   " FAILED")
-    print(f"circuits, 20 random, 300 runs of {T_TYP * 1e3:g} ms each:", "FAILED" if failed else "ok")
+    print(f"circuits, 20 random (half on the chip's supply, outputs fading near its rails), 300 runs of"
+          f" {T_TYP * 1e3:g} ms each:", "FAILED" if failed else "ok")
     kept, before, after = check_growth()
     ok = kept and after > 0.8 * before
     print(f"growth: state kept {kept}; target spikes {before} before a relay split its synapse, {after} after:"

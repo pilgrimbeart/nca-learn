@@ -1,0 +1,21 @@
+gen   0  mean +6.641  best +6.331  sigma 0.040
+gen   1  mean +6.371  best +6.726  sigma 0.036
+gen   2  mean +6.211  best +6.630  sigma 0.033
+gen   3  mean +6.731  best +7.115  sigma 0.030
+gen   4  mean +6.727  best +6.885  sigma 0.028
+gen   5  mean +6.364  best +7.044  sigma 0.027
+gen   6  mean +6.564  best +6.897  sigma 0.026
+gen   7  mean +6.712  best +6.810  sigma 0.025
+gen   8  mean +6.877  best +6.667  sigma 0.025
+gen   9  mean +7.079  best +7.114  sigma 0.024
+gen  10  mean +6.753  best +7.287  sigma 0.024
+gen  11  mean +7.113  best +7.449  sigma 0.025
+gen  12  mean +6.618  best +6.812  sigma 0.025
+gen  13  mean +7.208  best +6.710  sigma 0.026
+gen  14  mean +6.571  best +7.151  sigma 0.025
+gen  15  mean +6.825  best +6.885  sigma 0.022
+gen  16  mean +6.678  best +7.295  sigma 0.020
+gen  17  mean +7.053  best +6.789  sigma 0.021
+gen  18  mean +7.157  best +7.231  sigma 0.019
+gen  19  mean +6.974  best +7.148  sigma 0.018
+best mean: {'rt': '1.46e+08', 'ct': '3.31e-10', 'rg1': '5.42e+08', 'rg2': '1.16e+08', 'rsh': '2e+07', 'rp': '1.06e+07', 'ch': '8.14e-10', 'rf': '1e+09'} 7.208

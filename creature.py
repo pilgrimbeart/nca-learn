@@ -12,7 +12,7 @@ import time
 
 import numpy as np
 
-from units import TICK
+from units import MILLI, TICK
 from world import COLOURS, SENSE, THRUSTERS, WORLD, Body
 
 
@@ -303,9 +303,9 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
         across, far, _ = body.look()
         half_ray = EAT / RAYS                           # what the eyes see: each ray, fading as a block there would
         for o, length in zip(across, far):              # count less, up to the first block it meets
-            for k in range(int(np.ceil(length))):
-                a, b = h + k * f + o * r, h + min(k + 1, length) * f + o * r
-                alpha = int(90 / (1 + ((k + 0.5) / REACH) ** 2))
+            for k in range(int(np.ceil(length / MILLI))):      # in millimetre pieces
+                a, b = h + k * MILLI * f + o * r, h + min((k + 1) * MILLI, length) * f + o * r
+                alpha = int(90 / (1 + ((k + 0.5) * MILLI / REACH) ** 2))
                 for ox in (-WORLD, 0, WORLD):                   # the world is a torus: draw the wrapped copies too
                     for oy in (-WORLD, 0, WORLD):
                         q = np.array([ox, oy])
@@ -706,8 +706,8 @@ if __name__ == "__main__":
     for path in args.spec:                                  # a minimal-search circuit, as a brain like any other
         import json
         import os
-        from minimal.spec import make
-        BRAINS[os.path.basename(path)[:-5]] = make(json.load(open(path))["spec"])
+        from minimal.spec import load, make
+        BRAINS[os.path.basename(path)[:-5]] = make(load(path))
     args.brains = args.brains or list(BRAINS)
     for b in [args.brain, *args.brains]:
         if b not in BRAINS:

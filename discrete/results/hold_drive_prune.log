@@ -1,0 +1,15 @@
+whole: 14 parts, robust +6.82
+  open  R9 h a 1e+09                             robust +6.14
+  be    Q0 vdd e h Q0M                           robust +5.81
+  ce    Q0 vdd e h Q0M                           robust +2.92
+  open  C1 h 0 1.26e-09                          robust +2.77
+  short R13 h m1 7.77e+06                        robust +1.25
+  short R9 h a 1e+09                             robust -0.40
+    open  R9 h a 1e+09                           re-screened: robust +5.01
+    open  R9 h a 1e+09                           re-screened: robust +5.03
+    be    Q0 vdd e h Q0M                         re-screened: robust +4.76
+    be    Q0 vdd e h Q0M                         re-screened: robust +5.81
+    ce    Q0 vdd e h Q0M                         re-screened: robust +1.11
+    ce    Q0 vdd e h Q0M                         re-screened: robust +1.77
+no part can go: the best cut is surely worse (-1.19, -0.08)
+written discrete/results/hold_drive_pruned.json

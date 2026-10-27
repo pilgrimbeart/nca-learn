@@ -15,7 +15,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from minimal.spec import area, parts  # noqa: E402
+from minimal.spec import area, load, parts  # noqa: E402
 from units import C_MAX, I_MIN, MICRO, R_MAX, TAU_MAX, UNIT_AREA, si  # noqa: E402
 
 
@@ -56,4 +56,4 @@ def report(name: str, spec: dict) -> str:
 
 if __name__ == "__main__":
     for path in sys.argv[1:]:
-        print(report(os.path.basename(path)[:-5], json.load(open(path))["spec"]))
+        print(report(os.path.basename(path)[:-5], load(path)))

@@ -1,0 +1,2 @@
+{"circuit": "hold_drive", "best": {"rt": 1.56e8, "ct": 3.04e-10, "rg1": 3.65e8, "rg2": 8.04e7, "rsh": 2.79e7, "rp": 7.77e6, "ch": 1.26e-9, "rf": 1e9},
+ "note": "discrete.screen's best start (2026-10-26), closed loop on seeds 20000-20015 x 40 s: eff 6.64, gain 18.4, 114 nW"}

@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from units import I_TYP
+from units import NANO
 
 SPIKE_FLASH = 3     # ticks (units.TICK) a spike keeps a neuron white, so it can be seen (watching, not time)
 TASTE_SHOW = 30     # ticks a taste stays marked
@@ -328,7 +328,7 @@ class NodeView(BlockView):
             out = 1.0 / (1.0 + np.exp(-x)) if sig[e] > 0.5 else np.tanh(x)
             if g >= 0:
                 out *= min(max(c.V[g], 0.0), 1.0)
-            self.current[e] = SMOOTH * self.current.get(e, 0.0) + (1 - SMOOTH) * abs(gain[e] * out) / I_TYP   # nA
+            self.current[e] = SMOOTH * self.current.get(e, 0.0) + (1 - SMOOTH) * abs(gain[e] * out) / NANO   # nA
             width = 1 + int(6 * min(self.current[e] / 3, 1.0))
             colour = link(gain[e] >= 0, self.current[e] > 0.05)
             if t == f:                                  # its own node: a loop above it, marked + or -

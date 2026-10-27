@@ -35,9 +35,9 @@ from __future__ import annotations
 import numpy as np
 
 from brains.knowing import KnowingBrain
-from brains.circuit import INHIBIT, SIDE
+from brains.circuit import INHIBIT, I_TYP, SIDE
 from mixed_feedback import Circuit
-from units import C_TYP, I_TYP, T_TYP
+from units import C_TYP, T_TYP
 
 GUARD = 0.0         # s: a slow element by which T's spikes could reach E_T, to keep T's innate answer
                     # to a taste out of F: unneeded (E2: that answer comes too late to count anyway), and a cost

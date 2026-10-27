@@ -306,5 +306,6 @@ if __name__ == "__main__":
         name = os.path.basename(path)[:-5]
         r = json.load(open(path))
         out = os.path.join(os.path.dirname(__file__), "..", "media", f"{name}.svg")
-        open(out, "w").write(svg(name, r["spec"], r.get("note", "")))
+        from minimal.spec import load
+        open(out, "w").write(svg(name, load(path), r.get("note", "")))
         print("wrote", os.path.normpath(out))

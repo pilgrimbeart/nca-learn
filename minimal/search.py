@@ -46,8 +46,13 @@ def encode(p: dict, params: dict):
 
 
 def cmaes(design, params: dict, gens: int = 60, lam: int = 16, seeds: int = 8, seconds: float = LIFE,
-          sigma: float = 0.15, start: dict | None = None, log=print, first_seed: int = 10000, by: str = "score"):
-    """Maximise the objective (by: minimal/spec.py, OBJECTIVES). Returns (best parameters by their generation's mean, history)."""
+          sigma: float = 0.15, start: dict | None = None, log=print, first_seed: int = 10000, by: str = "score",
+          evaluate=None, judge=None):
+    """Maximise the objective (by: minimal/spec.py, OBJECTIVES). Returns (best parameters by their generation's mean, history).
+    evaluate(designs, seeds, seconds) -> each design's lives (default: minimal.spec.score's, in the simulator); judge(lives)
+    -> the value maximised (default: objective(lives, by))."""
+    judge = judge or (lambda lives: objective(lives, by))
+    evaluate = evaluate or (lambda specs, seeds, seconds: score(specs, seeds=seeds, seconds=seconds))
     n = len(params)
     mean = encode(start or {k: v[0] for k, v in params.items()}, params)
     mu = lam // 2
@@ -70,8 +75,8 @@ def cmaes(design, params: dict, gens: int = 60, lam: int = 16, seeds: int = 8, s
         x = mean + sigma * y
         x[-1] = mean                                            # (the mean itself, scored on the same lives)
         specs = [design(decode(xi, params)) for xi in x]
-        lives = score(specs, seeds=range(first_seed + g * seeds, first_seed + (g + 1) * seeds), seconds=seconds)
-        f = np.array([objective(l, by) for l in lives])
+        lives = evaluate(specs, range(first_seed + g * seeds, first_seed + (g + 1) * seeds), seconds)
+        f = np.array([judge(l) for l in lives])
         order = np.argsort(-f[:-1])
         if f[-1] > best[0]:
             best = (f[-1], decode(mean, params))
@@ -134,8 +139,8 @@ if __name__ == "__main__":
     if a.thrust is not None:
         minimal.spec.THRUST = a.thrust                  # (the score is reckoned here, in this process)
     from minimal.designs import raw
-    found = json.load(open(a.design))
-    design, params = raw(found["spec"])
+    from minimal.spec import load
+    design, params = raw(load(a.design))
     a.design = os.path.basename(a.design)[:-5]
     t0 = time.time()
     final, best, hist = cmaes(design, params, a.gens, a.lam, a.seeds, a.seconds, by=a.by)

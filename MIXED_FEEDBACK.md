@@ -226,7 +226,7 @@ Closest in spirit to evolving such circuits:
   to protect new structure [34].
 - **The simulator is never part of the solution**: Thompson's FPGA evolved a tone discriminator that depended on
   unconnected cells and the chip's physics [35]; Jakobi's "radical envelope of noise" hid what a simulation models
-  badly inside noise, so evolved controllers couldn't exploit it [36]. Both bear on the defences in `LESSONS.md`.
+  badly inside noise, so evolved controllers couldn't exploit it [36]. Both bear on the defences in `AGENTS.md` (the ground rules).
 
 ## What it suggests for this project
 

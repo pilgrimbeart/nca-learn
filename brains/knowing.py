@@ -13,9 +13,9 @@ All circuit.
 
 from __future__ import annotations
 
-from brains.circuit import SIDE, STRONG, CircuitBrain
+from brains.circuit import I_TYP, SIDE, STRONG, CircuitBrain
 from mixed_feedback import Circuit
-from units import C_TYP, I_TYP, T_TYP
+from units import C_TYP, T_TYP
 
 ELIGIBLE = 0.1      # s over which a sensor's eligibility fades
 PAIN = 3 * I_TYP    # A: how hard a bad taste drives T (a spike for every bad taste)

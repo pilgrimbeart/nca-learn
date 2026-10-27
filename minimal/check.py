@@ -53,8 +53,8 @@ if __name__ == "__main__":
     ap.add_argument("results")
     ap.add_argument("--seeds", type=int, default=16)
     a = ap.parse_args()
-    r = json.load(open(a.results))
-    spec = r["spec"]
+    from minimal.spec import load
+    spec = load(a.results)
     name = os.path.basename(a.results)[:-5]
     for dt, v in fine(spec, seeds=range(200, 200 + a.seeds)).items():
         print(f"{name} step {si(dt, 's')}: score {v['net']:+.2f} (the worst substrate), job {v['job']}, food"

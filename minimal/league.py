@@ -31,12 +31,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from minimal.spec import (COST, FIRING, JOB, JUDGED, MEAL, METABOLISM, SPAN, area, boot_index, by_level,  # noqa: E402
                           pack, parts, per_pair, score, slew, summary, unpack, worst_resampled)
-from units import si  # noqa: E402
+from units import SUPPLY, si  # noqa: E402
 
 HERE = os.path.dirname(__file__)
 CACHE = os.path.join(HERE, "results", "league_cache.json")
 SKIP = ("_round1", "_unlimited", "_start", "_feasible", "_fixednoise", "league_cache", "evolve", "C_tuned")  # (copies)
-LIVED = ("minimal/spec.py", "minimal/fastlife.py", "mixed_feedback.py", "units.py", "world.py", "creature.py",
+LIVED = ("minimal/spec.py", "minimal/fastlife.py", "mixed_feedback.py", "chip.py", "units.py", "world.py", "creature.py",
          "brains/circuit.py")   # the code that shapes a life or its judging: the cache is keyed by it
 # (results tuned under the old noise, before 2026-10-20's model, are re-validated under the new like any other)
 SEEDS = range(100, 164)         # the held-out seeds (minimal/search.py, validate)
@@ -65,8 +65,8 @@ def rows():
         r = json.load(open(path))
         if "spec" not in r:
             continue
-        spec = r["spec"]
-        from minimal.spec import violations
+        from minimal.spec import load, violations
+        spec = load(path)
         bad = violations(spec)
         if bad:                                         # refused by the rules: not lived, listed apart
             out.append({"name": name, "parts": parts(spec)["total"], "illegal": "; ".join(bad)})
@@ -173,14 +173,17 @@ def table() -> str:
            f"rules: {len(SEEDS)} held-out seeds x 2 with the noise of {', '.join(JUDGED)} (mixed_feedback.py), every",
            "measure the worst substrate's and the job required with each, with the simulator's mismatch, within the",
            f"honesty limits (units.py). **Job**: food at least {JOB[0]:g} per {SPAN:g} s, food:poison at least {JOB[1]:g}",
-           f"in the last third, at most {JOB[2]:.0%} of lives stranded (no food in the last third). **Parts**:",
-           "capacitors, resistors, diodes, transistors. **Area**: chip area by analogy with subthreshold analogue CMOS, in",
+           f"in the last third, at most {JOB[2]:.0%} of lives stranded (no food in the last third). **Parts**: as built in",
+           f"transistors on a {SUPPLY:g} V supply (chip.py, minimal/spice.py): transistors, resistors, capacitors, diodes",
+           "and bias sources: a literal translation of each element to within 1% of its formula (cascodes,",
+           "preamplifiers, a bias source each), an upper bound, not the minimal transistor circuit (minimal/NOTEBOOK.md,",
+           "M15). **Area**: chip area by analogy with subthreshold analogue CMOS, in",
            "unit transistors (minimal/spec.py, AREA; units.py; shown, not ranked on).",
            f"**Meals gained**: food, less {COST:g} for each poison (as in the score). **Efficiency**: meals gained per meal",
            f"spent: resting ({si(METABOLISM, 'W')}, a meal being worth {si(MEAL, 'J')}), moving and thinking, priced as in",
            "the score; above 1 a creature gains, and both haste (fuel) and dawdling (resting cost) lower it. **Gain rate**:",
            f"meals gained per {SPAN:g} s, energy free. **Food**, **poison**, **firings**: per {SPAN:g} s. **Power**: what",
-           "the circuit's devices dissipate, each its current times the voltage across it (mixed_feedback._step).",
+           "the supply delivers to the circuit's transistors (chip.py; mixed_feedback._step).",
            f"**Score**: as in the notebook, moving and the circuit's power charged in meals (a firing {si(FIRING, 'J')},",
            f"the circuit's energy at a meal per {si(MEAL, 'J')}). **Thrift**: food per 1,000 firings (shown, not ranked).",
            "",

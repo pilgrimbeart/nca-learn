@@ -12,14 +12,20 @@ from collections import deque
 import numpy as np
 
 from mixed_feedback import Circuit
-from units import I_TYP, PULSE, R_TYP, TICK
+from units import C_TYP, PULSE, R_TYP, T_TYP, TICK
 
-STIMULUS = 3 * I_TYP    # A: the current a stimulus injects into its sensor, for units.PULSE (a neuron's threshold
-                        # needs about a third of that charge)
+VOLT = 1.0              # V: the recruitment line's typical voltage: its circuits were drawn at 1 V before the supply was
+                        # fixed (2026-10-26), and keep it (mixed_feedback.Circuit's volt); not yet built in transistors
+I_TYP = C_TYP * VOLT / T_TYP    # A: its typical current, 1 nA (units.I_TYP is the chip's, at units.V_TYP)
+PULSES = 3.0            # the current a stimulus injects into its sensor for units.PULSE, and taste into the taste node
+                        # (x +1 food, -1 poison), in typical currents of the brain's technology (Circuit.unit: the
+                        # user's decision, 2026-10-26: the body's pulses match the technology in use); a neuron's
+                        # threshold needs about a third of that charge
+STIMULUS = PULSES * I_TYP   # A: so here (at 1 V typical)
 SIDE = 1 * I_TYP        # A: the weight of a synapse that relays every spike
 STRONG = 0.7 * I_TYP    # A: a gated synapse's weight when fully open: relays nearly every spike
 INHIBIT = 1.5 * I_TYP   # A: how hard a hold or hush node holds a neuron down (a current out of it)
-TASTE = 3 * I_TYP       # A: the current taste injects into the taste node for units.PULSE (x +1 food, -1 poison)
+TASTE = PULSES * I_TYP  # A: and taste's
 TRACE = 490             # watching: ticks of history drawn
 
 
@@ -32,7 +38,8 @@ class CircuitBrain:
 
     def __init__(self, seed: int):
         self.seed = seed
-        c = self.circuit = Circuit(seed=seed + 1_000_003, streams=self.STREAMS)   # its own noise, not the world's
+        c = self.circuit = Circuit(seed=seed + 1_000_003, streams=self.STREAMS, volt=VOLT,
+                                                on_chip=False)   # its own noise, not the world's
         self.sensors = [c.neuron(f"S{k}") for k in (0, 1)]
         self.motors = [c.neuron(f"M{k}") for k in (0, 1)]
         self.taste_node = c.node("taste", R=0.5 * R_TYP)
@@ -46,10 +53,10 @@ class CircuitBrain:
 
     def stimulate(self, sensor: int, at: float) -> None:
         """A stimulus, `at` seconds into the next tick."""
-        self.circuit.pulse(self.sensors[sensor], STIMULUS, at, PULSE)
+        self.circuit.pulse(self.sensors[sensor], PULSES * self.circuit.unit(), at, PULSE)
 
     def taste(self, value: float, at: float) -> None:
-        self.circuit.pulse(self.taste_node, TASTE * value, at, PULSE)
+        self.circuit.pulse(self.taste_node, PULSES * self.circuit.unit() * value, at, PULSE)
 
     def step(self) -> list:
         return self._motors(self._tick())

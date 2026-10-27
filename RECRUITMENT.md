@@ -8,7 +8,7 @@ mostly from abstracts and summaries; check details against the papers before rel
 numbered at the end.
 
 **Status (2026-10-22).** Rungs 0 and 1 were built and measured (below; the record in `experiments/NOTEBOOK.md`, the
-lessons in `LESSONS.md`), all under the earlier noise. Under noise and mismatch as biology makes them (2026-10-20)
+lessons in `NOTEBOOK.md` and `experiments/NOTEBOOK.md`), all under the earlier noise. Under noise and mismatch as biology makes them (2026-10-20)
 every hand-built circuit brain falls to about 1 food for each poison, because its excitable neurons don't survive 10%
 mismatch; the recruitment machinery itself does. So the next step for recruitment is a neuron that survives mismatch,
 then re-running the ladder.

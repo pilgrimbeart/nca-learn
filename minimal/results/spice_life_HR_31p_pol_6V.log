@@ -1,0 +1,64 @@
+spice seed 100 red : food 48, poison 16, firings 4031, 827 s
+sim   seed 100 red : food 53, poison 8, firings 3924
+spice seed 100 blue: food 53, poison 9, firings 3986, 1030 s
+sim   seed 100 blue: food 56, poison 4, firings 3939
+spice seed 101 red : food 67, poison 14, firings 3711, 862 s
+sim   seed 101 red : food 59, poison 8, firings 3573
+spice seed 101 blue: food 69, poison 11, firings 3604, 1111 s
+sim   seed 101 blue: food 66, poison 10, firings 3704
+spice seed 102 red : food 58, poison 8, firings 3050, 789 s
+sim   seed 102 red : food 14, poison 54, firings 2939
+spice seed 102 blue: food 51, poison 4, firings 3045, 1043 s
+sim   seed 102 blue: food 43, poison 8, firings 2827
+spice seed 103 red : food 46, poison 7, firings 2823, 779 s
+sim   seed 103 red : food 59, poison 8, firings 2794
+spice seed 103 blue: food 63, poison 9, firings 2817, 1010 s
+sim   seed 103 blue: food 55, poison 2, firings 2789
+spice seed 104 red : food 52, poison 4, firings 3396, 1084 s
+sim   seed 104 red : food 64, poison 7, firings 3260
+spice seed 104 blue: food 49, poison 7, firings 3405, 1088 s
+sim   seed 104 blue: food 61, poison 10, firings 3130
+spice seed 105 red : food 68, poison 3, firings 3578, 1120 s
+sim   seed 105 red : food 71, poison 9, firings 3415
+spice seed 105 blue: food 63, poison 6, firings 3329, 1115 s
+sim   seed 105 blue: food 53, poison 4, firings 3352
+spice seed 106 red : food 59, poison 5, firings 3424, 1107 s
+sim   seed 106 red : food 62, poison 7, firings 3377
+spice seed 106 blue: food 57, poison 7, firings 3489, 1090 s
+sim   seed 106 blue: food 52, poison 7, firings 3525
+spice seed 107 red : food 58, poison 9, firings 3345, 1168 s
+sim   seed 107 red : food 57, poison 5, firings 3358
+spice seed 107 blue: food 58, poison 12, firings 3308, 1111 s
+sim   seed 107 blue: food 55, poison 8, firings 3217
+spice seed 108 red : food 68, poison 12, firings 3083, 1190 s
+sim   seed 108 red : food 64, poison 6, firings 2902
+spice seed 108 blue: food 56, poison 12, firings 3249, 1140 s
+sim   seed 108 blue: food 46, poison 9, firings 2943
+spice seed 109 red : food 63, poison 7, firings 3426, 1213 s
+sim   seed 109 red : food 54, poison 9, firings 3242
+spice seed 109 blue: food 61, poison 6, firings 3366, 1130 s
+sim   seed 109 blue: food 59, poison 12, firings 3491
+spice seed 110 red : food 78, poison 7, firings 3215, 1166 s
+sim   seed 110 red : food 56, poison 7, firings 3079
+spice seed 110 blue: food 59, poison 6, firings 3225, 1102 s
+sim   seed 110 blue: food 61, poison 7, firings 3030
+spice seed 111 red : food 68, poison 8, firings 3939, 1100 s
+sim   seed 111 red : food 62, poison 6, firings 3651
+spice seed 111 blue: food 47, poison 13, firings 3752, 1081 s
+sim   seed 111 blue: food 65, poison 11, firings 3764
+spice seed 112 red : food 53, poison 7, firings 3489, 1099 s
+sim   seed 112 red : food 62, poison 12, firings 3369
+spice seed 112 blue: food 52, poison 7, firings 3561, 1284 s
+sim   seed 112 blue: food 56, poison 10, firings 3326
+spice seed 113 red : food 9, poison 65, firings 3530, 1122 s
+sim   seed 113 red : food 50, poison 8, firings 3257
+spice seed 113 blue: food 62, poison 10, firings 3322, 1132 s
+sim   seed 113 blue: food 59, poison 6, firings 3454
+spice seed 114 red : food 65, poison 6, firings 3429, 1209 s
+sim   seed 114 red : food 61, poison 8, firings 3336
+spice seed 114 blue: food 58, poison 3, firings 3398, 1122 s
+sim   seed 114 blue: food 59, poison 11, firings 3387
+spice seed 115 red : food 43, poison 14, firings 2937, 1075 s
+sim   seed 115 red : food 51, poison 7, firings 2855
+spice seed 115 blue: food 49, poison 6, firings 2785, 1081 s
+sim   seed 115 blue: food 49, poison 9, firings 2811

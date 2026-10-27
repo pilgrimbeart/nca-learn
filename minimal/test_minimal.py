@@ -1,9 +1,9 @@
 """Checks the minimal circuit search keeps its rules (python -m minimal.test_minimal; AGENTS.md, The minimal circuit
 search): the compiled life is creature.Life's, tick for tick; an illegal circuit can't be built (too fast for the
 integration step, a self-feedback too fast, wiring that names no node, the interface misused, its noise turned off,
-not in SI units);
-every node stays within the supply's rails; parts are counted as documented; and pruning renumbers
-what it keeps. (The noise and mismatch themselves are
+not in SI units, drawn at another voltage);
+every node stays within the supply's rails; parts are counted as built (chip.py's blocks, the same whether counted or
+written out for SPICE); power is what the supply delivers; and pruning renumbers what it keeps. (The noise and mismatch themselves are
 the simulator's: test_compiled.py.)
 """
 
@@ -18,21 +18,22 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from minimal.spec import SpecBrain, make, parts, violations  # noqa: E402
-from units import C_TYP, I_TYP, R_TYP, RAIL, T_TYP  # noqa: E402
+from units import C_TYP, I_TYP, R_TYP, RAIL, SLEW, SUPPLY, T_TYP, V_TYP  # noqa: E402
 
-nA, Ct, Rt = I_TYP, C_TYP, R_TYP        # (a typical current, capacitor and resistor: 1 nA, 2.5 pF, 1 GOhm)
+nA, Ct, Rt, V = I_TYP, C_TYP, R_TYP, V_TYP      # (a typical current, capacitor, resistor and voltage)
 
 
 def node(name, bias, R, C, lo=None, hi=None, start=None, memory=False):
-    return [name, bias * nA, None if R is None else R * Rt, C * Ct, lo, hi, start, memory]
+    v = lambda x: None if x is None else x * V
+    return [name, bias * nA, None if R is None else R * Rt, C * Ct, v(lo), v(hi), v(start), memory]
 
 
 def base() -> dict:
     """A legal circuit: two sensors, two motors, taste, a memory, one gated element."""
     nodes = [node("S0", -0.5, 2.0, 1.0), node("S1", -0.5, 2.0, 1.0), node("M0", -1.5, 1.0, 1.0),
              node("M1", -1.5, 1.0, 1.0), node("T", -0.5, 2.0, 1.0), node("m", 0.0, None, 1.0, 0.0, 1.0, 0.5, True)]
-    return {"nodes": nodes, "elements": [[2, 0, 5, 4 * nA, 0.5, 5.0, 0.0, True]], "sensors": [0, 1], "motors": [2, 3],
-            "taste": 4, "units": "SI"}
+    return {"nodes": nodes, "elements": [[2, 0, 5, 4 * nA, 0.5 * V, 5.0 / V, 0.0, True]], "sensors": [0, 1],
+            "motors": [2, 3], "taste": 4, "units": "SI", "volt": V}
 
 
 def refused(spec) -> bool:
@@ -65,16 +66,27 @@ if __name__ == "__main__":
 
     report("a legal circuit is built", not violations(base()) and not refused(base()))
     s = base(); s["elements"][0][3] = 40 * nA
-    report("an element too strong for its node's capacitor (40 nA into 2.5 pF: 16 kV/s, the limit 4 kV/s) is refused",
-           refused(s))
+    report(f"an element too strong for its node's capacitor (40 typical currents into a typical capacitor:"
+           f" {40 * nA / Ct:.0f} V/s, the limit {SLEW:.0f} V/s) is refused", refused(s))
     s = base(); s["nodes"][2][3] = 0.1 * Ct
     report("a capacitor too small for its leak (RC 0.25 ms) and its element is refused", refused(s))
     s = base(); s["elements"].append([3, 3, -1, 3 * nA, 0.0, 1.0, 0.0, False])
-    report("an unfiltered self-feedback faster than 10 steps (3 nA x 1/V into 2.5 pF: 0.83 ms) is refused", refused(s))
-    s = base(); s["elements"].append([3, 3, -1, 3 * nA, 0.0, 1.0, 20 * T_TYP, False])
+    s["elements"][-1][5] = 1.0 / V
+    report("an unfiltered self-feedback faster than 10 steps (3 typical currents x 1 per typical voltage into a typical"
+           " capacitor: 0.83 ms) is refused", refused(s))
+    s = base(); s["elements"].append([3, 3, -1, 3 * nA, 0.0, 1.0 / V, 20 * T_TYP, False])
     report("the same self-feedback, filtered, is built", not refused(s))
     s = base(); s["nodes"][0][3] = 0.2 * Ct
-    report("a sensor whose pulse would move it 6 kV/s is refused", refused(s))
+    report("a sensor whose pulse would move it too fast is refused", refused(s))
+    s = base(); s["volt"] = 1.0
+    report("a circuit drawn at another voltage (1 V, as before 2026-10-26) is refused", refused(s))
+    from minimal.designs import rescale
+    old = rescale(base(), 1.0)
+    back = rescale(old)
+    report("converting a circuit to another voltage and back gives it again",
+           all(np.allclose([x for x in a[1:7] if x is not None], [x for x in b[1:7] if x is not None])
+               for a, b in zip(back["nodes"], base()["nodes"]))
+           and np.allclose(np.array(back["elements"], float), np.array(base()["elements"], float)))
     s = base(); s.pop("units")
     report("a circuit not in SI units (as before 2026-10-22) is refused", refused(s))
     s = base(); s["nodes"][2][2] = 100 * Rt; s["nodes"][2][1] = -1.5 / s["nodes"][2][2]
@@ -88,14 +100,14 @@ if __name__ == "__main__":
     s = base(); s["taste"] = 0
     report("a taste node shared with a sensor is refused", refused(s))
 
-    s = base(); s["nodes"][2] = node("M0", 2.5, 1.0, 1.0)                          # rests at 2.5 V, kicked up by S0
+    s = base(); s["nodes"][2] = node("M0", 2.5, 1.0, 1.0)                  # rests at 2.5 typical volts, kicked up by S0
     b = make(s)(0)
     hi = lo = 0.0
     for t in range(300):
         b.stimulate(0, 0.0)
         b.step()
         hi, lo = max(hi, b.circuit.V.max()), min(lo, b.circuit.V.min())
-    report(f"every node within the rails (+-{RAIL:g} V): highest {hi:.2f}, lowest {lo:.2f}", hi <= RAIL and lo >= -RAIL)
+    report(f"every node within the rails (+-{RAIL:.2f} V): highest {hi:.2f}, lowest {lo:.2f}", hi <= RAIL and lo >= -RAIL)
 
     try:
         make(base(), substrate="none")(0)
@@ -104,14 +116,39 @@ if __name__ == "__main__":
         quiet = False
     report("a circuit can't be built without noise (it is one of mixed_feedback.SUBSTRATES')", not quiet)
 
+    from minimal.spice import netlist
     p = parts(base())
-    report(f"parts counted (6 C, 5 R, 2 D, 2 T: {p['C']}, {p['R']}, {p['D']}, {p['T']})",
-           (p["C"], p["R"], p["D"], p["T"]) == (6, 5, 2, 2))
+    _, built = netlist(base())
+    report(f"parts counted as built for SPICE ({p['T']} transistors, {p['R']} resistors, {p['C']} capacitors, {p['D']}"
+           f" diodes, {p['sources']} bias sources: the netlist has {built['T']}, {built['R']}, {built['C']},"
+           f" {built['D']}, {built['sources']}), and the clamps on m 2 diodes more",
+           all(p[k] == built[k] for k in ("T", "R", "C", "sources")) and p["D"] == built["D"] + 2
+           and p["total"] == p["T"] + p["R"] + p["C"] + p["D"] + p["sources"])
+    import chip
+    s = base(); s["elements"][0][2] = -1                                  # (ungated: its pair draws its full tail)
+    b = make(s, "silicon")(0)
+    c = b.circuit
+    c.run(0.2)
+    g = c.el_arr[0, 0]
+    x = c.el_arr[2, 0] * (c.V[0] - c.el_arr[1, 0])
+    I = g / (1 + np.exp(-x))
+    H = SUPPLY / 2
+    want = (chip.still(c.node_arr, c.el_arr, c.link) + I * (H - c.V[2])
+            + sum(abs(c.node_arr[0, i]) * (H - c.V[i] if c.node_arr[0, i] > 0 else c.V[i] + H)
+                  + c.node_arr[1, i] * c.V[i] ** 2 for i in range(len(c.V)))
+            + abs(sum(c.node_arr[1, i] * c.V[i] for i in range(len(c.V)))) * H)
+    k = b.circuit.steps
+    got = c.power_sum
+    c.run(0.000125)
+    step = c.power_sum - got
+    report(f"power is what the supply delivers (chip.py): one step {step * 1e9:.3f} nW, by hand {want * 1e9:.3f} nW;"
+           f" static {c.still * 1e9:.2f} nW, of it the element's tail and reference {2 * abs(g) * SUPPLY * 1e9:.2f} nW",
+           abs(step - want) < 0.02 * want and k > 0)
     from minimal.prune import simpler
     from minimal.spec import Lived, net, tidy
     s = base()                                          # an extra node n, read only by an element into M1
     s["nodes"].insert(1, node("n", -0.5, 2.0, 1.0))
-    s["elements"] = [[3, 0, 6, 4 * nA, 0.5, 5.0, 0.0, True], [4, 1, -1, 1 * nA, 0.0, 1.0, 0.0, True]]
+    s["elements"] = [[3, 0, 6, 4 * nA, 0.5 * V, 5.0 / V, 0.0, True], [4, 1, -1, 1 * nA, 0.0, 1.0 / V, 0.0, True]]
     s["sensors"], s["motors"], s["taste"] = [0, 2], [3, 4], 5
     t = tidy(dict(s, elements=s["elements"][:1]))
     report("pruning: a node nothing reads goes, and the rest are renumbered",

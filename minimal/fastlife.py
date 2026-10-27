@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import mixed_feedback as mf  # noqa: E402
 import world  # noqa: E402
-from brains.circuit import STIMULUS, TASTE  # noqa: E402
+from brains.circuit import PULSES  # noqa: E402
 from units import PULSE, TICK  # noqa: E402
 from world import BODY, DRAG, EAT, PUSH, SENSE, TURN, WORLD  # noqa: E402
 
@@ -37,9 +37,10 @@ def _somewhere(g, pos):
 
 @njit(cache=True)
 def _life(V, Vx, armed, node, el, link, q, rest, sensors, motors, taste_node, wrng, crng, pos, heading, xy, kind,
-          sensor_of, motor_of, poison, learning, ticks, dt):
+          sensor_of, motor_of, poison, learning, ticks, dt, cfg, pulse):
     """The life from tick 0 to ticks (each units.TICK). sensor_of[colour] -> sensor, motor_of[thruster] -> motor (0
-    left, 1 right); poison: a colour index, or -1 for all food; q, rest: the substrate's noise (mixed_feedback._step).
+    left, 1 right); poison: a colour index, or -1 for all food; q, rest: the substrate's noise (mixed_feedback._step);
+    pulse: the body's pulse, A (brains.circuit.PULSES typical currents).
     Returns the meals (tick, colour), the first tick a thruster fired, the circuit's mean power (W) and how many times
     the thrusters fired."""
     n = V.shape[0]
@@ -63,11 +64,12 @@ def _life(V, Vx, armed, node, el, link, q, rest, sensors, motors, taste_node, wr
         seen = world._sees(far, hit, 2)
         for c in range(2):                                          # each eye fires at random moments (as Life)
             for _ in range(wrng.poisson(SENSE * seen[c] * TICK)):
-                mf._pulse(drive, sensors[sensor_of[c]], STIMULUS, wrng.random() * TICK, PULSE, dt)
+                mf._pulse(drive, sensors[sensor_of[c]], pulse, wrng.random() * TICK, PULSE, dt)
         z = crng.standard_normal((steps, n))                        # the circuit's noise for this tick
         spikes[:] = 0
         for k in range(steps):
-            power_sum += mf._step(V, Vx, armed, spikes, vmax, drive[k], node, el, link, z[k], q, rest, dt, dV, gross)
+            power_sum += mf._step(V, Vx, armed, spikes, vmax, drive[k], node, el, link, z[k], q, rest, dt, dV, gross,
+                                  cfg)
         drive[:steps] = drive[steps:]
         drive[steps:] = 0.0
         fired = False
@@ -101,7 +103,7 @@ def _life(V, Vx, armed, node, el, link, q, rest, sensors, motors, taste_node, wr
         if taste != 0.0:
             at = wrng.random()                                      # (with learning off too, as Life)
             if learning:
-                mf._pulse(drive, taste_node, TASTE * min(max(taste, -1.0), 1.0), at * TICK, PULSE, dt)
+                mf._pulse(drive, taste_node, pulse * min(max(taste, -1.0), 1.0), at * TICK, PULSE, dt)
     return meal_t[:meals], meal_c[:meals], moving, power_sum / (ticks * steps), firings
 
 
@@ -119,7 +121,8 @@ def life(make, seed: int, poison: str | None, ticks: int, learning: bool = True)
                                 lf.rng, c.rng, body.pos.astype(float), float(body.heading), body.xy, body.kind,
                                 np.array([lf.sensor[x] for x in COLOURS], dtype=np.int64),
                                 np.array([lf.motor[x] for x in THRUSTERS], dtype=np.int64),
-                                -1 if poison is None else COLOURS.index(poison), learning, ticks, mf.DT)
+                                -1 if poison is None else COLOURS.index(poison), learning, ticks, mf.DT, c.cfg,
+                                PULSES * c.unit())
     return [(int(a), COLOURS[int(z)]) for a, z in zip(t, k)], (None if moving < 0 else int(moving)), power, \
         int(firings)
 

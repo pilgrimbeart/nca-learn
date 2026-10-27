@@ -8,10 +8,10 @@ import functools
 import pickle
 import sys
 
-from brains.circuit import INHIBIT
+from brains.circuit import INHIBIT, I_TYP
 from brains.recruiting import HOLD, RecruitingBrain
 from experiments.common import paired, run, summary
-from units import C_TYP, I_TYP
+from units import C_TYP
 
 KNOWING = functools.partial(RecruitingBrain, grow=False, hold="T")       # the recruiting circuit, growth switched off
 

@@ -23,9 +23,9 @@ of a thruster is small.
 
 from __future__ import annotations
 
-from brains.circuit import INHIBIT, SIDE, STRONG, CircuitBrain
+from brains.circuit import INHIBIT, I_TYP, SIDE, STRONG, CircuitBrain
 from mixed_feedback import Circuit
-from units import C_TYP, I_TYP, T_TYP
+from units import C_TYP, T_TYP
 
 HUSH = 0.1          # s over which a sensor's hush on the other fades
 ELIGIBLE = 0.1      # s over which a sensor's eligibility fades after it fires
