@@ -1,6 +1,6 @@
 """The discrete circuits drawn by hand as SVG (discrete/NOTEBOOK.md): hold and drive (discrete/circuits.py, 14 parts,
-D3) with its screened values, media/hold_drive_14.svg; and the learning circuit (49 parts, D6), media/learn_hold.svg;
-each also as a PNG on a dark ground for the live view (discrete/watch.py). Okabe-Ito colours, each block also outlined
+D3) with its screened values, media/hold_drive_14.svg; the learning circuit (49 parts, D6), media/learn_hold.svg; and
+the learning circuit that gives up and avoids (48 parts, D8), media/learn_avoid.svg; each also as a PNG on a dark ground for the live view (discrete/watch.py). Okabe-Ito colours, each block also outlined
 and named (the user is colour-blind). Redraw them when a circuit changes.
 
     python -m discrete.draw
@@ -229,19 +229,20 @@ DARK = {"--ink": "#e3e7ea", "--mute": "#9aa5ae", "--bg": "#14181c", "--c-eye": "
 LIGHT = {"--ink": "#1d2328", "--mute": "#5b6670", "--bg": "#ffffff", "--c-eye": "#0072B2", "--c-osc": "#C98500",
          "--c-ma": "#007A5A", "--c-mb": "#B5508F", "--c-if": "#8a949c", "--c-bit": "#D55E00", "--c-doubt": "#9B4F86",
          "--c-roam": "#8C7A00"}
-def learn_hold():
+def learn(avoid=False):
+    """learn_hold, or (avoid) learn_avoid: the roam replaced by giving up and avoiding."""
     import inspect
-    from discrete.circuits import learn_hold as build
-    P = {k: p.default for k, p in inspect.signature(build).parameters.items()}
-    tuned = os.path.join(HERE, "results", "learn_hold_tuned.json")
-    if os.path.exists(tuned):
-        P.update(json.load(open(tuned))["best"])
+    from discrete.circuits import learn_avoid, learn_hold
+    P = {}
+    for build in (learn_hold, learn_avoid) if avoid else (learn_hold,):
+        P.update({k: p.default for k, p in inspect.signature(build).parameters.items() if k != "kw"})
     G, B, D, O, R = BLK["eye"], BLK["bit"], BLK["doubt"], BLK["osc"], BLK["roam"]
     box(20, 20, 410, 485, "eyes and the gate", G)
     box(440, 20, 420, 485, "the bit: a toggle latch", B)
     box(20, 515, 840, 425, "the doubt: two poisons in quick succession", D)
     box(870, 20, 840, 545, "hold and drive (hold12): scan, and drive while the hold is up", O)
-    box(870, 575, 840, 365, "the roam: a phantom pulse every few seconds", R)
+    box(870, 575, 840, 365, "giving up, and turning from poison ahead" if avoid else
+        "the roam: a phantom pulse every few seconds", R)
     # the hold bus
     L((190, 80), (1480, 80)); T(600, 72, "h (the hold)", "node")
     # eyes, each gated by a Darlington shunt fed from the latch
@@ -253,7 +254,11 @@ def learn_hold():
         T(x0 + 6, 196, f"s{k}", "node")
         L((x0, 200), (x0 + 50, 200)); diode(x0 + 50, 200, 80, G); dot(x0 + 50, 80)
         tq, bq = bjt(x0 - 40, 300, "NPN", G)            # the shunt: collector at s, emitter to ground
-        L((x0, 210), tq); gnd(*bq)
+        L((x0, 210), tq)
+        if avoid:                                       # (its emitter to k: the current it sinks empties the hold)
+            L(bq, (bq[0], bq[1] + 14)); dot(bq[0], bq[1] + 14); T(bq[0] + 6, bq[1] + 20, "k", "node")
+        else:
+            gnd(*bq)
         td, bd = bjt(x0 - 80, 250, "NPN", G)            # its driver (Darlington)
         L(td, (x0 - 40, 210), (x0, 210)); dot(x0, 210)
         L(bd, (x0 - 40, 300))
@@ -334,6 +339,9 @@ def learn_hold():
     dot(1480, 80); res(1480, 80, 290, BLK["mb"]); label(1492, 180, "rb", eng(P["rb"], "Ω"), BLK["mb"])
     t, b = bjt(1440, 360, "NPN", BLK["mb"]); L(t, (1480, 290)); dot(1480, 290); gnd(*b)
     L((1480, 290), (1520, 290)); T(1486, 282, "m1", "node"); schmitt(1520, 290, "B")
+    if avoid:
+        _give_up(P, R, G)
+        return
     # the roam
     vdd(950, 615); res(950, 615, 720, R); label(962, 670, "rt2", eng(P["rt2"], "Ω"), R)
     dot(950, 720); T(930, 716, "a2", "node", "end")
@@ -357,7 +365,36 @@ def learn_hold():
     label(1120, 860, "2N3906, 2N3904", "", R)
 
 
-DRAWINGS = {"hold_drive_14": (hold_drive, (0, 0, 1150, 610)), "learn_hold": (learn_hold, (0, 0, 1720, 950))}
+def _give_up(P, R, G):
+    """learn_avoid's lower right: the followers from the eyes onto u, its leak, the PNP that feeds the hold once u has
+    sagged; and k, the shunts' emitters, on the NPN that empties the hold."""
+    for x, s in ((940, "s0"), (1060, "s1")):           # followers: collector at the supply, emitter onto u
+        t, b = bjt(x, 680, "NPN", R); vdd(t[0], 630); L((t[0], 630), t)
+        L((x - 30, 680), (x, 680)); T(x - 34, 676, s, "node", "end")
+        L(b, (b[0], 800))
+    L((980, 800), (1260, 800)); dot(1100, 800); T(986, 794, "u", "node")
+    label(900, 860, "2 x 2N3904", "", R)
+    dot(1140, 800); cap(1140, 800, 880, R); gnd(1140, 880); label(1152, 845, "cu", eng(P["cu"], "F"), R)
+    dot(1200, 800); res(1200, 800, 880, R); gnd(1200, 880); label(1212, 845, "ru", eng(P["ru"], "Ω"), R)
+    vdd(1260, 615); res(1260, 615, 700, R); label(1272, 655, "rh1", eng(P["rh1"], "Ω"), R)
+    dot(1260, 700); T(1248, 696, "ub", "node", "end")
+    res(1260, 700, 800, R); label(1272, 755, "rh2", eng(P["rh2"], "Ω"), R)
+    L((1260, 700), (1300, 700))
+    t, b = bjt(1300, 700, "PNP", R, top="e"); vdd(t[0], 650); L((t[0], 650), t)
+    L(b, (t[0], 900), (1700, 900), (1700, 80), (1480, 80)); T(1350, 892, "to h: drive on", "node")
+    label(1370, 690, "2N3906", "", R)
+    dot(1480, 780); T(1468, 774, "k", "node", "end")
+    res(1480, 780, 880, G); gnd(1480, 880); label(1468, 835, "rd", eng(P["rd"], "Ω"), G, "end")
+    L((1480, 780), (1560, 780))
+    t, b = bjt(1560, 780, "NPN", G); gnd(*b); L(t, (t[0], 720), (1700, 720)); dot(1700, 720)
+    label(1610, 800, "2N3904", "", G)
+    T(890, 925, "u sags once the free eye has seen nothing for a few seconds: the PNP feeds the hold, both thrusters "
+      "drive straight.", "ifl")
+    T(1490, 690, "the silenced eye's current", "ifl"); T(1490, 704, "empties the hold: turn", "ifl")
+
+
+DRAWINGS = {"hold_drive_14": (hold_drive, (0, 0, 1150, 610)), "learn_hold": (learn, (0, 0, 1720, 950)),
+            "learn_avoid": (lambda: learn(avoid=True), (0, 0, 1720, 950))}
 
 
 def svg(name, colours):

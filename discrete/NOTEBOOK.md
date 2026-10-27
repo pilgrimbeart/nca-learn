@@ -16,12 +16,22 @@ per meal spent resting, moving and thinking), gain rate (meals per 10 s), food, 
   equal (D5).
 - **Self-tuning to the body**: not found worth it yet. Bodies built differently barely move the best settings, except
   unequal thrusters, and no in-life tuning from meals beat a fixed circuit; driving only while the eyes still see the
-  block copes instead (D5). A richer body (an eye on each side for each colour) may give a tuning signal: to discuss.
-- **Learning the bit**: `learn_hold`, 49 parts, learns it (efficiency 1.17, food:poison 3.4 in the last third, surely
-  above 3) but 3 lives in 64 strand, too many to be sure of the job (D6, D7).
+  block copes instead (D5). A richer body (an eye on each side for each colour) is held off: the user prefers to
+  learn what extreme simplicity gives first.
+- **Learning the bit**: `learn_avoid`, 48 parts, surely does the job held out (80 lives): efficiency 1.56, food:poison
+  5.6 in the last third, none stranded, 128 nW (D8). It gives up on an empty patch (both thrusters straight once the
+  followed eye has seen nothing for a few seconds) and turns from poison ahead (the silenced eye empties the hold).
+  Its predecessor `learn_hold` (49 parts, D6) stranded: it circled in patches it had eaten clear of food.
+- **The ceiling** for this kind of brain on this body, as policies: 2.7 told the answer from birth, 2.3 learning
+  (D8). The circuit's gap to them is not in its speeds (the policies' best speeds made it worse).
+- Values not yet tuned for `learn_avoid` (its values are learn_hold's and the prototype's).
 - **The simulator** is checked in both step and tolerance: ngspice's error control is tightened in every netlist
   (D7).
-- Running (queue 7): every circuit re-judged and re-tuned with the tightened control.
+- Queue 7 re-judged every circuit with the tightened control (D7) and re-tuned learn_hold (noise, no trend: its
+  output kept as `results/learn_hold_tune_q7.json`, never judged); the foraging circuits' re-tunes were cancelled
+  (their results stand, D7).
+- Open: bodies are still identical in tuning and judging (but for `--motors`), though the body's dynamics should
+  vary from life to life (D5); making that the default awaits the user's choice of factors and spreads.
 - Open: high-value resistors (500 MOhm to 1 GOhm) are rarely better than 5% and leak across a board's surface;
   `life.TOL`'s 1% is optimistic for them.
 
@@ -282,6 +292,8 @@ free: a block that drifts out of the corridor stops the pulses, the scan finds i
 - Self-tuning, as asked, has little to work with here: the knobs a circuit could tune barely matter across bodies,
   and the one that matters (trim) can't be found from about 200 meals in a life with a wobble cheaper than the
   mistrim. The way to cope with a varied body is structural: drive while the eyes say the block is still ahead.
+- **The user's lesson** (2026-10-27): the body's dynamics need to vary from life to life, as the parts' tolerances
+  do, so that no circuit is tuned to one exact body's accidents (README, What we've learned).
 - Untried: a richer local signal for the trim. The eyes give no bearing; what a mistrimmed approach changes is how
   long a block stays in view, which is the pulses' *rate of change*, not their count.
 
@@ -429,6 +441,87 @@ seemed to undo D4 and D6; it was the check that misled.
   gate to the PNP's base instead of rbg, to kick it on for a fixed time whatever the dip's depth, never fired: the
   gate falls too slowly.
 - The lives of the misleading runs are kept in `results/coarse_default_tol/`.
+
+## D8: why learn_hold strands, and a simpler circuit that doesn't (2026-10-27)
+
+**The cause.** The three stranded held-out lives (seeds 50012, 50017, 50023, each with red as poison) re-lived with
+their nodes recorded: each ate steadily (a meal every second or two), then for its last 50-70 s the latch sat still on
+the right colour, the free eye saw nothing (its node never above 1 V), and the poison eye kept seeing blocks. Eaten
+blocks reappear elsewhere, so a creature that eats every food near it and refuses the poison turns its patch into a
+poison patch. Its roam, a phantom pulse every 2-3 s, fired motor B about twice a second there: dashes of 1-2 mm, a
+random walk too slow to leave. So the job is a *giving-up time* (foraging theory's: nothing found here for a while,
+go elsewhere), not hunger: the creature had eaten recently (the user's reading).
+
+**Giving up, built** (a prototype on learn_hold's parts: a follower charging a slow node u, cu leaking through ru;
+when u has sagged below a PNP's threshold, set by a divider rh1, rh2 from the supply to u, the PNP feeds the hold, so
+both thrusters drive straight until u is lifted again). 16 training seeds x 2 lives, paired with learn_hold's 1.17
+on the same lives:
+
+| u lifted by | old roam | parts | efficiency [95%] | poison | stranded |
+|---|---|---|---|---|---|
+| (learn_hold) | yes | 49 | 1.17 [0.98, 1.36] | 1.81 | 2 of 32 |
+| food (the taste node), divider too strong: never hungry again | no | 45 | 0.53 | 1.35 | 9 of 32 |
+| food, giving up about 4 s after a meal | no | 45 | 0.58, worse | 1.97 | 1 |
+| food, about 4 s | yes | 54 | 0.68, worse | 2.33 | 0 |
+| food, about 15-40 s | yes | 54 | 1.03, tied | 2.10 | 0 |
+| the eyes (a sighting of the followed colour), about 6 s | yes | 55 | 1.26, tied | 2.02 | 0 |
+| the eyes, about 6 s | no | 46 | 1.33, tied | 1.77 | 0 |
+| **... and the silenced eye empties the hold** | no | **48** | **1.54** [1.40, 1.68], better | **1.23** | 0 |
+
+- The first divider fed u itself: with rh1 + rh2 against ru, u could never sag below about 1.87 V, above the
+  threshold. Both now 500 MOhm and 1 GOhm: u floors near 1.2 V.
+- Giving up on *food* runs too often, and a blind straight run through the poison patch it leaves eats poison (two in
+  quick succession also flip the latch). Giving up on *sightings* (the time since the free eye last saw anything,
+  D6's policy roam "3 s with nothing seen") is better and makes the old roam oscillator (10 parts) unneeded.
+- **The circuit never avoided poison**, it only declined to approach it: its mouth eats whatever lies in its path,
+  and a run covers ground. The silenced eye's current was going to ground through its shunt; moved to a resistor
+  (rd, 1 MOhm) on the base of an NPN that empties the hold, it cuts motor B whenever poison is ahead, so the creature
+  turns off its line (2 parts).
+
+**Held out** (32 seeds from 50000 x 2, paired with learn_hold on the same lives; `learn_avoid` in `circuits.py`, its
+netlists identical to the prototype's, `results/learn_avoid_48_heldout.lives` and `.log`):
+
+| circuit | parts | efficiency [95%] | gain | poison | last third food:poison [95%] | stranded [95%] | power |
+|---|---|---|---|---|---|---|---|
+| learn_hold | 49 | 1.17 [1.04, 1.31] | 2.95 | 1.90 | 3.44 [3.08, 3.87] | 3 of 64 [2%, 13%] | 174 nW |
+| giving up and avoiding | 48 | 1.51 [1.29, 1.70] | 3.71 | 1.41 | 5.26 [4.72, 5.97] | 0 of 64 [0%, 5.7%] | 128 nW |
+
+Surely better: efficiency +0.34 [+0.07, +0.56], gain +0.76 [+0.16, +1.31]. With 8 seeds more (50032-50039), 80
+lives: efficiency 1.56 [1.36, 1.72], gain 3.82, food 6.50, poison 1.34, last third 5.56 [5.03, 6.23], **none
+stranded [0%, 4.6%]**, 128 nW: every interval within its limit, so **the job surely done**, as learn_hold's never was.
+Watched live (`python -m discrete.watch --circuit learn_avoid --poison --seed 50012`, a life learn_hold stranded in).
+
+**Policies, to rank the options** (`discrete/policies.py`, hold and drive with learn toggle n 2, forget 1.5 s, the
+circuit's speeds: scan and drive 56 per s, hold 0.08 s; 64 seeds x 2): avoid "drop" (poison ahead drops the hold, as
+the circuit does) is best with every roam; turning away actively (two extra firings of one thruster per pulse) is
+worst, below no avoidance; with no roam a third of lives strand. But at these speeds even the oracle policy (told
+from birth which sensor sees food; `oracle`) reaches only 1.41, below the circuit: the rule's speeds were wrong, so it
+is no ceiling. (`until_seen`: a roam lasting until the next sighting, as the circuit's run does.)
+
+**The ceiling** (the same rule over scan 8-56, drive 40-160 per s, hold 0.05-0.2 s, either roam, avoid "drop"; 64
+seeds x 2): told the answer from birth, **2.73** (scan 16, drive 40 for 0.2 s after a sighting; drive 80 for 0.1 s or
+160 for 0.05 s within 0.05: about 8 straight firings a sighting); learning (toggle, n 2), **2.29** at the same
+settings. So, within this family of rules, learning costs about 0.4, and the circuit (1.51) loses another 0.8, mostly
+to its speeds: it scans 3.5 times too fast, and its drive can't outrun its scan (both thrusters fire off one
+oscillator's beats). The giving-up run and the clock roam tie as rules (2.17 against 2.29), so the run's 10 fewer
+parts decide.
+
+**The policy's speeds don't carry over to the circuit.** Tried on the 48-part circuit (16 training seeds x 2):
+
+- *The hold speeding the oscillator* (hold_drive's rf, from the hold to the timing node), with the scan slowed to
+  17-21 per s (ct 1-1.3 nF): here the hold rests near 0 V (motor B drains it at every beat), so rf drained the timing
+  node and the oscillator nearly stopped (48 firings per 10 s, 75% of lives stranded). Through a diode (1 part more),
+  30 MOhm gave a 17-21 per s scan and a 50 per s drive on the bench, but draining the hold through rf left one
+  sighting 1 straight firing instead of 5 (100 MOhm stalled the oscillator). Not pursued.
+- *Policies with the drive tied to the scan* (one oscillator, as in the circuit; 64 seeds): best 1.76 at 20-24 per s
+  and hold 0.2-0.35 s (5-7 firings a sighting), against 0.82-0.96 at 56 per s. The circuit's hold buys about 5
+  firings a sighting whatever the rate (it drains by a fixed charge a firing), so slowing its oscillator alone should
+  have matched that policy. **It didn't**: ct 1 nF (about 21 per s) 1.04, ct 800 pF 1.14, both surely below 1.54 at
+  56 per s (-0.50 [-0.78, -0.21], -0.41 [-0.71, -0.13]); food fell by half (3.3-3.8 against 6.2). The circuit at 56
+  per s also beats its own policy at 56 per s (1.54 against about 0.9): what the circuit does (a hold topped up by
+  each pulse, motor B's firings draining it, the run at the scan's rate) isn't what the rule does, so the rule's best
+  settings don't transfer. A policy ranks *structures* (avoid by dropping the hold; giving up; some roam needed) but
+  not a circuit's values.
 
 ## Lessons from this line, in full (moved from the old LESSONS.md)
 

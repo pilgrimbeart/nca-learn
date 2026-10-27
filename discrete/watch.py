@@ -44,6 +44,10 @@ SHOWN = {               # circuit: (results file, schematic or None, [(node, lab
     "learn_hold": ("learn_hold_tuned.json", "learn_hold.png",
                    [("h", "h  hold", (86, 180, 233), 3.0), ("c0", "c0  the bit (high: eye 0 shorted)", (230, 159, 0), 3.0),
                     ("q", "q  doubt (taste)", (204, 121, 167), 3.0), ("m1", "m1  motor B (drive)", (224, 141, 192), 3.0)]),
+    "learn_avoid": ("learn_avoid_tuned.json", "learn_avoid.png",
+                    [("h", "h  hold", (86, 180, 233), 3.0), ("c0", "c0  the bit (high: eye 0 shorted)", (230, 159, 0), 3.0),
+                     ("u", "u  giving up (low: drive on)", (240, 228, 66), 3.0),
+                     ("m1", "m1  motor B (drive)", (224, 141, 192), 3.0)]),
 }
 
 _current = None         # the brain ngspice is running now: one circuit at a time in a process

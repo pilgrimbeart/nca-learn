@@ -63,11 +63,25 @@ The findings that changed the direction of the work, each told in full in the no
   at the noise level they were tuned at. So every circuit is judged with three noises: silicon's (about 280 times
   quieter than biology's at these currents, where any design that leans on noise fails), biology's, and twice
   biology's (`minimal/NOTEBOOK.md`, M7 and M12).
-- **A perfect symmetry in the simulation is a free gift to an optimiser.** The body's two thrusters were identical to
-  the last digit. A tuned 9-part circuit that ignores its eyes, firing both thrusters 300 times a second, used that
-  to drive dead straight and eat four times as fast as any sighted circuit. With the thrusters 1% unequal, as any
-  real pair would be, it drives in circles. For every perfect symmetry in the simulation, ask whether a real body
-  would have it (`discrete/NOTEBOOK.md`, D5).
+- **The body must vary from life to life, as the parts do.** Each life's circuit is built from parts with their own
+  tolerances, so no design can lean on one exact resistor. The body had no such spread: every creature had the same
+  strength, eyes and drag, and its two thrusters were identical to the last digit. An optimiser used that. A tuned
+  9-part circuit that ignores its eyes, firing both thrusters 300 times a second, drove dead straight and ate four
+  times as fast as any sighted circuit; with the thrusters 1% unequal, as any real pair would be, it drives in
+  circles. A circuit tuned on one exact body may be tuned to that body's accidents, so the body's dynamics need a
+  spread of their own, like noise; and for every perfect symmetry in the simulation, ask whether a real body would
+  have it (`discrete/NOTEBOOK.md`, D5).
+- **Declining poison isn't avoiding it, and an eaten-out patch needs leaving.** The learning circuit's only defence
+  against poison was not to approach it; its mouth still ate whatever lay in its path. And eaten food reappears
+  elsewhere, so a creature that eats every food near it and refuses the poison turns its patch into a poison patch,
+  then circles there for the rest of its life. Both were found only by recording the nodes of the lives that failed.
+  Two small additions cured both: the silenced eye's current, which had gone to ground, now turns the creature
+  aside, and a few seconds with nothing seen sends it off straight (`discrete/NOTEBOOK.md`, D8).
+- **A scripted policy ranks structures, not a circuit's values.** Rules that see only what a brain sees cost
+  seconds a life against a circuit's minutes, and they ranked the ideas correctly: avoid poison, give up on an empty
+  patch. Told the answer from birth, they also give a ceiling to measure a brain against. But their best speeds made
+  the circuit worse, because a circuit's hold and drive don't behave like the rule's: values have to be found in
+  the circuit itself (`discrete/NOTEBOOK.md`, D8).
 - **Check the simulator, not just the circuit.** A circuit simulator chooses its own time steps, within error limits.
   With ngspice's default limits, a transistor sitting right at its switch-on point turned on or not depending on
   where the steps happened to land, so results seemed to change with the step size. With the limits tightened,
@@ -448,9 +462,13 @@ The notebook (`discrete/NOTEBOOK.md`) tells how they were found.
   eyes, drag, unequal thrusters) the best settings hardly move, except for unequal thrusters, and a trim for those
   can't be learned from a life's 200 meals more cheaply than it costs. Driving only while the eyes still see the
   block copes with them instead.
-- **One bit, 49 parts** (`learn_hold`): the eyes gated by a latch that two poisons in quick succession flip, and a
-  slow oscillator that sends the creature roaming. Held out it learns the bit (efficiency 1.17, food:poison 3.4 in
-  the last third, surely above 3) at 174 nW, but 3 lives in 64 strand, too many to be sure of the job.
+- **One bit, 48 parts** (`learn_avoid`, `media/learn_avoid.svg`): the eyes gated by a latch that two poisons in
+  quick succession flip; once the eye it follows has seen nothing for a few seconds, both thrusters drive straight
+  until the next sighting (giving up on an empty patch); and the eye it silences empties the hold, so poison ahead
+  turns the creature aside. Held out (80 lives) it surely does the job: efficiency 1.56, food:poison 5.6 in the last
+  third, none stranded, 128 nW. Its predecessor (`learn_hold`, 49 parts, a roam on a clock) stranded 3 lives in 64
+  and was surely less efficient (1.17). The same rules as policies, told the answer from birth, reach 2.7, and 2.3
+  learning: the ceiling for this kind of brain on this body.
 
 ## Next
 
@@ -551,7 +569,8 @@ The notebook (`discrete/NOTEBOOK.md`) tells how they were found.
   unit transistors). Capacitors dominate, as on real neuromorphic chips. Shown, not ranked.
 - **Hold**, **roam** (the hold-and-roam circuit, HR): after a sighting of the food colour, a slow node keeps both
   thrusters firing together for a fraction of a second, so the creature goes on to the food instead of reacting for a moment and
-  sweeping past it; after a long spell with nothing seen, a timer sends it straight off to look elsewhere. Matching
+  sweeping past it; after a long spell with nothing seen (a *giving-up time*, in foraging theory's terms), it drives
+  straight off to look elsewhere. Matching
   the brain's speed to the body's sweep and momentum (impedance matching).
 - **Sepulchre's rules**: an experiment's constraint, every node leaky except memory nodes and no clamps (gates and
   floating-gate memories allowed).
@@ -587,11 +606,11 @@ python -m minimal.draw RESULTS.json  # draw a circuit (media/NAME.svg): its sign
 python -m minimal.spice RESULTS.json --check  # build it in SKY130 transistors; each element against its formula
 python -m minimal.sheets RESULTS.json  # its transistor schematics, sheet by sheet (media/NAME_transistors/)
 python -m minimal.spice_life RESULTS.json --seeds 100:116  # live it in SPICE, closed loop, against the simulator
-python -m discrete.watch           # discrete circuits live, ngspice beside the body (--circuit learn_hold --poison)
+python -m discrete.watch           # discrete circuits live, ngspice beside the body (--circuit learn_avoid --poison)
 python -m discrete.life hold_drive  # discrete circuits closed loop in SPICE (--set k=v: other values)
 python -m discrete.tune hold_drive 20   # tune a discrete circuit's values (--poison: for one that learns)
 python -m discrete.judge discrete/results/hold_drive_tuned.json  # on held-out seeds (--motors X: unequal thrusters)
-python -m discrete.poison learn_hold  # a learning circuit, each seed red then blue as poison
+python -m discrete.poison learn_avoid  # a learning circuit, each seed red then blue as poison
 python -m discrete.policies         # rules, not circuits, on the real body (and discrete.variation: bodies that differ)
 python -m discrete.draw             # redraw media/hold_drive_14.svg and .png
 python -m experiments.e1_oracle     # the rung-1 experiments, E1 to E7 (experiments/NOTEBOOK.md)

@@ -1,0 +1,5 @@
+# python -m discrete.poison learn_avoid --seeds 50000:50032 (prototype, identical netlists), then --seeds 50032:50040; pooled
+learn_avoid, seeds 50000-50031: efficiency 1.51 [1.29, 1.70]  gain 3.71  food 6.53  poison 1.41  last third 5.26 [4.72, 5.97]  stranded 0%  power 128 nW
+learn_avoid, seeds 50032-50039: efficiency 1.74 [1.58, 1.89]  gain 4.25  food 6.42  poison 1.09  last third 7.50 [6.32, 9.93]  stranded 0%  power 127 nW
+learn_avoid, 40 held-out seeds (80 lives): efficiency 1.56 [1.36, 1.72]  gain 3.82  food 6.50  poison 1.34  last third 5.56 [5.03, 6.23]  stranded 0% [0%, 4.6%]  firings 662  power 128 nW  job True
+paired with learn_hold on seeds 50000-50031: efficiency +0.34 [+0.07, +0.56], gain +0.76 [+0.16, +1.31], learn_avoid better

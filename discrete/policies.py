@@ -5,8 +5,10 @@ creature.Life's, unchanged (or built differently: discrete/bodies.py). Judged as
 (judge_poison, D6).
 
 A kind is the approach (straight, curve, counter, reflex, reflex_hold, hold_drive); options of any kind: a roam
-(bored, roam, roam_rate, or every), learning the bit (learn: toggle or trace, D6); kinds that tune one setting in the
-life (lockin, tumble, homeo, D5).
+(bored, roam, roam_rate, or every; until_seen: until the next sighting, giving up as learn_avoid does), learning the
+bit (learn: toggle or trace, D6), avoiding the colour not followed (avoid: extra turns, or "drop" the hold), the
+oracle (told from birth which sensor sees food: the ceiling, D8); kinds that tune one setting in the life (lockin,
+tumble, homeo, D5).
 
     python -m discrete.policies [--seeds 32]
 """
@@ -154,6 +156,8 @@ class Policy:
             self.roam_until = min(self.roam_until, self.t)                  # hold
             self.last = -1e9
             seen = 0
+        if seen and p.get("until_seen"):              # a roam that lasts until the next sighting (the circuit's run)
+            self.roam_until = min(self.roam_until, self.t)
         if seen:
             if p.get("dither") == "approach" and self.t - self.last >= self.setting("hold"):   # a new approach:
                                                                                                   # toss its sign
@@ -189,8 +193,8 @@ class Policy:
                     out += [0, 1] * self._clock("drive", self.setting("drive"))
             else:
                 out += [0] * self._clock("scan", self.setting("scan"))
-        if bad and p.get("avoid"):
-            out += [0] * bad * p["avoid"]
+        if bad and p.get("avoid"):                      # (avoid "drop": only the hold dropped, as in the circuit)
+            out += [0] * bad * (0 if p["avoid"] == "drop" else p["avoid"])
         return out
 
     def roaming(self):
@@ -208,6 +212,9 @@ def life(job):
     from minimal.spec import Lived, SPAN, thirds
     kind, p, seed, seconds, poison, body = (*job, None, None)[:6]
     lf = Life(seed, poison, brain=lambda s: Policy(s, kind, **p))
+    if p.get("oracle") and poison:                      # the ceiling: told from birth which sensor sees food (no
+        lf.brain.good = lf.sensor[next(c for c in lf.sensor if c != poison)]   # brain can know; learn "toggle" with
+                                                                                # a large n keeps it)
     if body:                                            # a body built differently (discrete/bodies.py)
         from discrete.bodies import vary
         vary(lf, body)

@@ -129,7 +129,7 @@ def toggle_latch(n: Netlist, w, rl=200e6, rx=200e6, rs=1e9, ct=200e-12):
 def learn_hold(rng=None, rt=2.17e8, ct=3.05e-10, rg1=2.11e8, rg2=4.32e7, rsh=4.99e7, rp=9.77e6, ch=4.63e-10,
                rb=1.28e7, rr=0.0, rl=5e8, rx=1e9, cs=200e-12, rk=1e8, cq=3e-9, rq=1e9, rq1=1e9, rw1=1e9,
                rw=1e8, darlington=True, roam=True, rt2=1e9, ct2=5e-9, rg3=3e8, rg4=1e8, rsh2=4e8, rbe=5e7, rbg=2e8, rz1=0.0,
-               rz2=1e8):
+               rz2=1e8, sink="0"):
     """Hold and drive with one bit learned (discrete/NOTEBOOK.md D6): hold12 (the oscillator, motor A scanning, motor
     B's pull-up from the hold, which drains by driving), with
     - a roam: a second, slow oscillator (put_osc, a few seconds a beat) whose discharge pulls its gate (g2) low, which
@@ -147,12 +147,13 @@ def learn_hold(rng=None, rt=2.17e8, ct=3.05e-10, rg1=2.11e8, rg2=4.32e7, rsh=4.9
     - doubt on the taste node q (cq, recovering through rq towards the supply over a second or so, and lifted by food):
       each poison pulls it down by about 0.8 V, so the second in quick succession takes it below the threshold
       transistor's base; it lets go, the second transistor turns on, and w falls: the latch flips, and the other
-      colour is followed."""
+      colour is followed.
+    sink: where the shunts' emitters go (learn_avoid uses the current they sink)."""
     n = hold12(rng, rt, ct, rg1, rg2, rsh, rp, ch, rb)
     n.eye = ["s0", "s1"]
     for s, c in (("s0", "c0"), ("s1", "c1")):
         n.D(s, "h")
-        n.Q("NPN", s, s + "b", "0")
+        n.Q("NPN", s, s + "b", sink)
         if darlington:                                  # (a second NPN feeding the shunt's base: a hundredth of
             n.Q("NPN", s, s + "d", s + "b")             # the latch's current can then sink an eye)
             n.R(c, s + "d", rk)
@@ -182,3 +183,30 @@ def learn_hold(rng=None, rt=2.17e8, ct=3.05e-10, rg1=2.11e8, rg2=4.32e7, rsh=4.9
 
 
 CIRCUITS["learn_hold"] = (learn_hold, SUPPLY)
+
+
+def learn_avoid(rng=None, cu=1e-8, ru=1e9, rh1=5e8, rh2=1e9, rd=1e6, **kw):
+    """One bit learned, giving up on an empty patch and turning from poison ahead (48 parts; discrete/NOTEBOOK.md D8):
+    learn_hold without its roam oscillator, and
+    - giving up: each eye's node lifts a slow node u through a follower (only the eye the latch leaves free reaches
+      it: the other is shunted), and u sags through ru; once it has been a few seconds since the free eye saw
+      anything, u is below the threshold set by the divider rh1, rh2 from the supply to u on a PNP's base, and the
+      PNP feeds the hold from the supply: both thrusters drive straight until the next sighting lifts u (a creature
+      that has eaten its patch clear of food leaves it, instead of circling among the poison);
+    - avoiding: the shunts' emitters go to k (rd to ground), so the silenced eye's current, sunk by its shunt, turns
+      on an NPN that empties the hold: poison ahead cuts motor B, and the creature turns off its line instead of
+      driving through it (it had only declined to approach poison, never avoided it)."""
+    n = learn_hold(rng, roam=False, sink="k", **kw)
+    for s in ("s0", "s1"):
+        n.Q("NPN", "vdd", s, "u")
+    n.C("u", "0", cu)
+    n.R("u", "0", ru)
+    n.R("vdd", "ub", rh1)
+    n.R("ub", "u", rh2)
+    n.Q("PNP", "h", "ub", "vdd")
+    n.R("k", "0", rd)
+    n.Q("NPN", "h", "k", "0")
+    return n
+
+
+CIRCUITS["learn_avoid"] = (learn_avoid, SUPPLY)
