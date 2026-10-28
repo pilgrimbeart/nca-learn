@@ -1,7 +1,8 @@
 """The discrete circuits drawn by hand as SVG (discrete/NOTEBOOK.md): hold and drive (discrete/circuits.py, 14 parts,
 D3) with its screened values, media/hold_drive_14.svg; the learning circuit (49 parts, D6), media/learn_hold.svg; and
-the learning circuit that gives up and avoids (48 parts, D8), media/learn_avoid.svg; each also as a PNG on a dark ground for the live view (discrete/watch.py). Okabe-Ito colours, each block also outlined
-and named (the user is colour-blind). Redraw them when a circuit changes.
+the learning circuit that gives up and avoids (46 parts, D8, D9), media/learn_avoid.svg; each also as a PNG on a dark
+ground for the live view (discrete/watch.py). Okabe-Ito colours, each block also outlined and named (the user is
+colour-blind). Redraw them when a circuit changes.
 
     python -m discrete.draw
 """
@@ -376,10 +377,7 @@ def _give_up(P, R, G):
     label(900, 860, "2 x 2N3904", "", R)
     dot(1140, 800); cap(1140, 800, 880, R); gnd(1140, 880); label(1152, 845, "cu", eng(P["cu"], "F"), R)
     dot(1200, 800); res(1200, 800, 880, R); gnd(1200, 880); label(1212, 845, "ru", eng(P["ru"], "Ω"), R)
-    vdd(1260, 615); res(1260, 615, 700, R); label(1272, 655, "rh1", eng(P["rh1"], "Ω"), R)
-    dot(1260, 700); T(1248, 696, "ub", "node", "end")
-    res(1260, 700, 800, R); label(1272, 755, "rh2", eng(P["rh2"], "Ω"), R)
-    L((1260, 700), (1300, 700))
+    L((1260, 800), (1260, 700), (1300, 700))
     t, b = bjt(1300, 700, "PNP", R, top="e"); vdd(t[0], 650); L((t[0], 650), t)
     L(b, (t[0], 900), (1700, 900), (1700, 80), (1480, 80)); T(1350, 892, "to h: drive on", "node")
     label(1370, 690, "2N3906", "", R)

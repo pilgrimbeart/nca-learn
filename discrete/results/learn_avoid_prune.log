@@ -1,0 +1,25 @@
+whole: 48 parts, robust +1.72
+  128 tried, 4 not surely worse and doing the job
+  short R44 ub u 1e+09                           robust +1.89
+  open  R43 vdd ub 5e+08                         robust +1.67
+  short C38 w j1 2e-10                           robust +1.17
+  open  R30 c0 j0 1e+09                          robust +0.98
+  open  R0 vdd a 2.17e+08                        robust -inf
+  short R0 vdd a 2.17e+08                        robust -inf
+cut (44, 'short'): R44 ub u 1e+09  (-0.43, +0.78); now 47 parts, robust +1.89, efficiency 1.89, gain 4.92
+  values: 
+  3 tried, 3 not surely worse and doing the job
+  open  R43 vdd ub 5e+08                         robust +1.78
+  open  R30 c0 j0 1e+09                          robust +1.73
+  short C38 w j1 2e-10                           robust +1.51
+cut (43, 'open'): R43 vdd ub 5e+08  (-0.46, +0.57); now 46 parts, robust +1.78, efficiency 1.78, gain 4.75
+  values: 
+  2 tried, 2 not surely worse and doing the job
+  open  R30 c0 j0 1e+09                          robust +1.53
+  short C38 w j1 2e-10                           robust +1.38
+cut (30, 'open'): R30 c0 j0 1e+09  (-1.36, +0.78); now 45 parts, robust +1.53, efficiency 1.54, gain 4.06
+  values: 
+  1 tried, 0 not surely worse and doing the job
+  short C38 w j1 2e-10                           robust -inf
+no part can go: every cut is surely worse or fails the job
+written discrete/results/learn_avoid_pruned.json

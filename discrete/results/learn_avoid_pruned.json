@@ -1,0 +1,23 @@
+{
+ "circuit": "learn_avoid",
+ "best": {},
+ "cuts": [
+  [
+   44,
+   "short"
+  ],
+  [
+   43,
+   "open"
+  ],
+  [
+   30,
+   "open"
+  ]
+ ],
+ "removed": [
+  "R44 ub u 1e+09",
+  "R43 vdd ub 5e+08",
+  "R30 c0 j0 1e+09"
+ ]
+}

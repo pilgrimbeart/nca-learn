@@ -3,8 +3,8 @@
 The question (the user's, 2026-10-20): how simple can a creature be that learns one bit in its life (which colour is
 poison), designed by hand as a proxy for evolution, or found by search? Simple means as few parts as possible, and
 those parts as simple as possible. Since 2026-10-22 also: how well can a circuit drive the body, for energy and for
-speed and accuracy (the three objectives, README: Terms). No neurons, locality or growth are required; what is found is
-mapped back onto the mixed-feedback programme afterwards (`MIXED_FEEDBACK.md`).
+speed and accuracy (once the three objectives; now README: Terms, what counts). No neurons, locality or growth are
+required; what is found is mapped back onto the mixed-feedback programme afterwards (`MIXED_FEEDBACK.md`).
 
 ## Where it stands
 

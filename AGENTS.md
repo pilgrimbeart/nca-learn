@@ -123,8 +123,10 @@ rule to both whenever one is added here.
 - **Counted as built** (the user's decision): parts are the transistors, resistors, capacitors, diodes and bias
   sources of `chip.py`'s blocks in SKY130; power is what the supply delivers; SPICE checks both (`minimal/spice.py
   --check`, `minimal/spice_life.py`).
-- **Three objectives, never traded** (the user's): among circuits doing the job, the fewest parts, the best
-  efficiency and the best gain rate (README, Terms). `search.py` and `prune.py --by efficiency|gain` work for one.
+- **What counts, in order** (the user's, 2026-10-27): among circuits doing the job, performance (the best
+  efficiency and the best gain rate, never traded against each other), then power, then area (what it takes to
+  build); simplicity (fewest parts) behind them, to understand a design, since evolution pays for power and
+  material, not elegance (README, Terms). `search.py` and `prune.py --by efficiency|gain` work for one.
 - **Sure, or within noise**: every measure with its 95% interval (bootstrap over seeds, each seed's pair together;
   stranding a Wilson interval); designs compared paired, one above another only if the interval of the difference
   excludes 0; the job done surely only if every interval is within its limits.

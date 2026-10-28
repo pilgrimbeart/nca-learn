@@ -18,20 +18,23 @@ per meal spent resting, moving and thinking), gain rate (meals per 10 s), food, 
   unequal thrusters, and no in-life tuning from meals beat a fixed circuit; driving only while the eyes still see the
   block copes instead (D5). A richer body (an eye on each side for each colour) is held off: the user prefers to
   learn what extreme simplicity gives first.
-- **Learning the bit**: `learn_avoid`, 48 parts, surely does the job held out (80 lives): efficiency 1.56, food:poison
-  5.6 in the last third, none stranded, 128 nW (D8). It gives up on an empty patch (both thrusters straight once the
-  followed eye has seen nothing for a few seconds) and turns from poison ahead (the silenced eye empties the hold).
-  Its predecessor `learn_hold` (49 parts, D6) stranded: it circled in patches it had eaten clear of food.
+- **Learning the bit**: `learn_avoid`, 46 parts, surely does the job held out (160 lives): efficiency 1.78, gain
+  4.7, food:poison 4.7 in the last third, none stranded, 130 nW (D8, D9). It gives up on an empty patch (both
+  thrusters straight once the followed eye has seen nothing for a few seconds) and turns from poison ahead (the
+  silenced eye empties the hold). Pruned from 48 parts (D9), and surely better than them. Its predecessor
+  `learn_hold` (49 parts, D6) stranded: it circled in patches it had eaten clear of food.
 - **The ceiling** for this kind of brain on this body, as policies: 2.7 told the answer from birth, 2.3 learning
   (D8). The circuit's gap to them is not in its speeds (the policies' best speeds made it worse).
-- Values not yet tuned for `learn_avoid` (its values are learn_hold's and the prototype's).
+- Values not yet tuned for `learn_avoid` (its values are learn_hold's and the prototype's). A pruned circuit
+  must be judged held out: pruning's last cut, "not surely worse" on 12 seeds, was surely worse held out (D9).
 - **The simulator** is checked in both step and tolerance: ngspice's error control is tightened in every netlist
   (D7).
 - Queue 7 re-judged every circuit with the tightened control (D7) and re-tuned learn_hold (noise, no trend: its
   output kept as `results/learn_hold_tune_q7.json`, never judged); the foraging circuits' re-tunes were cancelled
   (their results stand, D7).
 - Open: bodies are still identical in tuning and judging (but for `--motors`), though the body's dynamics should
-  vary from life to life (D5); making that the default awaits the user's choice of factors and spreads.
+  vary from life to life (D5); making that the default awaits the user's choice of factors and spreads. Identical
+  thrusters make a giving-up run exactly straight, and one such run stranded a life on the torus (D9).
 - Open: high-value resistors (500 MOhm to 1 GOhm) are rarely better than 5% and leak across a board's surface;
   `life.TOL`'s 1% is optimistic for them.
 
@@ -478,8 +481,8 @@ on the same lives:
   (rd, 1 MOhm) on the base of an NPN that empties the hold, it cuts motor B whenever poison is ahead, so the creature
   turns off its line (2 parts).
 
-**Held out** (32 seeds from 50000 x 2, paired with learn_hold on the same lives; `learn_avoid` in `circuits.py`, its
-netlists identical to the prototype's, `results/learn_avoid_48_heldout.lives` and `.log`):
+**Held out** (32 seeds from 50000 x 2, paired with learn_hold on the same lives; `learn_avoid` as it was in commit
+5a14076, its netlists identical to the prototype's; pruned to 46 parts in D9; `results/learn_avoid_48_heldout.lives` and `.log`):
 
 | circuit | parts | efficiency [95%] | gain | poison | last third food:poison [95%] | stranded [95%] | power |
 |---|---|---|---|---|---|---|---|
@@ -522,6 +525,49 @@ parts decide.
   each pulse, motor B's firings draining it, the run at the scan's rate) isn't what the rule does, so the rule's best
   settings don't transfer. A policy ranks *structures* (avoid by dropping the hold; giving up; some roam needed) but
   not a circuit's values.
+
+## D9: pruned to 46 parts, and a stranding from a perfect body (2026-10-27)
+
+**Pruning** (`python -m discrete.prune results/learn_avoid_start.json --poison --seeds 12 --seconds 40`, training
+seeds 30000-30011 x 2, about 6 h; `results/learn_avoid_prune.log`). `prune.py --poison` now lives each seed red then
+blue as poison and resamples each seed's pair together; a cut must do the job; a cut surely worse than the whole, or
+failing the job, is dropped for good (so after the first round of 128 only 4 were retried); `--resume` restarts from
+the cuts saved after each one (comparing against the circuit resumed from, not the original). It took 3 parts
+(`results/learn_avoid_pruned.json`; its line numbers are the 48-part netlist's, commit 5a14076):
+
+| cut | parts | robust (training) |
+|---|---|---|
+| (the whole) | 48 | 1.72 |
+| rh2 (ub to u) shorted | 47 | 1.89 |
+| rh1 (the supply to ub) removed | 46 | 1.78 |
+| rs of the latch's side 0 (c0 to j0) removed | 45 | 1.53 |
+
+then nothing more could go. Held out (seeds 50000-50039 x 2, the cuts applied to the 48-part netlists), the last cut
+was a fluke of 12 seeds: 45 parts 1.22 [0.72, 1.66], surely below 46 parts (-0.61 [-1.13, -0.10]). So a cut "not
+surely worse" on few seeds can still be worse: every pruned circuit is judged held out, cut by cut if need be.
+
+**The divider wasn't needed.** With the PNP's base on u itself, u sags until the PNP's own base current balances ru's
+leak (it settles near 2.57 V, the PNP feeding the hold about half a microamp): the threshold sets itself. `learn_avoid`
+is now this 46-part circuit (`circuits.py`, `media/learn_avoid.svg`); removing two resistors changes each seed's
+tolerance draws for the four parts after them, so it was judged afresh:
+
+| held out | parts | efficiency [95%] | gain | poison | last third food:poison [95%] | stranded [95%] | power |
+|---|---|---|---|---|---|---|---|
+| learn_avoid, 48 (D8), 50000-50039 | 48 | 1.56 [1.36, 1.72] | 3.82 | 1.34 | 5.56 [5.03, 6.23] | 0 of 80 [0%, 4.6%] | 128 nW |
+| learn_avoid, 46, 50000-50079 | 46 | **1.78** [1.62, 1.91] | **4.73** | 1.89 | 4.70 [4.27, 5.16] | **0 of 160** [0%, 2.3%] | 130 nW |
+
+Paired on 50000-50039: efficiency +0.24 [+0.07, +0.38], gain +0.94 [+0.48, +1.33], **surely better on both**, the
+job surely done (`results/learn_avoid_46_heldout.lives` and `.log`). It eats more of both: food 8.5 against 6.5, and
+poison 1.9 against 1.3 (food:poison in the last third 4.7, still well above 3). Giving up sooner and harder, it
+covers more ground.
+
+**A stranding from a perfect body.** The pruning's own netlists stranded one life in 160 (seed 50010, red as poison):
+from 52 s on, both thrusters fired equally (a giving-up run), the eyes saw nothing, and a replay of its firings through
+the body showed why: its heading was 0.004 rad off the world's y axis and its spin exactly 0 (identical thrusters), so
+on the torus the run retraced one column, which it had eaten clear, for 48 s (x drifting 48.1 to 47.2 mm). The world
+spawns a block only when one is eaten, so the column stayed empty. A body whose thrusters differ, as any built one
+would (D5; README: the body must vary), curves on a straight run. A second reason for varying bodies: an exactly
+straight run is an artefact the circuits can be stranded by, and so could come to depend on.
 
 ## Lessons from this line, in full (moved from the old LESSONS.md)
 

@@ -1,0 +1,7 @@
+# python -m discrete.poison learn_avoid --seeds 50000:50080 --out discrete/results/learn_avoid_46_heldout.lives (46 parts)
+learn_avoid: efficiency 1.78 [1.62, 1.91]  gain 4.73  food 8.52  poison 1.89  last third 4.70 [4.27, 5.16]  stranded 0%  firings 764  power 130 nW  job True
+stranded 0 of 160, Wilson [0%, 2.3%]
+paired with the 48-part learn_avoid (learn_avoid_48_heldout.lives) on seeds 50000-50039: efficiency +0.24 [+0.07, +0.38], gain +0.94 [+0.48, +1.33], 46 parts better
+# the pruning's netlists (48-part learn_avoid with cuts (44, short), (43, open); tolerances drawn as for 48 parts), the same seeds:
+learn_avoid_46 (cuts), 50000-50079: efficiency 1.83 [1.70, 1.94]  gain 4.88  food 8.46  poison 1.79  last third 5.37 [4.98, 5.83]  stranded 1 of 160 (50010 red)
+learn_avoid_45 (cuts + (30, open)), 50000-50039: efficiency 1.22 [0.72, 1.66]  gain 3.25, surely worse than 46: -0.61 [-1.13, -0.10]

@@ -68,9 +68,11 @@ The findings that changed the direction of the work, each told in full in the no
   strength, eyes and drag, and its two thrusters were identical to the last digit. An optimiser used that. A tuned
   9-part circuit that ignores its eyes, firing both thrusters 300 times a second, drove dead straight and ate four
   times as fast as any sighted circuit; with the thrusters 1% unequal, as any real pair would be, it drives in
-  circles. A circuit tuned on one exact body may be tuned to that body's accidents, so the body's dynamics need a
-  spread of their own, like noise; and for every perfect symmetry in the simulation, ask whether a real body would
-  have it (`discrete/NOTEBOOK.md`, D5).
+  circles. The other way round, a learning circuit's straight run, pointed by chance along the world's axis, retraced
+  one column it had eaten clear for its last 48 s, a stranding no built body would suffer. A circuit tuned on one
+  exact body may be tuned to that body's accidents, so the body's dynamics need a spread of their own, like noise;
+  and for every perfect symmetry in the simulation, ask whether a real body would have it (`discrete/NOTEBOOK.md`,
+  D5, D9).
 - **Declining poison isn't avoiding it, and an eaten-out patch needs leaving.** The learning circuit's only defence
   against poison was not to approach it; its mouth still ate whatever lay in its path. And eaten food reappears
   elsewhere, so a creature that eats every food near it and refuses the poison turns its patch into a poison patch,
@@ -421,10 +423,11 @@ designed by hand, tuned (a polish, `minimal/search.py`), pruned part by part (`m
 evolution over topologies (`minimal/evolve.py`), all judged on fresh seeds with the noise of silicon, biology and
 twice biology's (Terms: substrate).
 
-Three objectives, each among the circuits that do the job (learn the bit, eat enough, rarely strand), never traded
-against each other: the simplest brain, the best driver for energy (body efficiency) and the best for speed and
-accuracy (gain rate). The league (`minimal/LEAGUE.md`, generated) names the best at each and how sure that is;
-the notebook (`minimal/NOTEBOOK.md`) tells how they were found.
+What counts, among the circuits that do the job (learn the bit, eat enough, rarely strand): performance first (the
+best driver for energy, body efficiency, and the best for speed and accuracy, gain rate, never traded against each
+other), then power and area; the simplest brain behind them (Terms: what counts). The league (`minimal/LEAGUE.md`,
+generated) names the best at each and how sure that is; the notebook (`minimal/NOTEBOOK.md`) tells how they were
+found.
 
 What it has found so far:
 
@@ -462,12 +465,13 @@ The notebook (`discrete/NOTEBOOK.md`) tells how they were found.
   eyes, drag, unequal thrusters) the best settings hardly move, except for unequal thrusters, and a trim for those
   can't be learned from a life's 200 meals more cheaply than it costs. Driving only while the eyes still see the
   block copes with them instead.
-- **One bit, 48 parts** (`learn_avoid`, `media/learn_avoid.svg`): the eyes gated by a latch that two poisons in
+- **One bit, 46 parts** (`learn_avoid`, `media/learn_avoid.svg`): the eyes gated by a latch that two poisons in
   quick succession flip; once the eye it follows has seen nothing for a few seconds, both thrusters drive straight
   until the next sighting (giving up on an empty patch); and the eye it silences empties the hold, so poison ahead
-  turns the creature aside. Held out (80 lives) it surely does the job: efficiency 1.56, food:poison 5.6 in the last
-  third, none stranded, 128 nW. Its predecessor (`learn_hold`, 49 parts, a roam on a clock) stranded 3 lives in 64
-  and was surely less efficient (1.17). The same rules as policies, told the answer from birth, reach 2.7, and 2.3
+  turns the creature aside. Held out (160 lives) it surely does the job: efficiency 1.78, gain 4.7 meals per 10 s,
+  food:poison 4.7 in the last third, none stranded, 130 nW. Pruning took it from 48 parts and made it surely better
+  on both measures. Its predecessor (`learn_hold`, 49 parts, a roam on a clock) stranded 3 lives in 64 and was
+  surely less efficient (1.17). The same rules as policies, told the answer from birth, reach 2.7, and 2.3
   learning: the ceiling for this kind of brain on this body.
 
 ## Next
@@ -560,8 +564,11 @@ The notebook (`discrete/NOTEBOOK.md`) tells how they were found.
   of nW: for HR_31p_pol about a sixth of what moving costs). Above 1 a creature gains. Haste wastes fuel and dawdling the resting cost,
   so a careful creature has a best speed.
 - **Gain rate**: meals gained per 10 s, energy free: speed and accuracy.
-- **The three objectives**: the simplest brain doing the job (fewest parts), the best driver for energy (body
-  efficiency) and the best for speed and accuracy (gain rate), each its own dimension, never traded.
+- **What counts** (the user's order, 2026-10-27): among brains doing the job, performance (the best driver for
+  energy, body efficiency, and the best for speed and accuracy, gain rate, each its own dimension, never traded), then
+  power, then area (what it takes to build); simplicity (fewest parts) behind them, to understand a design. Evolution
+  pays for power and material and rewards performance; it doesn't pay for elegance. (Until then, 2026-10-22 to 27:
+  three objectives, the simplest brain, efficiency and gain rate, which the league still ranks.)
 - **Thrift**: food per 1,000 thruster firings (fuel alone, time no object); shown, not ranked.
 - **Area**: what a circuit would take on a chip, by analogy with subthreshold analogue CMOS, in unit transistors (15
   square microns each): an element 5 (a transconductance amplifier), a gate 3 more, a leak 2, a clamp 1, a memory
@@ -572,6 +579,11 @@ The notebook (`discrete/NOTEBOOK.md`) tells how they were found.
   sweeping past it; after a long spell with nothing seen (a *giving-up time*, in foraging theory's terms), it drives
   straight off to look elsewhere. Matching
   the brain's speed to the body's sweep and momentum (impedance matching).
+- **Policy**: a brain written as a few rules in code, not a circuit (`discrete/policies.py`): it gets the eyes'
+  pulses and the taste and fires the thrusters, as any brain, with no parts, power or noise of its own. A life costs
+  about a second against a circuit's minutes in SPICE, so policies rank ideas cheaply; told from birth which colour is
+  food (`oracle`), a policy gives the ceiling for its kind of brain on this body. Its best values don't transfer to a
+  circuit.
 - **Sepulchre's rules**: an experiment's constraint, every node leaky except memory nodes and no clamps (gates and
   floating-gate memories allowed).
 

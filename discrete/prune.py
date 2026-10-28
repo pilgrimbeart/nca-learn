@@ -7,9 +7,15 @@ cut, so that small losses can't add up) (paired over seeds, the 95%
 interval of the difference reaching 0); repeat until no part can go. What remains is what the job needs, for this
 circuit's kind; what went is what it didn't.
 
-    python -m discrete.prune RESULTS.json [--seeds 16] [--seconds 40]
+    python -m discrete.prune RESULTS.json [--seeds 16] [--seconds 40] [--poison] [--resume]
 
-RESULTS.json: discrete/tune.py's (its circuit and best values). Writes discrete/results/CIRCUIT_pruned.json.
+RESULTS.json: discrete/tune.py's (its circuit and best values). Writes discrete/results/CIRCUIT_pruned.json, after
+every cut (--resume: start from its cuts).
+
+--poison, for a circuit that learns (D8): each seed lived twice, red then blue as poison, its pair resampled together;
+a cut kept only if the circuit still does the job; no bench re-screening (its profile is foraging's); and a cut surely
+worse than the whole is not tried again in later rounds (a cut's harm rarely vanishes when another part goes: a
+shortcut taken because a round tries every part, closed loop, for an hour or more).
 """
 
 from __future__ import annotations
@@ -61,11 +67,12 @@ SPREAD = 3.0
 
 
 def _one(a):
-    name, params, cuts, seed, seconds, *more = a        # (and optionally a body, then a finer step)
-    body, finer = (*more, None, None)[:2]
+    name, params, cuts, seed, seconds, *more = a        # (and optionally a body, a finer step, the poison colour)
+    body, finer, poison = (*more, None, None, None)[:3]
     net, supply = build(name, params, cuts, seed)
     try:
-        return lived(live(net, seed, seconds, supply, body=body, step=STEP / (finer or 1)), seconds)
+        return lived(live(net, seed, seconds, supply, poison=poison, body=body, step=STEP / (finer or 1)), seconds,
+                     poison)
     except Exception:                                   # noqa: BLE001  (a cut that leaves no working circuit)
         return None
 
@@ -76,13 +83,13 @@ def judge(lives_list):
     return [robust(l) if l and all(x is not None for x in l) else -np.inf for l in lives_list]
 
 
-def paired(a, b, boot=2000, rng=np.random.default_rng(0)):
-    """95% interval of robust(a) - robust(b) over seeds resampled together."""
+def paired(a, b, boot=2000, rng=np.random.default_rng(0), group=1):
+    """95% interval of robust(a) - robust(b) over seeds resampled together (group: lives per seed, together)."""
     from discrete.tune import robust
-    n = len(a)
+    n = len(a) // group
     d = []
     for _ in range(boot):
-        k = rng.integers(0, n, n)
+        k = [j * group + g for j in rng.integers(0, n, n) for g in range(group)]
         d.append(robust([a[j] for j in k]) - robust([b[j] for j in k]))
     return np.percentile(d, [2.5, 97.5])
 
@@ -96,6 +103,8 @@ if __name__ == "__main__":
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--ladder", action="store_true", help="keep cutting the least harmful part while the job is done,"
                     " however much is lost: what each part buys")
+    ap.add_argument("--poison", action="store_true", help="lives with poison, for a circuit that learns")
+    ap.add_argument("--resume", action="store_true", help="start from the cuts already written")
     a = ap.parse_args()
     r = json.load(open(a.results))
     name, params = r["circuit"], r["best"]
@@ -103,29 +112,58 @@ if __name__ == "__main__":
     net, _ = build(name, params, [], None)
     parts = [i for i, ln in enumerate(net.lines) if ln[0] in PART]
     cuts = []
+    out = os.path.join(os.path.dirname(a.results), f"{name}_{'ladder' if a.ladder else 'pruned'}.json")
+    if a.resume and os.path.exists(out):
+        done = json.load(open(out))
+        cuts, params = [tuple(c) for c in done["cuts"]], done["best"]
+        print(f"resumed: {len(cuts)} cuts", flush=True)
+    colours = ("red", "blue") if a.poison else (None,)
+    group = len(colours)
+
+    def save():
+        json.dump({"circuit": name, "best": params, "cuts": cuts,
+                   "removed": [describe(name, params, i) for i, _ in cuts]}, open(out, "w"), indent=1)
+
     with ProcessPoolExecutor(a.workers) as ex, ProcessPoolExecutor(a.workers) as bench_ex:
         # (two pools: ngspice run on the bench and in closed loop can't share a process)
         def run_with(p, variants):
-            jobs = [(name, p, c, s, a.seconds) for c in variants for s in seeds]
+            jobs = [(name, p, c, s, a.seconds, None, None, k) for c in variants for s in seeds for k in colours]
             res = list(ex.map(_one, jobs))
-            return [res[k * len(seeds):(k + 1) * len(seeds)] for k in range(len(variants))]
+            n = len(seeds) * group
+            return [res[k * n:(k + 1) * n] for k in range(len(variants))]
 
         def run(variants):
             return run_with(params, variants)
         whole = run([cuts])[0]
-        print(f"whole: {len(parts)} parts, robust {judge([whole])[0]:+.2f}", flush=True)
+        print(f"whole: {len(parts) - len(cuts)} parts, robust {judge([whole])[0]:+.2f}", flush=True)
+        harmful = set()                                 # (--poison) cuts surely worse than the whole: not tried again
         while True:
             left = [i for i in parts if i not in {c[0] for c in cuts}]
-            variants = [cuts + [(i, m)] for i in left for m in MOVES[net.lines[i][0]]]
+            variants = [cuts + [(i, m)] for i in left for m in MOVES[net.lines[i][0]] if (i, m) not in harmful]
+            if not variants:
+                print("no cut left to try")
+                break
             lives = run(variants)
             vals = judge(lives)
+            if a.poison:
+                from minimal.spec import does_job
+                for c, l, v in zip(variants, lives, vals):
+                    if v == -np.inf or paired(l, whole, group=group)[1] < 0 or not does_job(l):
+                        harmful.add(c[-1])
+                vals = [v if c[-1] not in harmful else -np.inf for v, c in zip(vals, variants)]
+                print(f"  {len(variants)} tried, {sum(v > -np.inf for v in vals)} not surely worse and doing the"
+                      f" job", flush=True)
             for v, c, l in sorted(zip(vals, variants, lives), key=lambda x: -x[0])[:6]:
                 print(f"  {c[-1][1]:5s} {describe(name, params, c[-1][0]):40s} robust {v:+.2f}", flush=True)
             from discrete.screen import search
             order = [k for k in np.argsort(vals)[::-1][:RESCREEN] if vals[k] > -np.inf]
+            if a.poison:
+                order = order[:1]
             trials = []                                 # (value, variant, params, lives)
             for k in order:
                 trials.append((vals[k], variants[k], params, lives[k]))
+                if a.poison:
+                    continue
                 found = search(name, params, variants[k], SAMPLES, SPREAD, bench_ex)[:2]
                 for p, rates, fit in found:
                     if fit > -np.inf and p is not params:
@@ -135,9 +173,10 @@ if __name__ == "__main__":
                               f" robust {v:+.2f}", flush=True)
                         trials.append((v, variants[k], p, l))
             if not trials:
+                print("no part can go: every cut is surely worse or fails the job")
                 break
             v, variant, p, l = max(trials, key=lambda x: x[0])
-            lo, hi = paired(l, whole)
+            lo, hi = paired(l, whole, group=group)
             if a.ladder:
                 from minimal.spec import does_job, efficiency, gain
                 if not does_job(l):
@@ -152,7 +191,6 @@ if __name__ == "__main__":
                   f" {len(parts) - len(cuts)} parts, robust {v:+.2f}, efficiency {efficiency(l):.2f},"
                   f" gain {gain(l):.2f}", flush=True)
             print("  values: " + " ".join(f"{k}={x:.3g}" for k, x in params.items()), flush=True)
-    out = os.path.join(os.path.dirname(a.results), f"{name}_{'ladder' if a.ladder else 'pruned'}.json")
-    json.dump({"circuit": name, "best": params, "cuts": cuts,
-               "removed": [describe(name, params, i) for i, _ in cuts]}, open(out, "w"), indent=1)
+            save()
+    save()
     print("written", out)

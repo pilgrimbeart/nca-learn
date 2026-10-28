@@ -185,25 +185,24 @@ def learn_hold(rng=None, rt=2.17e8, ct=3.05e-10, rg1=2.11e8, rg2=4.32e7, rsh=4.9
 CIRCUITS["learn_hold"] = (learn_hold, SUPPLY)
 
 
-def learn_avoid(rng=None, cu=1e-8, ru=1e9, rh1=5e8, rh2=1e9, rd=1e6, **kw):
-    """One bit learned, giving up on an empty patch and turning from poison ahead (48 parts; discrete/NOTEBOOK.md D8):
-    learn_hold without its roam oscillator, and
+def learn_avoid(rng=None, cu=1e-8, ru=1e9, rd=1e6, **kw):
+    """One bit learned, giving up on an empty patch and turning from poison ahead (46 parts; discrete/NOTEBOOK.md D8,
+    D9): learn_hold without its roam oscillator, and
     - giving up: each eye's node lifts a slow node u through a follower (only the eye the latch leaves free reaches
-      it: the other is shunted), and u sags through ru; once it has been a few seconds since the free eye saw
-      anything, u is below the threshold set by the divider rh1, rh2 from the supply to u on a PNP's base, and the
-      PNP feeds the hold from the supply: both thrusters drive straight until the next sighting lifts u (a creature
-      that has eaten its patch clear of food leaves it, instead of circling among the poison);
+      it: the other is shunted), and u sags through ru; u is a PNP's base, the PNP's emitter at the supply, so once it
+      has been a few seconds since the free eye saw anything, u has sagged until the PNP's own base current balances
+      ru's leak, and the PNP feeds the hold from the supply: both thrusters drive straight until the next sighting
+      lifts u (a creature that has eaten its patch clear of food leaves it, instead of circling among the poison);
     - avoiding: the shunts' emitters go to k (rd to ground), so the silenced eye's current, sunk by its shunt, turns
       on an NPN that empties the hold: poison ahead cuts motor B, and the creature turns off its line instead of
-      driving through it (it had only declined to approach poison, never avoided it)."""
+      driving through it (it had only declined to approach poison, never avoided it).
+    (Pruned from 48 parts: a divider on the PNP's base, from the supply to u, wasn't needed.)"""
     n = learn_hold(rng, roam=False, sink="k", **kw)
     for s in ("s0", "s1"):
         n.Q("NPN", "vdd", s, "u")
     n.C("u", "0", cu)
     n.R("u", "0", ru)
-    n.R("vdd", "ub", rh1)
-    n.R("ub", "u", rh2)
-    n.Q("PNP", "h", "ub", "vdd")
+    n.Q("PNP", "h", "u", "vdd")
     n.R("k", "0", rd)
     n.Q("NPN", "h", "k", "0")
     return n
