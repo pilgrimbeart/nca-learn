@@ -92,9 +92,11 @@ The findings that changed the direction of the work, each told in full in the no
 - **Design in a fast model of the circuit's blocks; use SPICE to check it's real.** A circuit lived in SPICE with
   real chip transistors takes minutes a life. Instead each block of the circuit (a timer, the oscillator, the
   learning node) is measured once on SPICE's bench and copied into a simple model as a few numbers, which lives a
-  whole life in about a second. Checked against SPICE on the same lives, the model agreed within noise, so ideas are
-  now tried, searched and judged in the model, and SPICE checks the designs we claim (`discrete/NOTEBOOK.md`, D12,
-  D13).
+  whole life in about a second, some 300 times faster. Its best design, built in transistors and lived in SPICE
+  without retuning, did the job, at 80% of the score the model predicted; the gap was one timing quirk where two blocks
+  meet (a thruster firing alone as a drive began), which no single block's bench showed. Close enough: ideas are
+  tried, searched and judged in the model, and SPICE checks that a design is physically realisable, retuning it only
+  when realism matters (`discrete/NOTEBOOK.md`, D12, D13).
 - **Give every simulated life its own flaws, or an optimiser will find a knife-edge.** In the model every copy of a
   circuit was first identical. A search then set the learning threshold a hair below the most the learning node can
   ever reach: perfect in the model, but in real silicon each chip's parts differ a little, and in a quarter of the
@@ -653,6 +655,8 @@ python -m discrete.life hold_drive  # discrete circuits closed loop in SPICE (--
 python -m discrete.tune hold_drive 20   # tune a discrete circuit's values (--poison: for one that learns)
 python -m discrete.judge discrete/results/hold_drive_tuned.json  # on held-out seeds (--motors X: unequal thrusters)
 python -m discrete.poison learn_avoid  # a learning circuit, each seed red then blue as poison
+python -m discrete.model            # the fast model: circuit B from its SPICE bench, judged robustly (k=v: change a block)
+python -m discrete.blocks 0:32 OUT.json  # bench circuit B's blocks in SPICE on 32 seeds' tolerances
 python -m discrete.policies         # rules, not circuits, on the real body (and discrete.variation: bodies that differ)
 python -m discrete.draw             # redraw media/hold_drive_14.svg and .png
 python -m experiments.e1_oracle     # the rung-1 experiments, E1 to E7 (experiments/NOTEBOOK.md)
@@ -660,6 +664,7 @@ python -m experiments.h_run 64 1000 "share*"  # the healing experiments (H serie
 python measure_recruitment.py 32    # recruitment's local signals, neuron by neuron, watched from outside
 python test_rules.py                # check every sheet rule keeps the sheet brain's rules
 python test_compiled.py             # check the compiled circuit and eyes against plain numpy versions
+python -m discrete.test_model       # check the fast model and circuit B are as benched and lived in SPICE
 python watch.py organs              # one stage of the sheet brain on its own (organs, wiring; --show picks the numbers)
 python measure_organs.py            # when the coordinates and names come right, life by life
 python measure_wiring.py            # pulses sent from S1 and S2: how many arrive, and how soon
@@ -687,7 +692,7 @@ python creature.py --record frames  # save a life's frames as PNGs, headless (me
 | `measure_recruitment.py` | recruitment's local signals, watched from outside a circuit brain |
 | `blocks.py` | the block view: a circuit brain at level 1 (neurons, synapses, the states they hold), live; and the node view, level 0, for circuits without neurons |
 | `minimal/` | the minimal circuit search: `spec.py` (circuits as descriptions, the rules, scoring), `fastlife.py` (a whole life in one compiled call), `designs.py` (hand designs), `search.py` (polish), `prune.py`, `evolve.py` (open search), `league.py`, `check.py` (the real `Life` at two steps), `spice.py` (a circuit as SKY130 transistors, for ngspice), `sheets.py` (their schematics), `spice_life.py` (lives in SPICE, closed loop), `test_minimal.py`; its notebook `NOTEBOOK.md`, league table `LEAGUE.md`, results in `results/` |
-| `discrete/` | discrete circuits: `life.py` (netlists of common parts, lives closed loop in ngspice, the bench), `circuits.py` (the designs), `policies.py` (rules, not circuits), `bodies.py` (bodies built differently), `variation.py`, `screen.py` (bench screening), `tune.py`, `prune.py` (pruning and the ladder), `judge.py` (held-out, paired), `poison.py` (lives with poison), `draw.py` (the schematic), `watch.py` (live); its notebook `NOTEBOOK.md`, results in `results/` |
+| `discrete/` | discrete circuits: `life.py` (netlists of common parts, lives closed loop in ngspice, the bench), `circuits.py` (the designs), `cmos.py` (circuits in SKY130 CMOS: B), `model.py` (the fast model: B as its blocks' numbers), `blocks.py` (a circuit's blocks benched in SPICE, for the model), `test_model.py`, `policies.py` (rules, not circuits), `bodies.py` (bodies built differently), `variation.py`, `screen.py` (bench screening), `tune.py`, `prune.py` (pruning and the ladder), `judge.py` (held-out, paired), `poison.py` (lives with poison), `draw.py` (the schematic), `watch.py` (live); its notebook `NOTEBOOK.md`, results in `results/` |
 | `experiments/` | the recruitment experiments (E series: the recruiting circuit; H series: the healing circuit), their lab notebook (`NOTEBOOK.md`) and leaderboard (`LEADERBOARD.md`) |
 | `mixed_feedback.py` | the mixed-feedback element and circuit every circuit brain is built from |
 | `chip.py` | how each part of a circuit is built in transistors: the blocks an element takes, and so the power the supply delivers |

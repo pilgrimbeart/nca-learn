@@ -7,10 +7,10 @@ this repository lives in one place (below); other files link to it.
 ## Working
 
 - **Push only when the user says "Push".** Work directly on `main`. On "Push": commit in the foreground, then in one
-  background task run the three checks (`python test_rules.py`, `python test_compiled.py`, `python -m
-  minimal.test_minimal`) in a fresh venv built from `requirements.txt` alone, on a clean checkout of that commit (a
-  temporary `git worktree`), and push only if they pass. Say nothing if all pass; report a failure with its log. (A
-  fresh venv because another may hide a missing dependency. No GitHub CI.)
+  background task run the four checks (`python test_rules.py`, `python test_compiled.py`, `python -m
+  minimal.test_minimal`, `python -m discrete.test_model`) in a fresh venv built from `requirements.txt` alone, on a
+  clean checkout of that commit (a temporary `git worktree`), and push only if they pass. Say nothing if all pass;
+  report a failure with its log. (A fresh venv because another may hide a missing dependency. No GitHub CI.)
 - **Rip up and rewrite**: prefer a cleaner, smaller design to incremental edits that keep legacy structure.
 - **Real units, from few axioms** (the user's decision): every quantity in SI, every number that can be derived
   derived from the axioms in `units.py`; a design's own choices stay with the design, in SI. Rates are per 10 s, a
@@ -162,11 +162,13 @@ judging are every brain's.
   experiments that say so.
 - **The fast model is the lab; SPICE a check on reality** (the user's decisions, 2026-10-28): a closed-loop life in
   SKY130 takes minutes, a life in the fast model about a second, so ideas are tried, searched and judged in the fast
-  model (`policies.py`, and a circuit's blocks as their measured behaviour), and SPICE is used to ground them: short
-  bench runs measure each block's numbers, and their spread over seeds' tolerances, which the model's lives draw
-  from (else it flatters knife-edge designs); a model must reproduce its circuit's own closed-loop lives before it is
-  trusted; closed-loop SPICE lives only at milestones, for a design claimed as a result, judged held out. The fast
-  model is held to "nor may the simulator" too; never re-implement transistors in it.
+  model (`policies.py`, and a circuit's blocks as their measured behaviour: `model.py`, benched by `blocks.py`), and
+  SPICE is used to ground them: short bench runs measure each block's numbers, and their spread over seeds' tolerances,
+  which the model's lives draw from (else it flatters knife-edge designs); a model must reproduce its circuit's own
+  closed-loop lives before it is trusted; closed-loop SPICE lives only at milestones, for a design claimed as a result,
+  judged held out, to show it is close to something physically realisable, not identical to the model (the user,
+  2026-10-29: B lived at 80% of its prediction, close enough); retune in SPICE only when realism matters. The fast model
+  is held to "nor may the simulator" too; never re-implement transistors in it.
 - **Judged robustly** (the user's decision, 2026-10-29, confirming my proposal): in the
   fast model every life draws its blocks' tolerances (their spread benched in SPICE), and its body where an experiment
   says, for tuning and judging alike; the nominal model only for debugging. Variation is sampled, not swept (a

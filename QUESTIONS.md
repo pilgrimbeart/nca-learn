@@ -16,14 +16,10 @@ and when, why it matters, the line it belongs to, and the experiment that would 
   ideas: the extremum seeker with a better reward (the pulse rate rising as it nears); given three lives' time it
   only reaches 0.8 (D13), so the signal, not the time, is short. A zigzag within the drive failed (an eye's corridor
   shows nothing of a block's place within it).
-- **Does the new method stand?** (the user, 2026-10-28) The fast model was checked against SPICE on two closely related
-  circuits only. Its test is prediction: the model's best design built in transistors, its score predicted and written
-  down before it is lived closed loop in SPICE (held out), then compared. The bipolar results (lived in SPICE) and the
-  minimal line's (its own simulator with mismatch and noise) needn't be repeated. Done: the minimal leaders on
-  lopsided bodies collapse as the discrete designs do (`minimal/NOTEBOOK.md`, M16). Waiting: B in transistors benched
-  on 32 seeds (stopped for memory; to restart 4 at a time when the user says).
-- **The best design in transistors, verified**: the fast model's winner built in SKY130, its blocks benched, lived
-  closed loop in ngspice and judged held out (D12, D13).
+- **B's drive starts cleanly, in transistors** (D13; only when B's physical realism matters): the second thruster
+  fires alone at a drive's first beat in over half the drives, costing about 20% of its score in SPICE; a latch on
+  the beat halved it, but motor A still misses some first beats (its starved inverter, which also drives the
+  oscillator, is the suspect).
 - **The same task at Sepulchre's level** (the user, 2026-10-28): once the transistor-level design is concluded, repeat
   it with Sepulchre's blocks, and compare the low-level components.
 - **Which blocks are good to design with, and at what scale** (the user, 2026-10-28): sub-Sepulchre (gates,

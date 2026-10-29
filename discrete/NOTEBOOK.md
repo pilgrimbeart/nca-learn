@@ -30,12 +30,16 @@ per meal spent resting, moving and thinking), gain rate (meals per 10 s), food, 
 - **In SKY130 CMOS** (D12): a copy of the best policy, about 130 parts, works at a twelfth of `learn_avoid`'s power
   but is surely worse (gain about 0.8): its drive hold was 63 ms where the policy's is 0.2 s, and its doubt couldn't
   flip back for 3.6 s.
-- **The fast model** (D13): the circuit's blocks as their measured numbers, a life in a second, tied with ngspice on
+- **The fast model** (D13; `model.py`, its numbers benched by `blocks.py` on `cmos.py`'s circuit B): the circuit's
+  blocks as their measured numbers, a life in a second, tied with ngspice on
   the circuit's own lives; judged robustly (each life its own parts' errors), which exposed a knife-edge the nominal
   searches exploited. Its best design, **B**: doubt a bounded tally (+ a poison, - a food, no leak, the bit flipping
   at a threshold and the tally then reset), 2.38 held out with tolerances, learning costing it 0.15 against being told
-  the colour. Built in transistors (151 parts, 3.7 nW), every block works on the bench; its 32-seed bench (for the
-  model's prediction, before living it in ngspice) was stopped for memory, to restart 4 at a time.
+  the colour. Built in transistors (151 parts, 3.7 nW), benched on 32 seeds, its score predicted before ngspice
+  lived it: 2.03 predicted, **1.65 [1.47, 1.84] lived** (held out, 64 lives, the job done, none stranded): 80% of the
+  prediction. The gap is one quirk between blocks (the second thruster firing alone as a drive begins); with it in the
+  model they tie. **The method is close enough** (the user, 2026-10-29): design in the model, check in SPICE that it
+  is realisable, retune there only when realism matters.
 - **Bodies** (D13): with each thruster 0.5-2, every fixed design collapses (B 0.32, the best searched on such bodies
   0.76); told its balance, B gets 1.92; eight local rules for finding the balance reach at most 0.8.
 - **Ceilings** (D13): omniscient about 20, a perfect memory of what it has seen 4.5, B told the colour 2.54.
@@ -941,6 +945,66 @@ rest is physics: a weak body is slower). So the target for adapting is a single 
 **The user's decisions** (2026-10-29): the body stays as it is (learning a lopsided body's balance likely takes more
 than a 100 s life, and eyes that show which way it curves); no mapping brain now; robust judging and the log-uniform
 thrusters confirmed; B's bench to be rerun four at a time.
+
+**B in transistors, and the model's prediction, written before SPICE lives it** (2026-10-29). The circuit
+(`scratchpad/cmos.py`'s `pol` with mirror, counter, runfast; 151 parts): doubt a capacitor split between the rails
+(13.8 pF), poison stepping it up through four unit pMOS copies of the taste pulse, food stepping it down through four
+unit nMOS copies fed by a pMOS from the taste node (gate held at 1.1 V), no leak, the supply's rail the bound of
+trust, the flip pulling it down until its Schmitt lets go; drive hold 16 pF, boredom 45 pF, the run on the fast
+oscillator. Two of my own knife-edges found on the bench: the food pMOS's gate at 1.3 V left five seeds of 32 with a
+food step of 0.18 V instead of 0.65 (the taste node reached its clamp first); at 1.1 V all are sound. The bench
+first kept every node of every step (1.2 GB a run: eight at once ran the laptop out of memory); it now saves only
+what it reads (240 MB). Benched on 32 seeds (`blocksB.py`): hold 0.176 s, boredom 6.04 s, scan 12.3, drive 50, run
+43.6 per s, steps +0.656 V (poison) and -0.708 V (food), a drift towards trust of 0.020 V/s, threshold 1.476 V, reset
+to 0.195 V, 3.7 nW; each with its spread. **The prediction** (`predict.py`, the fast model with those numbers and
+spreads), on the seeds SPICE will live (50000-50031 x 2): **efficiency 2.03 [1.85, 2.21], gain 3.54, food 6.06,
+poison 1.26 per 10 s, 366 firings per 10 s, 2% stranded**; the mean over 512 other lives 2.28 [2.21, 2.35]. The
+method stands if SPICE ties with it, paired on those seeds (the interval of the difference including 0).
+
+**It didn't.** Lived closed loop in ngspice on those seeds (`trypc.py`, 3 h 50 min with 8 at a time): efficiency
+**1.65 [1.47, 1.84]**, gain 2.85, food 5.16, poison 1.15 per 10 s, 357 firings, none stranded, the job done; paired
+against the prediction, efficiency -0.38 [-0.68, -0.08], gain -0.69 [-1.20, -0.20]: the model surely flatters it.
+Poison (1.15 against 1.26) and firings (357 against 366) were as predicted, and food fell short by the same 15% in
+each third (15.8, 18.2, 17.7 against 18.6, 21.0, 21.1 per life), so learning is as modelled and foraging isn't: some
+block behaves differently in the closed loop than on the bench. (Life by life the two don't correlate, 0.06, as
+expected: the model draws its own tolerances, not the seed's.)
+
+*Tracing it.* Not the timers' response to sparse pulses: a lone eye pulse restarts the drive hold and boredom in full,
+the same as a train (`bench_lone.py`, 8 seeds). Not the tolerances' spread: the 32 held-out seeds benched
+(`benchH/`) and each lived in the model with its own numbers still gives 2.09 [1.91, 2.28], food 6.19
+(`predseed.py`). So some closed-loop behaviour is missing from the model. Four lives traced in ngspice (`trace_life.py`:
+each tick's mode, firings, sightings) against the model's of the same seeds (`trace_cmp.py`): the time in each mode,
+the firing rates and the sightings agree, but the circuit's drives are shorter (0.229 s against 0.278) and more
+frequent (10.7 against 9.2 per 10 s). The cause: **in the first tick of 55% of drives the second thruster fires alone**
+(its excess over the first: 0.54-0.57 in the first tick, 0.00 ± 0.03 in every other). Motor A fires on each beat's
+rising edge; motor B's gate (an AOI21: beat and DRIVE) opens the moment a food pulse starts a drive, and if the slow
+oscillator's output is already high (about half its cycle) B fires at once, without A: a lone turn at the very moment
+the block is sighted. The model drives with balanced pairs from the first beat.
+
+*It accounts for the miss.* With that firing in the model (`cmodel4`'s `lone`: at a drive's start, not from a run,
+B fires alone if the beat's phase is in the first 55% of its cycle), each seed with its own numbers gives 1.46
+[1.31, 1.61], and ngspice ties with it: +0.19 [-0.04, +0.43] in efficiency, +0.27 [-0.14, +0.68] in gain; the drives
+agree (0.244 s against 0.229, 10.3 against 10.7 per 10 s). Left over: during a drive the model fires 12% faster than
+the circuit (97 against 86 per s). This is an explanation after the fact, not a prediction, so the method isn't yet
+shown to stand. The lesson for benching: a block's numbers aren't enough, its **edges** (what happens at the moment
+one block turns another on) must be benched too; the stray firing lived between blocks, in no block's numbers.
+
+*A fix tried, and stopped.* Motor B latched to the beat (`cmos.pol`'s `edge`: DRIVE-or-RUN through a transmission
+gate while the beat's output y is high, held by a weak keeper through the beat, B on nor(y, latched); 12 transistors,
+0.4 nW more) only halved the stray firing (B alone in 23-38% of drives' first ticks, against 54-57%; four traced lives
+ate 50 food against 45): B's first firing waited for the next beat, but A still missed it at times. Not chased
+further. **The user's call (2026-10-29): the point of SPICE is to check we're close to something physically
+realisable, not to match the model exactly.** B is: it does the job held out in SKY130 at 3.7 nW, at 80% of the
+model's score, and the gap is understood. So the method stands as a lab: iterate design questions in the fast model;
+check a design in SPICE (and retune it there) only when its physical realism matters. Parked: the drive's first beat
+(`QUESTIONS.md`).
+
+*Moved into the repository* (2026-10-29): the fast model, slimmed to B's blocks, as `discrete/model.py` (doubt in the
+bench's volts; the failed variants of this entry stay in the scratch files named above, not kept), circuit B as
+`cmos.py`'s `cmos_b` (the D12 variants dropped), its bench as `blocks.py`, its 32-seed bench as
+`results/cmos_b_bench.json`; `test_model.py` checks the model lives the predicted lives (all 64 identical to the
+scratch model's) and B is built part for part as benched and lived. One seed in 32 (23) still has a food step of
+0.18 V against 0.70: the knife-edge of the food pMOS is rarer at vbf 1.1, not gone; the model's spread includes it.
 
 The plan, in the model (seeds 0-127 to tune, held out from 50000 to judge), then the best in transistors, its blocks
 benched, verified closed loop in ngspice and judged held out:

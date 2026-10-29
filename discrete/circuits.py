@@ -209,3 +209,7 @@ def learn_avoid(rng=None, cu=1e-8, ru=1e9, rd=1e6, **kw):
 
 
 CIRCUITS["learn_avoid"] = (learn_avoid, SUPPLY)
+
+from discrete.cmos import VDD, cmos_b  # noqa: E402  (SKY130 CMOS, D13)
+
+CIRCUITS["cmos_b"] = (cmos_b, VDD)

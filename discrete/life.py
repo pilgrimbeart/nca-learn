@@ -396,7 +396,8 @@ def bench(net: Netlist, seconds: float, nodes, supply: float = SUPPLY, pulses=()
     arr = (C.c_char_p * (len(lines) + 1))(*[ln.encode() for ln in lines], None)
     with tempfile.TemporaryDirectory() as d:
         ng.ngSpice_Circ(arr)
-        ng.ngSpice_Command(f"tran {step:g} {seconds:g} 0 {step:g} uic".encode())
+        ng.ngSpice_Command(b"save vdd#branch " + " ".join(f"v({n.lower()})" for n in nodes).encode())   # (only these: every
+        ng.ngSpice_Command(f"tran {step:g} {seconds:g} 0 {step:g} uic".encode())          # node kept took a gigabyte)
         out = os.path.join(d, "out.txt")
         ng.ngSpice_Command(f"wrdata {out} i(VDD) " .encode() + " ".join(f"v({n})" for n in nodes).encode())
         data = np.loadtxt(out)
