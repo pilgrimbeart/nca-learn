@@ -785,6 +785,20 @@ advanced on seeing food would do better, and after a turn of 360 degrees might d
   tunnelling supplies explicit, and a search for the most elegant native circuit: the baseline "if evolution had worked
   on silicon", from which to ask what a circuit must add to know it needs to learn, and to learn.
 
+## M16: the leaders on lopsided bodies (2026-10-28)
+
+The user's bodies (each thruster 0.5 to 2 times world.py's, drawn independently: `discrete/bodies.py`'s `THRUSTERS`),
+the leaders lived in the real `creature.Life` (silicon), held out (50000-50031 x 2; `scratchpad/minbodies.py`):
+
+| design | standard bodies | lopsided bodies |
+|---|---|---|
+| HR_31p_pol_pruned | 2.19 [1.92, 2.37] | 0.45 [0.14, 0.76], 25% stranded |
+| HR_32p_c | 2.05 [1.92, 2.16] | 0.35 [0.10, 0.61], 23% stranded |
+
+Neither does the job on such bodies, as no fixed discrete design does (`discrete/NOTEBOOK.md`, D13: balancing the
+drive for the body is what recovers it). On standard bodies they are about level with the discrete line's best
+model design (2.39).
+
 ## Lessons from this line, in full (moved from the old LESSONS.md)
 
 - **Match the brain's speed to the body's (impedance matching)** (2026-10-21, the user's observation live: the best

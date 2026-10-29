@@ -5,7 +5,10 @@ for all. What may differ, as factors on world.py's values (my choices, to confir
 - strength: both thrusters' push and turn together (a weaker or stronger motor pair, or a heavier body);
 - asymmetry: the left thruster's push and turn against the right's (two motors never match);
 - eyes: how often the eyes pulse for what they see (sensitivity);
-- drag: how fast speed and turning fade (friction).
+- drag: how fast speed and turning fade (friction);
+- left, right: each thruster's push and turn on its own (the user's choice, 2026-10-28, log-uniform confirmed
+  2026-10-29: each drawn independently, 0.5 to 2 times world.py's, so most bodies are lopsided and their speeds
+  differ: `THRUSTERS`).
 
 world.py is unchanged: a life's Body becomes a VariedBody after creature.Life builds it (the same world, wiring and
 start as the unvaried life of that seed).
@@ -22,6 +25,8 @@ from units import TICK
 
 SPREAD = {"strength": 2.0, "asymmetry": 1.25, "eyes": 2.0, "drag": 1.5}   # each factor drawn log-uniform within
                     # 1/x to x of world.py's value
+THRUSTERS = {"left": 2.0, "right": 2.0}                 # the user's bodies: each thruster 0.5 to 2 (log-uniform: the
+                                                        # median body as world.py's)
 
 
 def draw(seed: int, spread=SPREAD) -> dict:
@@ -36,7 +41,7 @@ class VariedBody(world.Body):
     def fire(self, thruster: str) -> None:
         f = self.factors
         side = math.sqrt(f.get("asymmetry", 1.0)) ** (1 if thruster == "left" else -1)
-        k = f.get("strength", 1.0) * side
+        k = f.get("strength", 1.0) * side * f.get(thruster, 1.0)
         self.speed += k * world.PUSH * self.forward()
         self.spin += k * (world.TURN if thruster == "right" else -world.TURN)
 

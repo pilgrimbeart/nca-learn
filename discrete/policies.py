@@ -263,7 +263,7 @@ if __name__ == "__main__":
         grid.append(("counter", dict(scan=s, k=k)))
     for s, h in itertools.product((16, 32, 64, 96), (0.05, 0.1, 0.2)):
         grid.append(("hold_drive", dict(scan=s, drive=s, hold=h)))
-    with ProcessPoolExecutor(4) as ex:
+    with ProcessPoolExecutor() as ex:
         for kind, p in grid:
             r = judge(kind, p, seeds, ex=ex)
             print(f"{kind:16s} {str(p):40s} eff {r['eff']:5.2f} gain {r['gain']:5.2f} food {r['food']:5.2f}"

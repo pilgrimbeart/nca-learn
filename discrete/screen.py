@@ -108,7 +108,7 @@ if __name__ == "__main__":
     ap.add_argument("--samples", type=int, default=200)
     ap.add_argument("--spread", type=float, default=4.0)
     ap.add_argument("--start", nargs="*", default=[])
-    ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--workers", type=int)
     a = ap.parse_args()
     build, _ = CIRCUITS[a.circuit]
     base = {k: p.default for k, p in inspect.signature(build).parameters.items()

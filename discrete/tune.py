@@ -4,7 +4,7 @@ lives a generation drew; the result is judged afterwards on seeds it never saw),
 a circuit counting only if it does the job (minimal/spec.py, objective). Each seed has its own parts' tolerances.
 
     python -m discrete.tune CIRCUIT [GENERATIONS] [--seconds 40] [--seeds 16] [--lam 10] [--by robust]
-                                    [--workers 8] [--start k=v ...] [--poison] [--only k ...]
+                                    [--workers N: default one per core] [--start k=v ...] [--poison] [--only k ...]
 
 --poison: each seed lived twice, red then blue as poison (discrete/poison.py), for a circuit that learns; --only: tune
 just these values, the rest kept at their defaults (or start's).
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     ap.add_argument("--seeds", type=int, default=16)
     ap.add_argument("--lam", type=int, default=10)
     ap.add_argument("--by", default="robust")
-    ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--workers", type=int)
     ap.add_argument("--sigma", type=float, default=0.04)    # in [0, 1] of each value's log range (1000 times for a
                                                             # resistor): 0.04 is about 1.3 times; the switch's window
                                                             # is only about 3 times wide

@@ -15,8 +15,7 @@ opening); the printed results in `results/` call the baseline circuit "minimal".
 - **All of it under the earlier noise.** Under noise and mismatch as biology makes them, these hand-built neurons fire
   on their own or miss pulses, and every circuit brain falls to about 1 food for each poison: the results stand only
   for the earlier simulator until the brains are rebuilt on a neuron that survives mismatch.
-- Open: recruitment under biological noise; de-recruitment (retiring a recruit failed in every form, H11); a recruit
-  that walks (`RECRUITMENT.md`).
+- Open questions: `QUESTIONS.md`.
 
 Rung 1 (RECRUITMENT.md): the knowing circuit (brains/knowing.py) learns what predicts pain in its taste neuron T, but T
 has no outputs. Can it grow, in its life and by local means only, the link that lets that knowledge change behaviour?

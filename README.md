@@ -84,6 +84,39 @@ The findings that changed the direction of the work, each told in full in the no
   patch. Told the answer from birth, they also give a ceiling to measure a brain against. But their best speeds made
   the circuit worse, because a circuit's hold and drive don't behave like the rule's: values have to be found in
   the circuit itself (`discrete/NOTEBOOK.md`, D8).
+- **Spinning faster doesn't see more.** The learning circuit scans by firing one thruster 54 times a second, which
+  spins it nearly three turns a second. Each firing moves it along the same small circle whatever the rate, so it
+  keeps re-sweeping the same view, and blocks flash past too fast for the eyes to fire. It sights food no more often
+  than a policy scanning at 16 a second, so a quarter of its firings buy nothing. The circuit learns and approaches as
+  well as the best policy; it loses on spending (`discrete/NOTEBOOK.md`, D10).
+- **Design in a fast model of the circuit's blocks; use SPICE to check it's real.** A circuit lived in SPICE with
+  real chip transistors takes minutes a life. Instead each block of the circuit (a timer, the oscillator, the
+  learning node) is measured once on SPICE's bench and copied into a simple model as a few numbers, which lives a
+  whole life in about a second. Checked against SPICE on the same lives, the model agreed within noise, so ideas are
+  now tried, searched and judged in the model, and SPICE checks the designs we claim (`discrete/NOTEBOOK.md`, D12,
+  D13).
+- **Give every simulated life its own flaws, or an optimiser will find a knife-edge.** In the model every copy of a
+  circuit was first identical. A search then set the learning threshold a hair below the most the learning node can
+  ever reach: perfect in the model, but in real silicon each chip's parts differ a little, and in a quarter of the
+  lives the bit could never flip. Now each life draws its own parts' errors (their spread measured in SPICE), and
+  that design lost half its score while a sounder one lost nothing (`discrete/NOTEBOOK.md`, D13).
+- **Learning which colour is food is a running tally of evidence, and in an unchanging world it shouldn't forget.**
+  The learning node ("doubt") adds a step for each poison and takes one away for each food, and flips the creature's
+  guess when the tally passes a threshold. Read as probability, each taste adds its evidence (the logarithm of how
+  much likelier it is if the guess is wrong than if it's right), and the threshold is a decision. Since which colour
+  is food never changes within a life, the tally should keep the trust that meals have built rather than leak it
+  away: the version that keeps it was surely best, needed no time constant at all, and costs only 0.15 against being
+  told the answer from birth (`discrete/NOTEBOOK.md`, D13).
+- **A lopsided body defeats every fixed brain.** With each thruster drawn between half and twice its usual strength,
+  every design, from either line, fell from about 2.2 to below 0.8 and stranded up to a quarter of its lives: a drive
+  meant to go straight circles past its food. Told its body, the same brain recovers nearly everything by balancing
+  its two thrusters, one number; but eight local rules for finding that number fell far short, because both eyes
+  look down one corridor and nothing in it shows which way the creature curves (`discrete/NOTEBOOK.md`, D13;
+  `minimal/NOTEBOOK.md`, M16).
+- **Behind these eyes, intelligence is worth about twice today's brains; the rest is what the eyes can't see.** A
+  brain told every block's place does ten times better than our best. One told only the places of blocks its eyes
+  have already seen, and remembering them, does twice as well: that is the most memory and reasoning can buy here.
+  The rest is coverage: an eye sees a corridor 2 mm wide, so most blocks are never seen (`discrete/NOTEBOOK.md`, D13).
 - **Check the simulator, not just the circuit.** A circuit simulator chooses its own time steps, within error limits.
   With ngspice's default limits, a transistor sitting right at its switch-on point turned on or not depending on
   where the steps happened to land, so results seemed to change with the step size. With the limits tightened,
@@ -476,16 +509,7 @@ The notebook (`discrete/NOTEBOOK.md`) tells how they were found.
 
 ## Next
 
-- **Object persistence**: a creature that has just lost sight of food sweeps back for it (the body can turn both
-  ways), the user's idea.
-- **Reversal**: every circuit so far learns only from food, so none unlearns when the poison colour swaps.
-- **A smaller robust circuit still**: the open search again, from HR_31p_pol_pruned.
-- **Sepulchre's discipline**: do circuits of mixed-feedback components (every node leaky, events from positive
-  feedback) do the job as simply? The first three-arm experiment settled nothing (`MIXED_FEEDBACK.md`): it needs a
-  start built of his components.
-- **Recruitment under biological noise**, on a neuron that survives mismatch; and a recruit that walks
-  (`RECRUITMENT.md`).
-- **Back to the sheet**: cellular automata again, with what the circuits have taught.
+The open questions, most valuable first, are in [`QUESTIONS.md`](QUESTIONS.md).
 
 ## Terms
 
@@ -582,8 +606,14 @@ The notebook (`discrete/NOTEBOOK.md`) tells how they were found.
 - **Policy**: a brain written as a few rules in code, not a circuit (`discrete/policies.py`): it gets the eyes'
   pulses and the taste and fires the thrusters, as any brain, with no parts, power or noise of its own. A life costs
   about a second against a circuit's minutes in SPICE, so policies rank ideas cheaply; told from birth which colour is
-  food (`oracle`), a policy gives the ceiling for its kind of brain on this body. Its best values don't transfer to a
-  circuit.
+  food (`oracle`), a policy gives the ceiling for its kind of brain on this body. A rule's own values don't transfer to a
+  circuit; a **fast model** does: a policy whose every part is a block of the circuit with the numbers measured on
+  SPICE's bench, checked against the circuit's own lives (`discrete/NOTEBOOK.md`, D13).
+- **Robust judging**: in the fast model, each life draws its own parts' errors (their spread over chips measured in
+  SPICE), and its own body where an experiment says, instead of every copy being perfect and identical.
+- **Doubt**: the learning node of the discrete circuits, a running tally of evidence that the creature's guess of the
+  food colour is wrong; in probability's terms a log-odds, kept as a CUSUM (a tally that can't go below a floor,
+  raising an alarm at a threshold: Page's 1954 test for a change).
 - **Sepulchre's rules**: an experiment's constraint, every node leaky except memory nodes and no clamps (gates and
   floating-gate memories allowed).
 
@@ -673,6 +703,7 @@ python creature.py --record frames  # save a life's frames as PNGs, headless (me
 | `diagram.py` | draws `media/cell.svg`, the diagram above (by hand from the rules: redraw it when one changes) |
 | `schematic.py` | draws `media/designed_circuit.svg` and `.png`, the designed circuit's schematic (by hand: redraw it when it changes) |
 | `AGENTS.md` | the rules, for agents and people: principles, honesty, every brain's constraints, how to work here |
+| `QUESTIONS.md` | the open questions, most valuable first: parked mid-quest, removed when answered |
 | `NOTEBOOK.md` | the lab notebook of the sheet brain, the body and the circuit simulator: what was tried, what failed and why |
 | `MIXED_FEEDBACK.md` | the mixed-feedback approach (Sepulchre and colleagues): what is new in it, the literature, and what it suggests here |
 | `RECRUITMENT.md` | how a brain might recruit more computational power locally, with no god: the literature, insights and plan |

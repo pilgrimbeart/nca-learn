@@ -24,7 +24,21 @@ per meal spent resting, moving and thinking), gain rate (meals per 10 s), food, 
   silenced eye empties the hold). Pruned from 48 parts (D9), and surely better than them. Its predecessor
   `learn_hold` (49 parts, D6) stranded: it circled in patches it had eaten clear of food.
 - **The ceiling** for this kind of brain on this body, as policies: 2.7 told the answer from birth, 2.3 learning
-  (D8). The circuit's gap to them is not in its speeds (the policies' best speeds made it worse).
+  (D8, D10). The circuit's gap isn't in learning or approaching but in spending: it scans at 54 per s for no more
+  sightings than at 16, and its giving-up run is fast and runs into poison (D10). Two speeds fight the bipolars'
+  collapsing gain at nanoamps (D11).
+- **In SKY130 CMOS** (D12): a copy of the best policy, about 130 parts, works at a twelfth of `learn_avoid`'s power
+  but is surely worse (gain about 0.8): its drive hold was 63 ms where the policy's is 0.2 s, and its doubt couldn't
+  flip back for 3.6 s.
+- **The fast model** (D13): the circuit's blocks as their measured numbers, a life in a second, tied with ngspice on
+  the circuit's own lives; judged robustly (each life its own parts' errors), which exposed a knife-edge the nominal
+  searches exploited. Its best design, **B**: doubt a bounded tally (+ a poison, - a food, no leak, the bit flipping
+  at a threshold and the tally then reset), 2.38 held out with tolerances, learning costing it 0.15 against being told
+  the colour. Built in transistors (151 parts, 3.7 nW), every block works on the bench; its 32-seed bench (for the
+  model's prediction, before living it in ngspice) was stopped for memory, to restart 4 at a time.
+- **Bodies** (D13): with each thruster 0.5-2, every fixed design collapses (B 0.32, the best searched on such bodies
+  0.76); told its balance, B gets 1.92; eight local rules for finding the balance reach at most 0.8.
+- **Ceilings** (D13): omniscient about 20, a perfect memory of what it has seen 4.5, B told the colour 2.54.
 - Values not yet tuned for `learn_avoid` (its values are learn_hold's and the prototype's). A pruned circuit
   must be judged held out: pruning's last cut, "not surely worse" on 12 seeds, was surely worse held out (D9).
 - **The simulator** is checked in both step and tolerance: ngspice's error control is tightened in every netlist
@@ -32,11 +46,7 @@ per meal spent resting, moving and thinking), gain rate (meals per 10 s), food, 
 - Queue 7 re-judged every circuit with the tightened control (D7) and re-tuned learn_hold (noise, no trend: its
   output kept as `results/learn_hold_tune_q7.json`, never judged); the foraging circuits' re-tunes were cancelled
   (their results stand, D7).
-- Open: bodies are still identical in tuning and judging (but for `--motors`), though the body's dynamics should
-  vary from life to life (D5); making that the default awaits the user's choice of factors and spreads. Identical
-  thrusters make a giving-up run exactly straight, and one such run stranded a life on the torus (D9).
-- Open: high-value resistors (500 MOhm to 1 GOhm) are rarely better than 5% and leak across a board's surface;
-  `life.TOL`'s 1% is optimistic for them.
+- Open questions: `QUESTIONS.md`.
 
 ## D1: the problem, from above (2026-10-26)
 
@@ -568,6 +578,377 @@ on the torus the run retraced one column, which it had eaten clear, for 48 s (x 
 spawns a block only when one is eaten, so the column stayed empty. A body whose thrusters differ, as any built one
 would (D5; README: the body must vary), curves on a straight run. A second reason for varying bodies: an exactly
 straight run is an artefact the circuits can be stranded by, and so could come to depend on.
+
+## D10: where the circuit spends, against the best policy (2026-10-28)
+
+The best learning policy (D8's ceiling grid: scan 16 per s, drive 40 per s for 0.2 s after a sighting, giving up
+after 3 s at 20 per s, poison dropping the hold) is more efficient than `learn_avoid` (2.08 against 1.78 on seeds
+50000-50039 x 2) but slower (gain 3.59 against 4.73). Both lived on those 80 lives, every tick recorded (the circuit's
+firings replayed through the body give the same meals; a scratch analysis): what the eyes saw, each sensor's pulses,
+the bit, each meal. Modes: *approach* (motor B fired in the last 0.1 s and the followed eye pulsed in the last 1 s),
+*run* (B firing, nothing seen), *scan* (B idle).
+
+| per life (100 s), means | circuit | policy | circuit, ct 1 nF (21 per s) | policy, scan = drive = 21 |
+|---|---|---|---|---|
+| firings per s: approach / run / scan | 27.0 / 20.5 / 28.5 | 23.1 / 5.2 / 8.2 | 12.0 / 11.1 / 8.1 | 15.6 / 6.7 / 9.1 |
+| share of time: approach / run / scan | 29% / 19% / 52% | 35% / 13% / 52% | 33% / 28% / 40% | 39% / 17% / 45% |
+| food in approach, per life | 78.2 | 57.1 | 28.3 | 42.5 |
+| poison: approach / run / scan | 11.6 / 2.75 / 4.65 | 7.0 / 0.11 / 4.56 | 4.6 / 1.6 / 4.3 | 5.8 / 0.1 / 3.6 |
+| food sightings per 10 s | 5.2 | 5.3 | 4.7 | 4.9 |
+| a block in view: ms, pulses | 20, 0.56 | 62, 1.73 | 47, 1.47 | 46, 2.01 |
+| bit right, flips, learned at | 96%, 3.8, 20 s | 94%, 1.2, 24 s | 90%, 2.6, 22 s | 91%, 1.1, 24 s |
+| mm per s | 37 | 18 | 16 | 16 |
+
+- **Learning isn't the gap**: both have the bit right about 95% of the time, learned by about 20 s.
+- **Approaching isn't either**: the circuit's approaches yield as much food per firing as the policy's (0.029 against
+  0.025 food a firing) and, at 54 pairs a second, more food per second: its higher gain.
+- **Scanning is wasted**: one thruster at 54 per s spins it 2.7 turns a second, a block crossing its view in 20 ms
+  and giving 0.56 pulses; at 16 per s, 62 ms and 1.7. Food is *sighted* equally often either way (5.2 per 10 s): a
+  single thruster's firings trace the same 1.25 mm circle at any rate, so spinning faster re-sweeps the same view.
+  20 firings per s, 0.4 meals per 10 s, buy nothing.
+- **Running is costly and eats poison**: the giving-up run fires both thrusters at the scan's 54 per s (108 a second
+  against the policy's 40), for 19% of the life, and runs into poison (2.75 a life against 0.1, each costing 2
+  meals): a poison sighting empties the hold for a moment, but u is still low and the PNP refills the hold, so the
+  run goes on. In the policy a poison sighting ends the run.
+- **Why slowing the oscillator failed (D8)**: it slowed the approach too (the drive is the scan's beat), and its
+  approaches then yielded a third of the food (28 against 78), with drive time without sightings up to 28%.
+
+**Policies on the same lives, to rank the structures** (giving up 3 s, poison dropping the hold, learning toggle n 2):
+
+| policy | efficiency | gain | poison |
+|---|---|---|---|
+| the circuit's speeds (scan, drive and run 54, hold 0.08 s) | 0.92 | 2.18 | 1.84 |
+| ... scan 16 | **1.95** | 3.47 | 1.44 |
+| scan 16, drive 54 for 0.15 s, run 20 | **2.29** | **4.11** | 1.21 |
+| scan 16, drive 40 for 0.2 s, run 20 (the grid's best) | 2.08 | 3.59 | 1.17 |
+
+A slow scan with a fast drive more than doubles the circuit-like policy, and the best mix beats the grid's best on
+both measures. (The circuit itself beats its own-speed policy, 1.78 against 0.92: its hold, topped up by each pulse
+and drained by each firing, approaches better than a timer; so the values won't transfer, D8, but the structure
+should.)
+
+**Suggestions, in order of expected worth** (spending: a firing 0.002 meals; the circuit spends 2.65 meals per 10 s,
+1 resting, 1.52 firing, 0.13 its own power):
+
+1. *Two speeds*: the oscillator slow (about 16-20 per s) while the hold is empty, fast while it is up; a switched
+   resistor beside rt, its switch driven from h through a high resistance (so as not to drain the hold, as D8's rf
+   did). Saves about 20 firings per s in scan: spending 2.65 to about 2.25, efficiency about 2.1 at the same gain,
+   if the approach is unchanged. About 3-4 parts.
+2. *Poison ends the run*: the silenced eye's current (at k) also lifts u, as a sighting does (an NPN on k pulling a
+   PNP from the supply into u, about 3 parts). Removes most of the 2.75 poisons a life eaten in runs: gain about
+   +0.5 per 10 s.
+3. *A slower run*: the run at the slow speed rather than the fast (with 1, the PNP into h should not also speed the
+   oscillator); about 15 firings per s less, but the policies don't say a slower run is better on its own.
+
+Together, if each works as measured: spending about 1.95, gain about 5.2, efficiency about 2.7, above the policy
+ceiling found so far on both measures.
+
+## D11: D10's suggestions in bipolars, and why they fight the parts (2026-10-28)
+
+Each tried on `learn_avoid` (scratch prototypes; training seeds 0-15 x 2, where `learn_avoid` scores efficiency 1.70,
+gain 4.47, 750 firings per 10 s):
+
+| change | parts | efficiency | gain | firings | why |
+|---|---|---|---|---|---|
+| the hold speeding the oscillator through a follower and rf | 48 | 0.0, -0.9 | | 460-520 | the oscillator stalls (below) |
+| two speeds by capacitance: 1 nF switched in while the hold is empty | 52 | 1.74 | 3.91 | 551 | half works: the diode's drop leaves the capacitor coupled for only part of the swing (32-37 per s, not 18) |
+| a second oscillator for the drive, from the hold; the scan suppressed while it runs | 56-58 | 0.4-1.2 | 0.9-2.3 | 365-590 | approaches too short: the drive oscillator drained the hold, or (through a follower) slowed as it sagged, and the half-way states of scan and drive overlapped |
+| poison resets the giving-up timer | 49 | 1.41 | 3.42 | 639 | 9% stranded: in a poison patch every sighting resets it |
+| **poison lifts the giving-up timer partly** (rpku 300 MOhm) | 50 | **2.01**, surely better | **5.29**, surely better | 744 | |
+
+Held out (seeds 50000-50039 x 2) the last was tied with `learn_avoid` (efficiency 1.89 against 1.78, +0.09 [-0.04,
++0.23]; gain +0.26 [-0.12, +0.63]): not kept.
+
+**Why the bipolar circuits resist two speeds.** At the nanoamps that keep power down, a 2N3904's gain collapses (its
+base leakage, the model's ISE, takes most of the base current: about 400 falls to about 20 at 0.39 V). The oscillator's
+regenerative pair then has too little loop gain: with too little timing current it settles half on instead of
+snapping (a at 0.89 V, b at 0.21 V); with too much it latches. An astable multivibrator at these currents sat in its
+DC state, both transistors half on. Every state in between (a hold half drained, a timer half sagged) leaves the
+circuit in a half mode. Positive feedback, which makes decisions clean, needs gain the parts don't have at these
+currents; complementary parts (CMOS) draw nothing at rest, so they can switch with gain to spare (the user's point).
+
+## D12: the best policy in SKY130 CMOS (2026-10-28)
+
+The user's decisions: parts readily realisable in SKY130 (its 1.8 V core MOSFETs, R, C, diodes, bias sources), for
+the power merits of complementary designs and the clean decisions of positive feedback. `Netlist(chip=True)` and
+`Netlist.M` (`life.py`); the eye's and taste's pulse 0.9 nA (`CHIP_EYE`), a motor input 0.1 pF.
+
+**A copy of the best policy** (D10: scan 16, drive 40, hold 0.2 s, bored after 3 s, the bit toggled by two poisons
+within 1.5 s; a scratch circuit, 126 parts, 116 of them MOSFETs): starved Schmitt triggers read each eye, OAI22 gates
+pick food and poison by the bit, a hold and a boredom capacitor each read by a Schmitt, one oscillator with a slow and
+a fast pair of starved current sources, a master-slave flip-flop of transmission gates for the bit. Every mode works
+on the bench at 2.5 nW. Closed loop (seeds 0-7 x 2):
+
+| version | efficiency | gain | food | last third | firings | power |
+|---|---|---|---|---|---|---|
+| first | 0.26 [-0.58, 1.06] | 0.39 | 3.1 | 5.6 | 245 | 10 nW |
+| the doubt window widened (below) | 0.53 [0.02, 1.08] | 0.79 | 3.1 | 3.0 | 240 | 11 nW |
+| `learn_avoid` (bipolar), same lives | | | about 8 | | about 750 | 130 nW |
+
+Both surely worse than `learn_avoid` (gain -3.8, -3.4); power a twelfth of it. Replayed through the body (D10's
+analysis): learning failed in 5 of 16 lives (seed 6 red ate 23 poisons, the bit never flipped), the approach succeeded
+after half the food sightings (`learn_avoid` 0.86), and the first motor-B firing came 49 ms after a sighting (0).
+
+- **The doubt window was a fraction of a second.** Two poisons flipped the bit only if the second came before the
+  taste node recovered, under a second, where the policy's window is 1.5 s; widening it needs about 0.6 pA, below
+  the chip's 1 pA. Each poison's charge is fixed by the interface, so it is copied four times over by a pMOS mirror
+  into an 8 pF doubt node drained by a 40 um long leak: one poison never flips the bit, two up to 1.5 s apart do (seeds
+  0 and 6, on the bench). Food no longer resets doubt.
+- **A pMOS's current isn't proportional to its width** at these currents in SKY130 (W 1 to 8 um: 0.93 to 1.28 nA at
+  the same gate voltage; the threshold moves with width): a mirror's gain is built from unit copies.
+- **A width below the models' range doesn't simulate**: varied by the seed, a 0.42 um pMOS fell below the narrowest
+  bin and ngspice refused it, three hours in. Widths are now floored at 0.36 um (nMOS), 0.42 um (pMOS).
+- **BSIM4 runs on OpenMP threads**: 8 lives at once ran 17 times slower than one. One thread each (`life.py`) gives
+  2.3 times, the laptop's cores sharing its power. A 100 s life alone takes about 5.5 min (3.3 s a second of life);
+  the bipolar circuits about 15 s.
+- **So design moves to the fast model** (the user's decision, AGENTS.md): blocks measured on the bench, given to the
+  policy, the policy checked against the circuit's own lives, SPICE to verify and judge.
+
+## D13: the fast model, and what the hand-design suggests (2026-10-28)
+
+**The model** (`scratchpad/cmodel.py`, to move into `discrete/`): the CMOS policy circuit as its blocks' measured
+behaviour, each block a few lines, its numbers from short bench runs (`blocks.py`): eye 1.4 ms delay, 10 ms hold;
+drive hold 63 ms after the last food pulse (the policy's: 0.2 s); boredom 2.7 s; scan 12.3, drive 44, run 12.6 per s;
+doubt +1.12 V a poison, leaking 0.43 V/s, the bit flipping as doubt rises through about 1.5 V and re-arming only below
+0.23 V (3.6 s after a flip, a third poison did nothing). On the same 16 lives as ngspice it is tied with the circuit
+(efficiency -0.36 [-0.99, +0.37]; food 3.41 against 3.14, firings 238 against 240), a life in about a second
+against 5.5 minutes. With motor B fired on each food pulse it was worse than the circuit (-0.65 [-1.11, -0.19]):
+two firings close together count twice in the model, once in the circuit (a motor re-arms between them); both said
+the option hurts.
+
+What it showed in minutes (seeds 0-63, efficiency):
+
+| change | efficiency |
+|---|---|
+| as built | 0.36 |
+| drive hold 0.2 s (the policy's) | 1.05 |
+| ... and doubt cleared by a flip | 1.72 |
+| ... and by food tasted | 1.88 |
+| ... but by food *seen* instead | -1.1: while the bit is wrong, "food" seen is poison, so doubt is wiped and it never flips |
+| doubt's leak 0.3 V/s instead of 0.43 (no clearing) | about 0 |
+
+A coordinate search (seeds 0-127): no clearing 1.91 (three poisons to flip); cleared by a flip 2.25, about the best
+policy's 2.3. Both pushed boredom to the search's limit (8 s): the give-up as built barely helps.
+
+**Doubt is a CUSUM** (the user asked, MacKay's way, whether it is Bayesian). Two hypotheses about the current bit, W
+(wrong) and R (right), exhaustive, so one number carries the belief: the log-odds, to which each event adds its log
+likelihood ratio. A poison adds log(lambda_W / lambda_R), a fixed step (the mirror's charge); food subtracts a large
+step; silence drifts at the difference of the total event rates (a constant leak: the leak is a current, not an RC).
+The floor at 0 V (doubt holds evidence against the bit, never confidence in it) makes it Page's CUSUM (1954), the
+optimal detector of a change (Lorden 1971); the threshold is Wald's sequential test, a decision (false flips against
+delay), not inference; the restart after the alarm is the reset on a flip; food's large step down, floored, is the
+reset on food. All three of the model's improvements are the CUSUM's own rules; the trap (clearing on food seen) is
+evidence with a likelihood ratio of about 1 taken as strong. Suggestive, not proven: leak / step should be (lambda_W -
+lambda_R) / log(lambda_W / lambda_R); the circuit's 0.43 / 1.12 = 0.38 per s, the bipolar's measured poison rates
+(0.18 per s right, 0.72 wrong) give 0.39, the CMOS circuit's own rates 0.17, the search chose 0.23 (with clearing on
+a flip). Where it isn't Bayesian: evidence comes in bursts (the creature clears food around it, leaving poison; chance
+clumps; an approach to food can sweep through a poison beside it), so two poisons close together mean less than two
+independent ones; and the data depend on its own actions. Blocks are placed uniformly; food and poison may touch
+(about 6% of food blocks touch a poison): kept so, the user's decision.
+
+**But our world never changes in a life**, so the CUSUM's floor, right for a world that changes, throws away
+confidence: after 50 meals two poisons flip the bit as at birth. A Bayesian here lets food build confidence (doubt
+resting mid-supply, food pulling it down, poison up, bounded against bursts), so its learning rate falls as trust
+grows. To test.
+
+**Two variables per unit** (the user's thread). Belief needs one number (the log-odds); acting on it without
+dithering adds one more bit of state, which way it last decided (hysteresis is a memory). The same in physics
+(position needs momentum to carry the present to the future), excitable media (the sheet brain's ignition and supply;
+FitzHugh-Nagumo's fast and slow variables), asynchronous cellular automata (a refractory state where a classic CA has
+a global clock): a one-dimensional autonomous system can only settle; keeping time needs two (Poincare-Bendixson).
+Every block of the CMOS circuit is that pair, a fast bistable (a Schmitt, the flip-flop) and a slow leaky integrator
+(a capacitor and a starved current): Sepulchre's fast positive with slow negative feedback, reached from below. The
+building block to design with is that pair; what differs from block to block is what feeds it and how fast it leaks.
+
+**Time constants against delays.** A loop with delay that reacts faster than its delay oscillates, so each slow
+variable must outlast the loop it closes: drive hold (about 0.2 s: the gaps in an approach), doubt's window (about
+1.5 s: an approach into its taste), boredom (seconds: a search). The circuit's 63 ms hold, shorter than its gaps,
+cost two thirds of its efficiency.
+
+**How fast to learn is itself worth knowing** (the user's): the right timescale depends on evidence's noise, the
+world's volatility, the loop's delay and how much is already known (a Bayesian's precision sets its learning rate:
+the second variable is the learning rate). We set it now from outside (the search); whether the brain should learn it
+depends on whether the best timescale differs from life to life in ways a unit can see locally (its input rates, its
+reversals, the delay from its outputs to their consequences). A unit tuning its own time constant from its own
+signals is self-optimisation without a god: the project's real goal.
+
+**Stigmergy** (the user's): eating writes to the world (food cleared nearby), the eyes read it back, so the world holds
+"been here". Poison *seen* with little food seen says "this patch is spent" (leave); poison *tasted* says "the bit is
+wrong" (flip): two hypotheses with opposite remedies, told apart by the sense the poison comes through. Charnov's
+marginal value theorem (1976): leave when the local rate falls below the habitat's; as circuit, two leaky integrators
+of food seen, a fast and a slow, compared. D11's "poison seen lifts the give-up timer" was this, half done.
+
+**Results overnight** (`scratchpad/cmodel2.py`, `msearch2.py`: each variant searched on seeds 0-127 from the best
+so far, then judged on 50000-50127, paired; nominal blocks, no tolerances yet):
+
+| variant | efficiency held out | gain |
+|---|---|---|
+| A: doubt cleared by a flip and by food tasted | 2.15 [2.05, 2.25] | 3.63 |
+| **B: confidence** (doubt down to -1.8 V, food -0.75 V, recovering at 0.04 V/s; a poison +1.12 V, threshold 0.8 V, leak 0.30 V/s) | **2.39 [2.30, 2.48]** | **4.05** |
+| C: A, and each poison seen ages the boredom timer 0.14 s | 2.18 [2.09, 2.28] | 3.64 |
+| D: A, leaving by a Charnov comparator (food seen fading over 2 s against 15 s; leave below 0.15 of it) | 2.20 [2.10, 2.29] | 3.69 |
+| E: doubt cleared by a flip only | 2.12 [2.01, 2.22] | 3.58 |
+
+**B is surely better than every other** (against A: efficiency +0.24 [+0.14, +0.36], gain +0.42 [+0.23, +0.61]);
+the rest are tied with each other. So confidence pays, as predicted: at birth one poison flips the bit, after a run of
+meals three are needed; the learning rate falls as trust grows. Two of B's settings sit at the search's limits (the
+threshold at 0.8 V, trust at -1.8 V): it may go further. Leaving by stigmergy (C, D) gains nothing over boredom in
+this model (both searches pushed boredom out, to 14 s in C); clearing on food adds nothing once a flip clears (A tied
+with E). Not yet with tolerances or varied bodies.
+
+**Judged robustly** (`scratchpad/cmodel3.py`). The blocks benched in ngspice on 32 seeds (`blocks.py`), each
+number's spread over the seeds' tolerances (sd of its log): eye hold 0.08, drive hold 0.14, boredom 0.21, scan and run
+0.10, drive 0.07, doubt's step 0.05, its leak 0.17; doubt's lower threshold 0.23 V within 0.01 (the upper one, not
+measured cleanly, taken as 0.02 V); assumed: a block redesigned keeps its relative spread. Each life then draws its
+own blocks; with bodies, its own thrusters (each 0.5 to 2, `bodies.THRUSTERS`). Held out (50000-50127):
+
+| variant | nominal | with tolerances | with tolerances and bodies |
+|---|---|---|---|
+| A | 2.15 | 1.06 [0.70, 1.37] | -0.27, 15% stranded |
+| B (confidence) | 2.39 | **2.38 [2.29, 2.47]** | **0.32 [0.17, 0.49]**, 11% stranded |
+| C | 2.18 | 1.03 | -0.09, 14% |
+| D | 2.20 | 1.09 | -0.18, 13% |
+| E | 2.12 | 0.99 | -0.31, 16% |
+
+- **Every search but B's had exploited a knife-edge.** A, C, D and E set doubt's threshold at 1.79 V, a hair under its
+  1.8 V ceiling (three poisons to flip); with tolerances 26% of lives drew it above the ceiling, so their bit could
+  never flip. B's threshold, 0.8 V, is nowhere near: B is unmoved by tolerances, and surely better than A by +1.32
+  [+0.97, +1.72]. The nominal model let the searches exploit it, "nor may the simulator"; the robust judge caught it.
+- **Lopsided bodies defeat every fixed design**: B falls to 0.32, 11% of lives stranded, none does the job (B still
+  surely best, +0.60 over A). A thruster at half strength makes the scan slow and the drive curve; a straight run
+  becomes a circle. So the question of a brain adapting to its body is now the main one.
+
+**Evidence is barely bursty** (`scratchpad/bursts.py`, B in the fast model with tolerances, 256 lives): with the
+bit right, poison is eaten at 0.094 per s; within 0.5, 1, 2, 5 s after a poison at 1.04, 1.11, 1.07, 0.99 times that;
+after a food at 1.47, 1.33, 1.13, 0.97 times (blocks lying close together), but a meal has already stepped doubt
+down. So poisons are close to independent evidence, and counting each as a full step is sound: the worry about bursts
+(above) was small.
+
+**Do the best timescales vary from life to life?** (`scratchpad/timescales.py`: B with tolerances, bodies each
+thruster 0.5-2 with the drive balanced by the oracle, seeds 0-127 x 2 grouped by strength, sqrt(left x right), into
+thirds; efficiency):
+
+| setting | weak | middling | strong |
+|---|---|---|---|
+| hold 0.1 / 0.2 / 0.4 s | 1.40 / **1.88** / 1.80 | 1.87 / **2.08** / 1.66 | **2.14** / 1.95 / 1.51 |
+| drive 30 / 44 / 65 per s | 1.74 / 1.88 / **1.90** | 2.01 / **2.08** / 1.84 | **2.23** / 1.95 / 1.42 |
+| boredom 3 / 6 / 12 s, scan 8 / 12 / 18 per s | flat within noise | | |
+
+Yes, predictably: a strong body wants a slower drive and a shorter hold, a weak one the reverse (what matters is the
+body's speed, rate x strength). But adapting them is worth about +0.1 overall (the oracle restoring every firing got
+2.00 against balance alone's 1.92), against the balance's +1.6. Doubt in B has no timescale left to learn.
+
+**The ladder's top rung: an omniscient brain** (`scratchpad/omni.py`; QUESTIONS.md). Told every block's place, its
+own pose and wiring and which colour is food, it steers to the nearest food whose straight path passes no poison
+(turning with the thruster that turns it towards it, allowing for the spin to come; pushing with both while it points
+there and goes slower than a cap). Held out (50000-50063 x 2, standard bodies): **efficiency about 20 [19, 22], gain
+about 58, food 52-65 per 10 s**, against B's 2.4 and 6. Even so it strands 9-16% of lives (it circles a target it
+can't turn tightly enough for): a lower bound. So these organs leave about ten times today's performance to a brain
+that knows where things are; the mapping rung (legal inputs only) will say how much of that knowledge can be had.
+
+**A short memory rung** (`scratchpad/memo.py`: B's blocks with tolerances, told which colour is food and its own
+heading, as perfect path integration would give; having lost sight of food it turns back to the heading where it last
+saw it, within so many s, then drives; held out, 50000-50063 x 2): without memory 2.54 [2.40, 2.66]; with 0.5-4 s of
+it about 2.0, worse. A first version was far worse (down to -2.0: it went back for food it had just eaten, ignoring
+poison in view); cleared by any taste and by poison seen, still worse: turning back costs firings and time, and a
+heading without a range rarely points at the block, lost because the creature moved past it. A memory pays only with
+range too: the mapping rung. And a by-product: **told the colour from birth, B gets 2.54; learning it, 2.39** (the
+same lives otherwise): learning costs it 0.15. The learning is near ideal; the headroom (to the omniscient 20) is all
+in finding food.
+
+**The seer rung, and what a map is worth** (`scratchpad/seer.py`): told the exact place of each block the moment an
+eye pulses for it (the nearest of that colour in the corridor), remembering it until eaten, told its pose and which
+colour is food; steering (as omni.py) to the nearest remembered food with no remembered poison on its path, scanning
+with one thruster when it knows none, and after 2 s of that running straight 0.5 s (without the run it ate what it
+had seen and then scanned in place: 70% stranded). Held out (50000-50063 x 2): **efficiency 4.53 [4.34, 4.73], food
+9.7 per 10 s**, 2% stranded. The ladder, every rung told the colour:
+
+| rung | efficiency | food per 10 s |
+|---|---|---|
+| omniscient (knows every block) | about 20 | about 58 |
+| seer (a perfect map of what it has seen) | 4.5 | 9.7 |
+| B | 2.54 | 6.1 |
+
+A perfect map of what it has seen would nearly double B: that is the most intelligence (remembering and placing
+blocks) can buy behind these eyes. The rest, 4.5 to 20, isn't intelligence but coverage: an eye's corridor (2 mm
+wide, 15 mm long) never sees most blocks. A first mapper inferring places from pulses (`scratchpad/mapper.py`, an
+evidence grid) failed (0.6 food per 10 s): scanning from one spot, an eye can't tell how far a block is, so every
+cell of the corridor looks alike; it needs ranging by moving (parallax, the pulse rate as it nears).
+Given the seer's exploring run and lower thresholds it still got only about 1 food per 10 s (16 seeds x 2), firing
+about 900 times per 10 s: each pulse credited every cell along the corridor as strongly as if the block were in each,
+so the map filled with false lines of food. A sound mapper needs a proper sensor model (one nearest block per
+corridor, the evidence shared out along it): a substantial build, left open.
+A second mapper with that sensor model (`scratchpad/mapper2.py`: an occupancy grid; each tick, per eye, the chance
+that the nearest block of its colour lies in each bin along the corridor, or none, weighed by the pulses' Poisson
+likelihood; bins nearer than it emptied, it filled, those behind kept): judged cell by cell no cell passed 0.32 (the
+evidence spreads over the corridor's width) and it ate blind; judged by a block's chance within a block's size, it
+avoids poison well (food:poison 8 in the last third) but finds only 2.0-2.4 food per 10 s, firing about 800 times
+(efficiency 0.45-0.65, 16 seeds x 2). Still a poor lower bound: a mapping brain that beats B is possible (the seer's
+4.5), but building one is a robotics project of its own.
+
+**Reversal: confidence, bounded, doesn't cost it** (`scratchpad/reversal.py`; an experiment only, the task never
+swaps): the poison colour swapped at 50 s, B against E (doubt floored at 0), tolerances, 50000-50127 x 2. Just after
+(50-70 s) B eats food 4.87 and poison 2.16 per 10 s (ratio 2.3), E 4.10 and 2.88 (1.4); in the last 20 s B 6.04 and
+1.00 (6.0), E 5.62 and 1.46 (3.9). B's trust is bounded (about two and a half meals' worth), so two or three poisons
+undo it: the bound is the hedge a Bayesian makes against a world that might change. So B gets both: it keeps trust
+where the world is steady and reverses when it isn't.
+
+**Adapting to the body** (`scratchpad/cmodel4.py`; held out, tolerances and bodies each thruster 0.5 to 2):
+
+| brain | efficiency | stranded |
+|---|---|---|
+| B, fixed | 0.32 | 11% |
+| the best fixed design for such bodies (searched on them) | 0.76 [0.65, 0.88] | 7% |
+| B, the drive balanced for its body (told it: an oracle) | **1.92 [1.82, 2.02]** | 0% |
+| B, every firing restored to the standard body's (oracle) | 2.00 [1.91, 2.09] | 0% |
+| B on standard bodies | 2.38 | 0% |
+
+Straightening the drive recovers nearly all of it: one number per life, the ratio of the two motors' drive rates (the
+rest is physics: a weak body is slower). So the target for adapting is a single balance, worth up to +1.6.
+- **Extremum seeking** (each approach nudged one way, alternately; its food pulses against their running mean move the
+  balance the way its nudge went; all local to the drive): 0.15 to 0.53 on training seeds (0-63). It finds the right
+  balance in about half the lives, in 40 to 60 s of a 100 s life; others never get there. Slow, because each
+  approach's signal is weak and noisy.
+- **A dead end: the time to re-find a lost block as the balance's sign.** I reasoned that a drive curving with the
+  scan loses its block on the far side, found again late, and one curving against it on the near side, soon. Measured
+  (balance set wrong on purpose by -0.6, 0, +0.6, 40 lives each): median re-find 0.75, 0.46, 0.47 s. It is shortest
+  near the right balance, an extremum, not a gradient; used as a sign it made things worse (to 30% stranded).
+- **Extremum seeking's settings searched** (step 0.02-0.05, nudge 0.15-0.35, averaging over 3 or 8 approaches):
+  every one about 0.4-0.5; the signal, not the settings, limits it.
+- **A dead end: system identification from the scan.** Scanning alternately with each motor, the world sweeping past
+  should show each motor's turn. Sightings begun per firing came out reversed (a slow sweep breaks one block into
+  several sightings, a fast one misses some); pulses per firing pointed the right way but compressed to 0.14 of the
+  truth (residual sd 0.22: inverted, an error of 1.6), the forward motion each firing also gives drowning the turn.
+  The alternating scan alone cost a little (-0.12 against 0.15: it re-covers ground).
+- **Sweeping back the other way after a lost block** (a feedback, not a learned number): no help (about 0.0). The
+  block isn't lost behind it: a lopsided drive circles past it. Straightening needs steering during the drive, and an
+  eye's corridor gives no side.
+- **A dead end: a zigzag within each approach** (the balance wobbling every 0.1-0.4 s, the food pulses in its two
+  halves compared, lock-in style): no better than not adapting (-0.12 to 0.10, up to 26% stranded). A first try was
+  biased (every approach began in the same half, its first moments rich in pulses: the balance ran to its limit on
+  every body). The deeper reason: a block wholly inside an eye's corridor pulses the same wherever it lies in it, so a
+  small wobble changes nothing the eye sees until the block leaves; the wobble only spoils approaches.
+- **Given time, extremum seeking stalls** (`scratchpad/longbody.py`: one body kept 300 s, each 100 s judged, seeds
+  0-63 x 2): with small steps (0.01) 0.37, 0.81, 0.83; larger (0.03) 0.38, 0.45, 0.49; not adapting about 0.2; the
+  oracle 1.9-2.1. Time doubles it, then it settles at less than half the oracle: its estimate never gets precise, each
+  approach's signal too noisy. Weak in itself, not merely slow. A meal ending an approach added to its reward (as 5
+  or 20 pulses): 0.49 and 0.11 against 0.37, within noise or worse.
+- So far, on such bodies, the best brain is the fixed design searched on them (0.76 held out) or extremum seeking
+  (about 0.5 in a life, 0.8 given three), against the oracle's 1.92. The eyes carry little about the balance's sign within an
+  approach; open.
+
+
+**The user's decisions** (2026-10-29): the body stays as it is (learning a lopsided body's balance likely takes more
+than a 100 s life, and eyes that show which way it curves); no mapping brain now; robust judging and the log-uniform
+thrusters confirmed; B's bench to be rerun four at a time.
+
+The plan, in the model (seeds 0-127 to tune, held out from 50000 to judge), then the best in transistors, its blocks
+benched, verified closed loop in ngspice and judged held out:
+1. clearing on a flip and on food tasted, searched;
+2. confidence (doubt below rest, food building trust) against the floor;
+3. leaving by poison seen, and by a Charnov comparator, against boredom;
+4. the best leak and threshold life by life and on bodies built differently: do they vary enough to learn?
+5. bursts: poison's rate just after a food or a poison, the bit right, against its mean.
 
 ## Lessons from this line, in full (moved from the old LESSONS.md)
 

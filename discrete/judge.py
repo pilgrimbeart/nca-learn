@@ -31,7 +31,7 @@ from discrete.prune import _one, build  # noqa: E402
 HELD_OUT = 50000        # the first seed judged: no search used seeds from here on
 
 
-def judge(name, params, cuts, seeds, seconds, workers=8, motors=None, finer=1):
+def judge(name, params, cuts, seeds, seconds, workers=None, motors=None, finer=1):
     from discrete.bodies import draw
     from minimal.spec import efficiency, gain, interval
     body = (lambda s: draw(s, {"asymmetry": motors})) if motors else (lambda s: None)

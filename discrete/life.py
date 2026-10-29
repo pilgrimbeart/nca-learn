@@ -16,7 +16,7 @@ Parts are real: each seed draws its own tolerances (TOL) for every resistor, cap
 parts off the shelf would vary. Noise: none in SPICE (a discrete circuit's thermal noise is microvolts against swings of
 volts); the body's pulses are random (Poisson, at random moments), and the tolerances differ seed by seed.
 
-    python -m discrete.life CIRCUIT [--seeds 0:8] [--seconds 100] [--workers 4] [--set k=v ...]
+    python -m discrete.life CIRCUIT [--seeds 0:8] [--seconds 100] [--workers N: default one per core] [--set k=v ...]
 """
 
 from __future__ import annotations
@@ -29,6 +29,9 @@ import threading
 import time
 
 import numpy as np
+
+os.environ.setdefault("OMP_NUM_THREADS", "1")  # read as libngspice loads: lives run in parallel processes, and BSIM4's
+                                               # OpenMP threads spinning at barriers made 8 at once 17 times slower
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -46,9 +49,15 @@ ACCURACY = ".options trtol=1 reltol=1e-4"
         # the job; at finer steps the timing converged but a marginal roam still fired or not by the step's chance.
         # Tightened, every step from 0.5 ms to 16 us agrees (discrete/NOTEBOOK.md D7)
 
-TOL = {"R": 0.01, "C": 0.05, "IS": 0.2, "BF": 0.25}
+TOL = {"R": 0.01, "C": 0.05, "IS": 0.2, "BF": 0.25, "W": 0.13}
         # each part's spread (one standard deviation, relative): 1% resistors, 5% capacitors (a 10% part's), a
-        # transistor's saturation current 20% (its VBE about 5 mV) and gain 25%
+        # transistor's saturation current 20% (its VBE about 5 mV) and gain 25%; a SKY130 MOSFET's width 13% (a current
+        # spread standing for its threshold's, about 5 mV at 4 x 4 um, in subthreshold)
+
+CHIP_TOL = {"R": 0.1, "C": 0.05}   # on a chip, resistors and capacitors spread more (Netlist(chip=True))
+CHIP_EYE = 0.9e-9       # A: on a chip, an eye's pulse and taste's are the technology's (brains.circuit.PULSES typical
+CHIP_MOTOR_C = 0.1 * PICO   # currents, units.I_TYP); a thruster driver's input an on-chip gate
+CHIP_ACCURACY = ".options trtol=1 reltol=1e-4 abstol=1e-15 gmin=1e-18"   # (picoamps must count)
 
 TRANSISTORS = {                                         # (kind, saturation current, gain, the rest)
     "NPN": ("NPN", 6.734e-15, 416.4, "XTI=3 EG=1.11 VAF=74.03 NE=1.259 ISE=6.734f IKF=66.78m XTB=1.5 BR=.7371 NC=2"
@@ -66,14 +75,18 @@ DIODE = "D(IS=5e-14 N=1.0 RS=5 CJO=2p M=0.33 TT=3u BV=85 IBV=1n)"
 class Netlist:
     """A circuit being written for one seed: parts with this seed's tolerances (rng None: nominal), counted."""
 
-    def __init__(self, rng=None):
-        self.rng, self.lines, self.models, self.count = rng, [], [], {"R": 0, "C": 0, "D": 0, "Q": 0}
+    def __init__(self, rng=None, chip=False):
+        self.rng, self.lines, self.models, self.count = rng, [], [], {"R": 0, "C": 0, "D": 0, "Q": 0, "X": 0}
+        self.chip = chip                # SKY130 parts (M: its 1.8 V MOSFETs), the chip's pulses, tolerances, limits
+        self.eye_amps = CHIP_EYE if chip else EYE
+        self.motor_c = CHIP_MOTOR_C if chip else MOTOR_C
         self.eye = ["s0", "s1"]         # the node each eye feeds (both may feed one: a wire, not a part)
         self.motor = ["m0", "m1"]       # the node each motor reads (both may read one)
         self.taste = None               # the node the taste feeds, if any
 
     def _vary(self, x, kind):
-        return x if self.rng is None else x * float(np.exp(self.rng.normal(0.0, TOL[kind])))
+        tol = CHIP_TOL.get(kind, TOL[kind]) if self.chip else TOL[kind]
+        return x if self.rng is None else x * float(np.exp(self.rng.normal(0.0, tol)))
 
     def R(self, a, b, ohms):
         self.count["R"] += 1
@@ -95,6 +108,14 @@ class Netlist:
         self.models.append(f".model Q{n}M {pol}(IS={self._vary(IS, 'IS'):.6g} BF={self._vary(BF, 'BF'):.6g} {rest})")
         self.lines.append(f"Q{n} {c} {b} {e} Q{n}M")
 
+    def M(self, kind, d, g, s, w=4.0, l=4.0):
+        """A SKY130 1.8 V MOSFET, "N" (nfet_01v8, body at ground) or "P" (pfet_01v8, body at the supply), W x L um,
+        its width varied by the seed (TOL["W"]) but never below the narrowest the models cover (0.36 um nMOS, 0.42 pMOS)."""
+        from minimal.spice import NFET, PFET
+        self.count["X"] += 1
+        model, body, wmin = (NFET, "0", 0.36) if kind == "N" else (PFET, "vdd", 0.42)
+        self.lines.append(f"X{len(self.lines)} {d} {g} {s} {body} {model} W={max(self._vary(w, 'W'), wmin):.4g} L={l:g}")
+
     def parts(self) -> int:
         return sum(self.count.values())
 
@@ -103,10 +124,16 @@ class Netlist:
                  f"VEYE veye 0 dc {supply:g}", ".model DMOD " + DIODE, ".model DEYE D(IS=1e-14 N=1)"]
                 + [f"I_eye{k} 0 {self.eye[k]} dc 0 external" for k in (0, 1)]
                 + [f"D_eye{k} {self.eye[k]} veye DEYE" for k in (0, 1)]
-                + [f"C_motor{k} {m} 0 {MOTOR_C:g}" for k, m in enumerate(dict.fromkeys(self.motor))]
+                + [f"C_motor{k} {m} 0 {self.motor_c:g}" for k, m in enumerate(dict.fromkeys(self.motor))]
                 + ([f"I_taste 0 {self.taste} dc 0 external", f"D_taste_hi {self.taste} veye DEYE",
                     f"D_taste_lo 0 {self.taste} DEYE"] if self.taste else [])
-                + self.models + self.lines + [ACCURACY])
+                + (self._mos_models() if self.count["X"] else [])
+                + self.models + self.lines + [CHIP_ACCURACY if self.chip else ACCURACY])
+
+    @staticmethod
+    def _mos_models() -> list:
+        from minimal.spice import models
+        return models().splitlines()
 
 
 class SpiceBrain:
@@ -231,9 +258,9 @@ def live(net: Netlist, seed: int, seconds: float, supply: float = SUPPLY, poison
     def on_isrc(val, t, name, i, u):
         name = name.decode().lower()
         if "taste" in name:
-            val[0] = EYE * (sum(a <= t < b for a, b in pulses[2]) - sum(a <= t < b for a, b in pulses[3]))
+            val[0] = net.eye_amps * (sum(a <= t < b for a, b in pulses[2]) - sum(a <= t < b for a, b in pulses[3]))
         else:
-            val[0] = EYE * sum(a <= t < b for a, b in pulses[int(name[-1])])
+            val[0] = net.eye_amps * sum(a <= t < b for a, b in pulses[int(name[-1])])
         return 0
 
     @GetSync
@@ -244,7 +271,8 @@ def live(net: Netlist, seed: int, seconds: float, supply: float = SUPPLY, poison
     ng.ngSpice_Init(on_char, on_stat, on_exit, on_data, on_init, on_bg, None)
     ident = C.c_int(0)
     ng.ngSpice_Init_Sync(on_vsrc, on_isrc, on_sync, C.byref(ident), None)
-    ng.ngSpice_Command(b"set ng_nomodcheck")
+    for cmd in (b"set ng_nomodcheck", b"set num_threads=1"):  # one OpenMP thread (above)
+        ng.ngSpice_Command(cmd)
     arr = (C.c_char_p * (len(lines) + 1))(*[ln.encode() for ln in lines], None)
     result = {}
 
@@ -312,7 +340,7 @@ def _one(a):
     return live(net, seed, seconds, supply)
 
 
-def judge(name, params, seeds, seconds=100.0, workers=4):
+def judge(name, params, seeds, seconds=100.0, workers=None):
     """Lives of a circuit on seeds (each with its own parts): the league's measures, all food, and the lives."""
     from concurrent.futures import ProcessPoolExecutor
     from minimal.spec import efficiency, gain
@@ -333,7 +361,7 @@ if __name__ == "__main__":
     ap.add_argument("circuit")
     ap.add_argument("--seeds", default="0:8")
     ap.add_argument("--seconds", type=float, default=100.0)
-    ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--workers", type=int)
     ap.add_argument("--set", nargs="*", default=[])
     a = ap.parse_args()
     lo, hi = (int(x) for x in a.seeds.split(":"))
@@ -354,12 +382,14 @@ def bench(net: Netlist, seconds: float, nodes, supply: float = SUPPLY, pulses=()
         keep.append(f(lambda s, i, u: 0))
     keep.append(Exit(lambda *a: 0))
     ng.ngSpice_Init(keep[0], keep[1], keep[2], None, None, None, None)
+    ng.ngSpice_Command(b"set num_threads=1")
     lines = [f"bench"] + net.text(supply)
     lines = [ln for ln in lines if not ln.startswith(("I_eye", "I_taste"))]
     for k, node in ((0, net.eye[0]), (1, net.eye[1]), ("food", net.taste), ("poison", net.taste)):
         ts = [t for e, t in pulses if e == k]
         if ts:
-            pts = " ".join(f"{t:g} 0 {t + 1e-6:g} {EYE:g} {t + PULSE:g} {EYE:g} {t + PULSE + 1e-6:g} 0" for t in ts)
+            e = net.eye_amps
+            pts = " ".join(f"{t:g} 0 {t + 1e-6:g} {e:g} {t + PULSE:g} {e:g} {t + PULSE + 1e-6:g} 0" for t in ts)
             a, b = ("0", node) if k != "poison" else (node, "0")
             lines.append(f"I_bench{k} {a} {b} pwl(0 0 {pts})")
     lines.append(".end")

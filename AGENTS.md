@@ -27,7 +27,11 @@ this repository lives in one place (below); other files link to it.
   | how each part is built in transistors, and so its parts and power | `chip.py` (written out for SPICE by `minimal/spice.py`) |
   | rankings | `experiments/LEADERBOARD.md`, `minimal/LEAGUE.md` (generated) |
   | background reading | `MIXED_FEEDBACK.md`, `RECRUITMENT.md` |
+  | open questions, most valuable first | `QUESTIONS.md` |
 
+- **Open questions** (the user's idea, 2026-10-28): a question that occurs mid-quest is parked in `QUESTIONS.md`
+  rather than chased; one answered leaves it, its answer in its line's notebook. With nothing else to do (the user
+  away), take the most valuable one.
 - **Where findings go.** Record every finding and dead end in its line's notebook as you go. When one changes the
   direction of the work, add it to the README's "What we've learned": a short heading, then what it means in plain
   terms a newcomer understands, with a link to the notebook. Keep each notebook's "Where it stands" current.
@@ -137,18 +141,39 @@ rule to both whenever one is added here.
 
 ## Discrete circuits (README; `discrete/NOTEBOOK.md`)
 
-Common parts on a 3 V coin cell, living closed loop in ngspice beside the body (`discrete/life.py`). The task, body,
-interface and judging are every brain's.
+Circuits of parts, living closed loop in ngspice beside the body (`discrete/life.py`). The task, body, interface and
+judging are every brain's.
 
-- **Parts as bought**: 2N3904 / 2N3906 models, resistors 1 MOhm to 1 GOhm, capacitors 47 pF to 30 nF
-  (`circuits.BOUNDS`); each seed draws its own tolerances (`life.TOL`). Parts counted one by one; power is what the
-  battery delivers.
+- **Parts readily realisable in SKY130** (the user's decision, 2026-10-28): its 1.8 V core nMOS and pMOS
+  (`Netlist(chip=True)`, `Netlist.M`), resistors, capacitors, diodes and bias sources, within the chip's limits
+  (AGENTS.md, the minimal search: 1.8 V, no capacitor above 50 pF, no resistance above about 77 GOhm, no current below
+  1 pA); each seed draws its own tolerances (`life.TOL`, `CHIP_TOL`: a transistor's width standing for its threshold's
+  spread). Complementary designs for power, positive feedback for clean decisions. Parts counted one by one; power is
+  what the supply delivers. (The circuits before were 2N3904 / 2N3906 bipolars on a 3 V coin cell, resistors 1 MOhm
+  to 1 GOhm, capacitors 47 pF to 30 nF, `circuits.BOUNDS`: my choice, never the user's.)
 - **No noise in SPICE**, by design (thermal noise is microvolts against swings of volts): the body's random pulses
   and each seed's tolerances are the variation. So a result must hold on held-out seeds (`judge.py`, from seed 50000)
   and at a finer step (`--finer`), with the error control tightened in every netlist (`life.ACCURACY`).
-- **Interface choices, mine, awaiting the user's confirmation**: an eye a photodiode giving 1 uA for each 2.5 ms pulse,
-  clamped at the supply; a motor a CMOS Schmitt input (fires rising through 2/3 of the supply, re-arms below 1/3); the
-  taste a 1 uA pulse into a `taste` node, + for food, - for poison, clamped a diode drop beyond either rail; bodies
-  built differently (`bodies.py`) only in experiments that say so.
+- **The interface** (on a chip, the user's confirmation, 2026-10-28; the rest my choices): on a chip, an eye's and the taste's pulse are the
+  technology's (0.9 nA, as the chip brains', `life.CHIP_EYE`) and a motor input an on-chip gate (0.1 pF); in the
+  bipolar circuits, an eye a photodiode giving 1 uA for each 2.5 ms pulse, clamped at the supply, and the taste a 1 uA
+  pulse into a `taste` node, + for food, - for poison, clamped a diode drop beyond either rail; a motor a CMOS Schmitt
+  input (fires rising through 2/3 of the supply, re-arms below 1/3); bodies built differently (`bodies.py`) only in
+  experiments that say so.
+- **The fast model is the lab; SPICE a check on reality** (the user's decisions, 2026-10-28): a closed-loop life in
+  SKY130 takes minutes, a life in the fast model about a second, so ideas are tried, searched and judged in the fast
+  model (`policies.py`, and a circuit's blocks as their measured behaviour), and SPICE is used to ground them: short
+  bench runs measure each block's numbers, and their spread over seeds' tolerances, which the model's lives draw
+  from (else it flatters knife-edge designs); a model must reproduce its circuit's own closed-loop lives before it is
+  trusted; closed-loop SPICE lives only at milestones, for a design claimed as a result, judged held out. The fast
+  model is held to "nor may the simulator" too; never re-implement transistors in it.
+- **Judged robustly** (the user's decision, 2026-10-29, confirming my proposal): in the
+  fast model every life draws its blocks' tolerances (their spread benched in SPICE), and its body where an experiment
+  says, for tuning and judging alike; the nominal model only for debugging. Variation is sampled, not swept (a
+  Monte Carlo average's error doesn't grow with the factors varied); designs compared on the same draws; each life's
+  draws kept, to regress its score on them. A nominal search exploited a knife-edge that tolerances exposed
+  (`discrete/NOTEBOOK.md`, D13).
+- **Ngspice runs one thread per life** (`life.py`): lives run in parallel processes, and BSIM4's OpenMP threads made
+  8 at once 17 times slower.
 - **Ngspice run as a library keeps every circuit**: unload each (`destroy all`, `remcirc`). Bench runs and closed-loop
   runs can't share a process.

@@ -16,7 +16,7 @@ they were written with: the "grown brain" is the sheet brain, the "mixed-signal 
 - **The circuit simulator** (`mixed_feedback.py`) carries noise and mismatch as a substrate makes them (silicon,
   biology, twice biology), with no way round them; under biology's, every hand-built circuit brain falls to about 1
   food for each poison (below: Noise as biology makes it).
-- Open: back to the sheet with what the circuits have taught (README: Next).
+- Open questions: `QUESTIONS.md`.
 
 ## Lessons from these lines, in full
 

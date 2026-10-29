@@ -2,7 +2,7 @@
 and drive policy's best settings for each body against the settings best for the standard body. If every body's best
 is the standard's, a fixed circuit is enough; the gap is what a circuit tuning itself in its life could gain.
 
-    python -m discrete.variation [--seeds 12] [--seconds 60] [--workers 2]
+    python -m discrete.variation [--seeds 12] [--seconds 60] [--workers N: default one per core]
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", type=int, default=12)
     ap.add_argument("--seconds", type=float, default=60.0)
-    ap.add_argument("--workers", type=int, default=2)
+    ap.add_argument("--workers", type=int)
     a = ap.parse_args()
     seeds = range(4000, 4000 + a.seeds)
     out = {}

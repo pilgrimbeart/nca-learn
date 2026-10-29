@@ -100,7 +100,7 @@ if __name__ == "__main__":
     ap.add_argument("results")
     ap.add_argument("--seeds", type=int, default=16)
     ap.add_argument("--seconds", type=float, default=40.0)
-    ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--workers", type=int)
     ap.add_argument("--ladder", action="store_true", help="keep cutting the least harmful part while the job is done,"
                     " however much is lost: what each part buys")
     ap.add_argument("--poison", action="store_true", help="lives with poison, for a circuit that learns")

@@ -3,7 +3,7 @@
 rate, food:poison in the last third, stranding, the job, each with its 95% interval). A circuit that ignores taste
 nets below 0.
 
-    python -m discrete.poison CIRCUIT [--seeds 0:8] [--seconds 100] [--workers 8] [--set k=v ...] [--finer F]
+    python -m discrete.poison CIRCUIT [--seeds 0:8] [--seconds 100] [--workers N: default one per core] [--set k=v ...] [--finer F]
         [--out F.lives]
 
 Held out: --seeds 50000:50032 (discrete/judge.py's HELD_OUT).
@@ -31,7 +31,7 @@ def _one(a):
     return lived(live(net, seed, seconds, supply, poison=poison, step=step), seconds, poison)
 
 
-def judge(name, params, seeds, seconds=100.0, workers=8, finer=1):
+def judge(name, params, seeds, seconds=100.0, workers=None, finer=1):
     """The paired lives (red, then blue as poison, on each seed) and their summary (finer: life.STEP divided)."""
     from minimal.spec import summary
     with ProcessPoolExecutor(workers) as ex:
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     ap.add_argument("circuit")
     ap.add_argument("--seeds", default="0:8")
     ap.add_argument("--seconds", type=float, default=100.0)
-    ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--workers", type=int)
     ap.add_argument("--set", nargs="*", default=[])
     ap.add_argument("--finer", type=float, default=1, help="divide SPICE's largest step by this (a result must hold)")
     ap.add_argument("--out", default=None, help="keep the lives here (a pickle, for discrete.judge --compare)")
