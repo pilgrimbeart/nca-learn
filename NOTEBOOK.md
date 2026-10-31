@@ -11,8 +11,8 @@ they were written with: the "grown brain" is the sheet brain, the "mixed-signal 
 - **The sheet brain works as designed and has been left as it is since 2026-10-17**: it builds its coordinates, organs
   and wiring from nothing, and learns the bit from taste alone in 24 lives of 32 (README: The sheet brain, Result). It
   is slow: about 6 s to build itself, a pulse 0.13 s to cross the sheet, and meals are few.
-- **The body** is the pointed triangle with two tail thrusters (`world.py`), in real units since 2026-10-22; earlier
-  bodies capped every brain (below: Telling food from poison).
+- **The body** is a disc with its mouth at the front of its rim and two thrusters on its rear rim (`world.py`), in real
+  units since 2026-10-22; earlier bodies capped every brain (below: Telling food from poison).
 - **The circuit simulator** (`mixed_feedback.py`) carries noise and mismatch as a substrate makes them (silicon,
   biology, twice biology), with no way round them; under biology's, every hand-built circuit brain falls to about 1
   food for each poison (below: Noise as biology makes it).
@@ -393,6 +393,15 @@ meals per 1,000 ticks.
   is compute: 37 ticks a second instead of 150.
 - **What would go further.** The eyes can't tell left from right, so a veer is always to one side, sometimes into
   poison lying beside the food: one sensor per side would fix it, but that is more sensors, a ground-rule change.
+
+### The disc (2026-10-31)
+
+The user's decision, after the arena's robots, each a triangle covered by five colliding discs, hooked each other as
+they turned past: every body a disc, simple to hit-test, its sensors and thrusters placed round it. Its radius is the
+triangle's circumradius (`world.RADIUS`, 2.3 mm), so the mouth sits where the point was and the thrusters where the
+tail's corners were (120 degrees either side of the mouth, on the rim): the physics, the eyes and eating are unchanged,
+and so is every life in this world (the checks pass unchanged). Only the drawing and the arena's collisions changed
+(`discrete/NOTEBOOK.md`, D18).
 
 ### The second body: a square with two forward thrusters (withdrawn 2026-10-17)
 

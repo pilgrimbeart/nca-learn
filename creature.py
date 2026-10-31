@@ -154,7 +154,7 @@ def measure(lives: int, seconds: float = 100.0, brains=tuple(BRAINS), all_food: 
 def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until: float = 100.0,
           all_food: bool = False) -> None:
     """A life, live. Left, the brain's own panel. Right, the world: red and blue blocks, lettered R and B,
-    the creature a triangle with its point marked, and what its eyes see. It runs FAST ticks a frame, but SLOW while the
+    the creature a disc with its mouth marked, and what its eyes see. It runs FAST ticks a frame, but SLOW while the
     brain wires itself and until a little after the creature starts moving; up and down take over the speed (down, past
     a tick a frame, waits 2, 4 ... 32 frames between ticks, so single spikes can be followed). The window can be
     resized (or maximised): the panels stay square, centred, in the proportions it opens with. Buttons
@@ -317,13 +317,15 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
             px = to_px((x, y))
             pygame.draw.rect(screen, BLOCK_RGB[c], (px[0] - 8, px[1] - 8, 16, 16))
             screen.blit(small.render(c[0].upper(), True, (255, 255, 255)), (px[0] - 4, px[1] - 6))
-        corners = body.corners()
-        pygame.draw.polygon(screen, (255, 255, 255) if yuck else (160, 160, 160), [to_px(p) for p in corners], 5 if yuck else 2)
+        rad = max(4, int(round(np.hypot(*np.subtract(to_px(body.head()), to_px(body.pos))))))
+        pygame.draw.circle(screen, (255, 255, 255) if yuck else (160, 160, 160), to_px(body.pos), rad, 5 if yuck else 2)
         pygame.draw.circle(screen, (255, 255, 255), to_px(body.head()), 4)
         recent = {k for when, k in life.firings[-4:] if life.t - when < 6}
-        for k, corner in zip(("left", "right"), corners[1:]):   # a ring at the corner of a thruster firing
+        for k, at in zip(("left", "right"), body.thrusters()):   # each thruster a square on the rim, ringed firing
+            px = to_px(at)
+            pygame.draw.rect(screen, (220, 220, 220), (px[0] - 2, px[1] - 2, 5, 5))
             if k in recent:
-                pygame.draw.circle(screen, (255, 255, 255), to_px(corner), 6, 2)
+                pygame.draw.circle(screen, (255, 255, 255), px, 6, 2)
         if yuck:
             px = to_px(body.pos)
             screen.blit(font.render("yuck!", True, (0, 0, 0), (255, 255, 255)), (px[0] + 14, px[1] - 28))

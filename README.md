@@ -102,6 +102,43 @@ The findings that changed the direction of the work, each told in full in the no
   ever reach: perfect in the model, but in real silicon each chip's parts differ a little, and in a quarter of the
   lives the bit could never flip. Now each life draws its own parts' errors (their spread measured in SPICE), and
   that design lost half its score while a sounder one lost nothing (`discrete/NOTEBOOK.md`, D13).
+- **The same brain built of neuron-like elements costs 8 times the power of logic gates.** One design (B) was built
+  three ways: as abstract blocks (timers, an oscillator, a tally), as Sepulchre's neuron-like elements (leaky nodes
+  with fast positive and slow negative feedback), and as logic gates. Both lower levels did what the blocks
+  predicted, so designing with blocks loses little and is fastest. But the neuron-like version needed 841 parts and
+  31 nW against the gates' 151 and 3.7 nW: each element is an amplifier drawing current all the time, and its slow
+  analogue signals are easily disturbed by noise, where gates swing rail to rail. What the elements offer instead is
+  knobs a brain could turn to tune itself (`discrete/NOTEBOOK.md`, D14).
+- **Within a life, the best tuning is small careful steps; the big search is evolution's.** A brain born with its
+  spending settings (how long to chase, when to give up and explore) up to 3 times wrong can nudge each setting and
+  keep the nudges that bring more meals per unit of energy, with no coordinator (each setting wiggling at its own
+  moments and noticing whether things then went better than usual), and it recovers a third of what was lost in a
+  long life. Hoping to find the best possible, we gave an idealised learner the same information (only its meals, what it
+  saw and its own effort) and unlimited computing power to explore cleverly. It did no better, and worse where the
+  settings matter little: meals come too rarely to tell good settings from bad ones far apart, so it kept exploring
+  and paying for it. Exploring wildly early in life (annealing) hurt the simple tuner too. Finding good designs from
+  scratch is for a search across many lives (evolution, or this project's searches); a life can only polish what it
+  was born with, or rescue itself when something is badly wrong, like a lopsided body. So each problem has its
+  solver (the user, 2026-10-30): what is the same in every life (how often meals come, how fast the body turns) is
+  best set by evolution or design; what differs between lives but shows clearly in experience (which colour is
+  food, a lopsided body) is best learned in the life; and what differs but barely shows (spending near its best) is
+  best made not to matter: a design whose best is broad, as B's turned out to be (`discrete/NOTEBOOK.md`, D15).
+- **A brain can grow a new reflex in its life, when something hurts that no sense predicts but an action can stop.** In
+  an *arena* of robots that eat each other by biting tails, being bitten hurts (a bad taste), and the biter is behind,
+  out of sight, so no sense can warn of it (the user's insight). Beside a brain evolution would build (one that steers
+  towards tails), a generic *grower*, told nothing of what it is for, notices bad tastes no sense predicted, grows one
+  new link from taste to the motors, and tries the simplest responses (fire one motor, the other, both, nothing),
+  judging each by the taste of the moment after it. It found a turn, which breaks a bite at once, in 97% of lives, and
+  gained three quarters of what the best designed reflex gains, judged on fresh arenas. Two things made it work: judging
+  every bite rather than whole trials (lives are short), and a predictor that compares what follows a sense with what
+  comes anyway. The obvious answer, speeding away, was worse than nothing: the biter just follows. Nor does it need a
+  menu holding the answer: a recruit of two knobs (how hard to fire each motor when bitten), jittered at each bite and
+  nudged towards whatever jitter tasted better, reached 86 to 97% of the best designed reflex, depending on where it
+  started. (Those figures left out what firing costs. Since 2026-10-31 the robots are discs and firing is charged.
+  Escape still grows and nets about as much as the best designed burst against the old tracker, and its control, pain
+  no action can stop, now costs; but against a tracker whose fixed habits are tuned for the arena (evolution's part)
+  it barely pays, +0.03 meals a 10 s: most of its value was the baseline's waste. A growth case must be judged against
+  a well-tuned baseline: `discrete/NOTEBOOK.md`, D18.)
 - **Learning which colour is food is a running tally of evidence, and in an unchanging world it shouldn't forget.**
   The learning node ("doubt") adds a step for each poison and takes one away for each food, and flips the creature's
   guess when the tally passes a threshold. Read as probability, each taste adds its evidence (the logarithm of how
@@ -111,10 +148,18 @@ The findings that changed the direction of the work, each told in full in the no
   told the answer from birth (`discrete/NOTEBOOK.md`, D13).
 - **A lopsided body defeats every fixed brain.** With each thruster drawn between half and twice its usual strength,
   every design, from either line, fell from about 2.2 to below 0.8 and stranded up to a quarter of its lives: a drive
-  meant to go straight circles past its food. Told its body, the same brain recovers nearly everything by balancing
-  its two thrusters, one number; but eight local rules for finding that number fell far short, because both eyes
-  look down one corridor and nothing in it shows which way the creature curves (`discrete/NOTEBOOK.md`, D13;
-  `minimal/NOTEBOOK.md`, M16).
+  meant to go straight circles past its food. Told its body, the same brain recovers nearly everything by balancing its
+  two thrusters, one number; but eight local rules for finding that number fell far short, because both eyes look down
+  one corridor and nothing in it shows which way the creature curves (`discrete/NOTEBOOK.md`, D13;
+  `minimal/NOTEBOOK.md`, M16). What does work, partly, is judging every drive rather than every meal: jitter the balance
+  a little at each drive, and keep moving it the way the drives that kept their block in view longer went. That closes
+  over a third of the gap in a short life, surely better than learning from meals (`discrete/NOTEBOOK.md`, D19). Far
+  better still is learning a model of the body by prediction: turning with one thruster alone, the creature sees the
+  same things come round again once a revolution, and how long a revolution takes says how strong that thruster is. With
+  a few minutes of such sweeps, deliberate experiments of its own, it finds its body almost exactly and closes some 90%
+  of the gap, surely beating every learner judged by outcomes. Sweeping only when it is eating badly costs an ordinary
+  body nothing: it never sweeps, and once a lopsided body's drive is fixed the meals rise and the sweeps stop of
+  themselves (`discrete/NOTEBOOK.md`, D20).
 - **Behind these eyes, intelligence is worth about twice today's brains; the rest is what the eyes can't see.** A
   brain told every block's place does ten times better than our best. One told only the places of blocks its eyes
   have already seen, and remembering them, does twice as well: that is the most memory and reasoning can buy here.
@@ -147,8 +192,9 @@ everything is explicit circuit, with noise modelled on biology's built into the 
 
 ## The creature and its world
 
-A triangle whose point is the mouth, with eyes looking ahead (one sensor for each colour) and a forward thruster at each
-corner of its tail: both thrusters together drive it straight ahead, one alone makes it veer. Red and blue blocks lie
+A disc whose front point is the mouth, with eyes looking ahead (one sensor for each colour) and a forward thruster on
+each side of its rear rim: both thrusters together drive it straight ahead, one alone makes it veer. (It was a triangle
+until 2026-10-31; the disc keeps the mouth where the point was, so every life is unchanged.) Red and blue blocks lie
 about the world; one colour is poison, alternating from life to life. A brain fires its two motors and is told only what
 its sensors see and the taste. In *all-food lives* both colours are food, so there is nothing to learn: the control for
 recruitment, which should then grow nothing.
@@ -200,9 +246,9 @@ In the live view:
 
   For a circuit brain: each neuron's voltage (sky blue), a white line at each spike.
 - **Right, the world:** red blocks and blue blocks, lettered R and B, and the creature, a
-  triangle pointing the way it faces, its point (the mouth) marked, and what its eyes see: a pale beam ahead, the
+  disc with its mouth marked by a dot on the rim the way it faces, its thrusters small squares on the rear rim, and what its eyes see: a pale beam ahead, the
   corridor its mouth will sweep, fading with distance, each of its rays stopping at the first block it meets (so a
-  near block casts a shadow). A ring at a corner of the tail shows that thruster firing. "yuck!" is a poison meal.
+  near block casts a shadow). A ring round a thruster shows it firing. "yuck!" is a poison meal.
 - **Below:** the tick, the stage of life, which colour is poison this life, and the recent meals; and buttons for `b`,
   `i` and `s` (above). The life waits while the rules or the schematic are open. The window can be resized or
   maximised: the panels stay square, centred, and the block view takes the rest.
@@ -618,6 +664,11 @@ The open questions, most valuable first, are in [`QUESTIONS.md`](QUESTIONS.md).
   raising an alarm at a threshold: Page's 1954 test for a change).
 - **Sepulchre's rules**: an experiment's constraint, every node leaky except memory nodes and no clamps (gates and
   floating-gate memories allowed).
+- **Arena**: a world of ten robots and nothing else, each with a red mouth and a blue tail; a robot eats by holding
+  its mouth on another's tail (a meal a second), which tastes good to the biter and bad to the bitten; an empty belly
+  is death, and a newborn takes its place (`discrete/NOTEBOOK.md`, D18).
+- **Grower**: generic machinery beside a brain that notices a gap (a bad outcome nothing predicted), grows a recruit
+  where it is, and lets the recruit try the simplest operations, keeping what works; told nothing of what it is for.
 
 **Names**: in prose "the sheet brain", "the designed circuit", "the knowing circuit"; on the command line `sheet`,
 `designed-circuit`, `knowing-circuit` and so on. Recruitment's baseline, the **baseline circuit**, was called the
@@ -692,7 +743,7 @@ python creature.py --record frames  # save a life's frames as PNGs, headless (me
 | `measure_recruitment.py` | recruitment's local signals, watched from outside a circuit brain |
 | `blocks.py` | the block view: a circuit brain at level 1 (neurons, synapses, the states they hold), live; and the node view, level 0, for circuits without neurons |
 | `minimal/` | the minimal circuit search: `spec.py` (circuits as descriptions, the rules, scoring), `fastlife.py` (a whole life in one compiled call), `designs.py` (hand designs), `search.py` (polish), `prune.py`, `evolve.py` (open search), `league.py`, `check.py` (the real `Life` at two steps), `spice.py` (a circuit as SKY130 transistors, for ngspice), `sheets.py` (their schematics), `spice_life.py` (lives in SPICE, closed loop), `test_minimal.py`; its notebook `NOTEBOOK.md`, league table `LEAGUE.md`, results in `results/` |
-| `discrete/` | discrete circuits: `life.py` (netlists of common parts, lives closed loop in ngspice, the bench), `circuits.py` (the designs), `cmos.py` (circuits in SKY130 CMOS: B), `model.py` (the fast model: B as its blocks' numbers), `blocks.py` (a circuit's blocks benched in SPICE, for the model), `test_model.py`, `policies.py` (rules, not circuits), `bodies.py` (bodies built differently), `variation.py`, `screen.py` (bench screening), `tune.py`, `prune.py` (pruning and the ladder), `judge.py` (held-out, paired), `poison.py` (lives with poison), `draw.py` (the schematic), `watch.py` (live); its notebook `NOTEBOOK.md`, results in `results/` |
+| `discrete/` | discrete circuits: `life.py` (netlists of common parts, lives closed loop in ngspice, the bench), `circuits.py` (the designs), `cmos.py` (circuits in SKY130 CMOS: B), `model.py` (the fast model: B as its blocks' numbers), `blocks.py` (a circuit's blocks benched in SPICE, for the model), `tuner.py` (B tuning its own knobs), `test_model.py`, `policies.py` (rules, not circuits), `bodies.py` (bodies built differently), `variation.py`, `screen.py` (bench screening), `tune.py`, `prune.py` (pruning and the ladder), `judge.py` (held-out, paired), `poison.py` (lives with poison), `draw.py` (the schematic), `watch.py` (live); its notebook `NOTEBOOK.md`, results in `results/` |
 | `experiments/` | the recruitment experiments (E series: the recruiting circuit; H series: the healing circuit), their lab notebook (`NOTEBOOK.md`) and leaderboard (`LEADERBOARD.md`) |
 | `mixed_feedback.py` | the mixed-feedback element and circuit every circuit brain is built from |
 | `chip.py` | how each part of a circuit is built in transistors: the blocks an element takes, and so the power the supply delivers |

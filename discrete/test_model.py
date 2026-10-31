@@ -2,7 +2,9 @@
 discrete/NOTEBOOK.md, D13): the model lives the same lives as when circuit B's score was predicted; each life draws
 its own blocks, the same for a seed every time; doubt is a bounded tally that flips the bit at its threshold; the
 drive's stray first beat is there only when asked for; and circuit B is built as it was benched and lived in SPICE
-(its parts, and each seed's tolerances in the same order, the latch built last so that it moves no other part's).
+(its parts, and each seed's tolerances in the same order, the latch built last so that it moves no other part's); the
+self-tuning brain (discrete/tuner.py, D15) lives its lives as when it was moved, fixed it is B where born, and its
+knobs move only by tuning and stay within their bounds.
 No SPICE here: the bench (discrete/blocks.py) and the closed loop (discrete/life.py) need ngspice."""
 
 from __future__ import annotations
@@ -15,12 +17,16 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from discrete import model as M  # noqa: E402
+from discrete import tuner as T  # noqa: E402
 from discrete.cmos import cmos_b  # noqa: E402
 
 # B from its bench, judged robustly, on held-out seeds 50000-50001 (red, then blue as poison): each third's (food,
 # poison), as the model lived them when it was moved into discrete/ (2026-10-29)
 LIVED = [[(14, 6), (15, 0), (29, 5)], [(17, 4), (14, 4), (21, 2)], [(29, 3), (26, 4), (27, 4)],
          [(20, 5), (12, 6), (33, 1)]]
+# the tuner on seed 50000 (red as poison), 300 s, on the standard body and a lopsided one, as when it was moved into
+# discrete/ (2026-10-30; it reproduced D15's 10,000 s lives exactly)
+TUNED = [[(49, 7), (80, 10), (57, 19)], [(7, 7), (6, 9), (33, 12)]]
 
 
 if __name__ == "__main__":
@@ -78,4 +84,18 @@ if __name__ == "__main__":
     rest0 = [ln for ln in parts(n0) if not {"m1", "m1_m", "m1_bc"} & set(ln.split())]   # all but the AOI21
     report(f"the latch on motor B ({e0.parts()} parts) moves no other part's tolerance", e0.parts() == 163
            and parts(e0)[:-18] == rest0)   # (its 18 transistors, for the AOI21's 6)
+
+    L = [T.life((dict(p, body=b), spread, 50000, 300.0, "red")) for b in (0, 1)]
+    report("the self-tuning brain lives its lives as when it was moved (2 lives, 300 s)",
+           [[tuple(t[:2]) for t in l[:3]] for l in L] == TUNED)
+    report("its knobs stay within their bounds", all(np.log(T.BOUNDS[k][0]) <= v <= np.log(T.BOUNDS[k][1])
+                                                     for l in L for _, x, _ in l.trace for k, v in x.items()))
+    fixed = T.life((dict(p, tune=0), spread, 50001, 100.0, "blue"))
+    born = T.mistuned(M.drawn(p, spread, 50001), 50001, 3.0)
+    plain = M.life((dict(born, vary=0), spread, 50001, 100.0, "blue"))
+    report("fixed (tune=0), it lives B's life with the knobs it was born with (the floor)",
+           [tuple(t) for t in fixed] == [tuple(t) for t in plain])
+    still = T.life((dict(p, eta=0.0), spread, 50000, 300.0, "red"))
+    report("its knobs move only by tuning (eta=0: each stays where born, only wiggling)",
+           all(x == still.trace[0][1] for _, x, _ in still.trace) and L[0].trace[-1][1] != L[0].trace[0][1])
     sys.exit(1 if failed else 0)

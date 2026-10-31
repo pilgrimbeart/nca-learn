@@ -40,8 +40,58 @@ per meal spent resting, moving and thinking), gain rate (meals per 10 s), food, 
   prediction. The gap is one quirk between blocks (the second thruster firing alone as a drive begins); with it in the
   model they tie. **The method is close enough** (the user, 2026-10-29): design in the model, check in SPICE that it
   is realisable, retune there only when realism matters.
+- **Which level to think at** (D14): B at three levels. Tuned in its own simulator, B built of Sepulchre's elements
+  ties with the block model (2.06 against 2.03) but costs 8 times the power of gates (31 nW, 841 parts, against 3.7 nW,
+  151) and fails with biology's noise, which no setting of its knobs survives but size does: four times the capacitance on the bit's chain does the job with it for 48 nW (twice biology's still fails). Blocks are the fastest place to design, and both levels below realise them
+  faithfully; gates are cheapest; Sepulchre's elements have the knobs a self-tuning brain would turn.
+- **Self-tuning** (D15): B's knobs mistuned at birth (up to 3 times off), tuned from its own outcomes (taste and its
+  own firings) in 10,000 s lives. A tuner with no coordinator (each knob wiggling at its own moments, correlating
+  its wiggle with a broadcast "better than usual") reaches 1.98 against the floor's 1.74 and the ceiling's 2.47
+  (+0.24 [+0.15, +0.34]), and on lopsided bodies, the balance a sixth knob, 0.90 against 0.19 and 1.94. A Bayesian
+  optimiser with the same information and unlimited computation does no better (1.61, never converging; 0.92 on
+  lopsided bodies), and annealing hurts: within a life, perfect is local; the global search is evolution's.
+- **Tricks nobody designed** (D16): 200 random sequence detectors beside B, each adding a beat to a motor, credited
+  by taste through fading tags. On lopsided bodies +0.30 [+0.16, +0.44] over B (0.59, stranding 61% to 14%), by
+  learning (+0.71 over the same detectors not learning), but not by steering: it prunes the harmful random beats and
+  keeps those that unstrand. On the standard body it costs 0.26.
+- **Recruitment, case 1** (D17): with taste wired to nothing, a generic grower (predict what follows each eye, grow a
+  recruit where a bad outcome is predicted and happens anyway, let it try the pathway's operations) grows in every
+  poison life on the poison eye, in no all-food life, and, trying every operation once before keeping the best,
+  reaches 1.80, tied with B's designed learning (2.01; the unwired -3.35).
+- **The arena** (D18): ten robots that eat each other by biting tails, being bitten a bad taste; each robot a disc
+  since 2026-10-31 (the triangle's colliding discs hooked each other; the figures below are the triangle's; on the
+  disc, with firing charged (uncharged before: every earlier arena figure ignored firing's cost), escape grown nets
+  +0.14, matching the best scripted burst, but against a tracker whose standing policy is tuned for the arena only
+  +0.03; no pursuit or memory pays; what standing policy pays depends on the population). Beside the tracker
+  (a Braitenberg steerer, evolution's design here), a grower told nothing of its purpose grows escape from bites, a
+  pain no sense predicts: a recruit of two knobs (each motor's rate when bitten), jittered at each bite and judged by
+  the taste just after, reaches 86-97% of the best scripted reflex held out (+0.22 to +0.25 meals a 10 s net, the
+  ceiling +0.25); its gain vanishes when no response can stop the pain. Steering, pursuit and a memory of recent
+  bites failed to certify as growth cases.
+- **A lopsided body learned from every drive** (D19): the drive's balance jittered at each drive and judged by the
+  food pulses that drive saw, the jitter shrinking with experience: 0.98 [0.78, 1.17] held out in 2,000 s lives
+  (floor 0.36, ceiling 1.92), surely above D15's meal-judged tuner on the same lives (+0.26 [+0.07, +0.45]). On the
+  drive started in step (D20): 1.02 against the tuner's 0.80 (+0.21 [+0.02, +0.40]), ceiling 2.15: 37% of the gap.
+- **The body learned by prediction** (D20): scanning with one motor turns the body steadily, so what it sees comes round
+  once a revolution, and the period gives that thruster's strength. Sweeps of its own (5 s with one motor, every 20 s
+  until its estimate stalls) and a bank of coincidence counters find both periods: 1.66 [1.55, 1.76] held out on
+  lopsided bodies, 83% of the gap closed, surely above every outcome-judged learner (+0.68 over D19's); with 8 s
+  sweeps 1.71 (87%), costing 0.18 on the standard body (2.46 to 2.27), all of it in the first minutes. Sweeping
+  only when frustrated (fewer than 8 meals in the last 32 s) removes that cost (2.47, tied with B) and keeps the gain
+  (1.68 on lopsided bodies, 85% of the gap, 5 sweeps instead of 12; 1.39 on fully varied ones). A bank of 96
+  log-spaced coincidence counters, chance from their neighbours (lateral inhibition) and a fixed comb does as well as
+  the exact histogram held out: what is left for a circuit is the delay line holding a sweep's pulses. Sweeping at birth and every 12 s until the evidence is in, gated by the meal rate on a
+  clock that stops while sweeping: lopsided 1.81 held out, 93% of the gap; standard 2.48, tied with B. A balanced
+  drive used to start out of step (each motor its own oscillator, motor 1's stale from the last drive), costing
+  ceilings and learners alike; started in step (`sync=1`): ceiling 2.15, learner **2.03 held out, 93% of the gap**,
+  standard body 2.45, tied with B; fully varied: ceiling 1.94, learner 1.59. In counters on the fixed drive, lopsided:
+  the bank 1.92 (87% of the gap, a little below the exact histogram, -0.11 [-0.25, -0.01]), its delay line's stages
+  holding up to 3 pulses (2 bits) 1.88, tied with the bank; one-bit stages 1.78 (79%), probably below it. Restricted
+  to what a circuit could hold (192 counters, 2-bit stages; still blocks, nothing built in transistors): lopsided 1.93 (88%), fully varied 1.68, standard 2.49, each
+  tied with the exact histogram.
 - **Bodies** (D13): with each thruster 0.5-2, every fixed design collapses (B 0.32, the best searched on such bodies
-  0.76); told its balance, B gets 1.92; eight local rules for finding the balance reach at most 0.8.
+  0.76); told its balance, B gets 1.92 (2.15 with its drive started in step, D20); eight local rules for finding the balance reach at most 0.8; judging each
+  drive does better (D19), and a model learned from its own turning far better (D20).
 - **Ceilings** (D13): omniscient about 20, a perfect memory of what it has seen 4.5, B told the colour 2.54.
 - Values not yet tuned for `learn_avoid` (its values are learn_hold's and the prototype's). A pruned circuit
   must be judged held out: pruning's last cut, "not surely worse" on 12 seeds, was surely worse held out (D9).
@@ -1013,6 +1063,815 @@ benched, verified closed loop in ngspice and judged held out:
 3. leaving by poison seen, and by a Charnov comparator, against boredom;
 4. the best leak and threshold life by life and on bodies built differently: do they vary enough to learn?
 5. bursts: poison's rate just after a food or a poison, the bit right, against its mean.
+
+## D14: which level to think at (2026-10-29)
+
+The user's plan (QUESTIONS.md): find the best level to think at, then, at that level, ask how a brain can know it
+isn't doing a good job and compensate (tuning itself or recruiting). So: one architecture, B, rendered at three
+levels, compared on its score, what it costs (parts, power), and what each level makes easy.
+
+| level | built of | B |
+|---|---|---|
+| below Sepulchre | gates, Schmitt triggers, flip-flops, capacitors | `cmos.py`'s `cmos_b` (D13) |
+| Sepulchre | leaky nodes, saturating elements, events from fast positive feedback and slow negative feedback | below |
+| above Sepulchre | timers, oscillators, tallies as primitives | `model.py` (D13) |
+
+**B at Sepulchre's level** (`scratchpad/sepb.py`), in the minimal line's language (mixed_feedback's nodes and
+elements) under its rules "mixed" (every node leaky but memory nodes, no clamps), lived by its simulator (noise,
+mismatch), its parts and power as `chip.py` builds it in SKY130: 13 nodes, 20 elements. The eyes and taste leaky
+nodes a pulse holds up for tens of ms; the bit a memory node with a node copying its negative; food and poison routed
+by four elements reading the bit, each gated by one eye's pulse; hold and boredom leaky nodes (0.19 s, 3.7 s) read
+at thresholds; drive-or-run a node either sets; the beat Sepulchre's relaxation oscillator (fast positive feedback,
+slow negative at 0.25 s, a faster negative at 55 ms gated by drive-or-run), motor A the oscillator, motor B following
+it through an element gated by drive-or-run; doubt a memory node written by taste through two sigmoids set well
+away from rest; the flip a monostable (fast positive and slow negative feedback) that resets doubt to trust and
+writes the bit against a slow copy of itself (master-slave).
+
+Getting it to work took four fixes, each a lesson about the level: a tanh reading a node at its rest writes all the
+time once mismatch shifts its offset (10% of a typical voltage), so a memory written by taste drifted: read events
+through sigmoids set away from rest; a node counts a spike only after it falls below a typical voltage below zero, so
+an oscillator that leaks back to zero never fires a motor; an oscillator whose "fast" node is slower than its "slow"
+feedback settles at a fixed point instead (Sepulchre's condition: the resting point on the fast I-V curve's
+negative slope); a taste node held up for 30 ms wrote doubt 1.2 V per poison.
+
+Benched (`sepbench.py`, as `blocks.py` benches `cmos_b`): hold 0.17 s, boredom 5.8 s, scan 11.3, drive 44, run 44
+beats per s, a poison's step 0.72 V (B's: 0.18 s, 6.0 s, 12.3, 50, 44, 0.66 V). Untuned, judged held out (50000-50031
+x 2): with silicon's noise it does the job, efficiency 0.83 [0.64, 1.02], food 3.8, poison 1.2 per 10 s; with
+biology's noise it eats as much poison as food (-0.85; twice biology's -1.56): its bit flips by itself (4 times in 30
+s with no input at biology's noise, 150 at twice), the slow nodes (taste, eyes, hold) moving 0.14-0.27 V by noise,
+enough to cross thresholds 0.3-0.6 V away. Built, it is **841 parts (638 transistors) and 29 nW**, against
+`cmos_b`'s 151 and 3.7 nW. Rejecting noise costs power at this level: a node's noise falls with a larger capacitor
+or a shorter time constant, both needing larger currents, and every element draws twice its gain from rail to rail
+all the time, gated or not (`chip.static`). `cmos_b` never meets the problem: its signals swing rail to rail, and
+real thermal noise is microvolts. So the levels are compared in silicon, where both would be built.
+
+**Tuned** (`sepsearch.py`: minimal.search's CMA-ES on 17 of its numbers, by efficiency, silicon's noise, fresh seeds
+each generation, 30 generations, 20 minutes): held out, **efficiency 2.06 [1.85, 2.27]**, gain 3.30, food 5.21,
+poison 0.95 per 10 s, the job done, 31 nW, 841 parts; still failing with biology's noise (-0.90). Paired on the same
+worlds: **tied with the block model's prediction for B** (+0.03 [-0.26, +0.35]), and better than `cmos_b` lived in
+SPICE (+0.41 [+0.17, +0.67]), though that was never retuned in SPICE and keeps its drive-start quirk. The search
+slowed the scan (tau 0.48 s), shortened the hold's leak and set doubt's threshold higher; its power didn't fall
+(efficiency barely feels 30 nW against the creature's 1 uW).
+
+**The three levels, for B:**
+
+| | blocks (`model.py`) | Sepulchre (`sepb.py`) | gates (`cmos_b`) |
+|---|---|---|---|
+| efficiency, held out | 2.03 predicted (2.38 over more lives) | 2.06, its own simulator | 1.65 lived in SPICE (2.0 modelled) |
+| parts / power | (none: numbers) | 841 (638 transistors) / 31 nW | **151 / 3.7 nW** |
+| noise | each life's tolerances | silicon's yes, biology's no | none in SPICE (rail-to-rail swings) |
+| an idea tried in | **a second a life** | about a second a life, an hour to build, 20 min to tune | minutes a life; a day to design (D12-D13) |
+| knobs | every block's number | every element's gain, offset and time constant, each settable by another node (a gate) | widths and lengths fixed when built; bias voltages |
+
+What it says:
+- **Both lower levels realise the blocks faithfully**: the Sepulchre circuit, tuned, ties with the block model;
+  the transistors reach 80% of it untuned, the gap one quirk where blocks meet (D13). So designing at the block level
+  loses little, and ideas are tried there fastest.
+- **For the same function in silicon, Sepulchre's level costs 8 times the power and 5.6 times the parts of gates.**
+  Each of its elements is a biased amplifier drawing twice its gain all the time; a starved CMOS gate draws a
+  nanoamp only as it switches. And its slow analogue nodes are easily moved by noise, where gates swing rail to rail.
+- **What Sepulchre's level gives instead is knobs**: every gain, offset and time constant is a bias, settable by
+  another node through a gate, so a slow loop inside the circuit can tune it. That is the next phase's question
+  (tuning towards better outcomes), so the comparison on B, a design of decisions with almost no regulation, is
+  biased towards gates (the user agreed, 2026-10-29: regulation means tuning towards outcomes, the next phase).
+- What biology's noise costs at Sepulchre's level (2026-10-31): not reachable with B's knobs. The same CMA-ES (30
+  generations of 16, fresh seeds each) judged by the worst of silicon's, biology's and twice biology's noise, from
+  the hand-built start, never left a score of about -11.6 (each generation's best within noise of the first), while
+  its step size grew: a flat landscape. Its final design is worse everywhere held out: silicon 0.63 [0.42, 0.83],
+  biology -0.66 [-0.78, -0.53], biology x2 -0.48, 33 nW. Six of its 17 knobs ended on a bound, all towards slower
+  and quieter (the scan's and drive's time constants at 0.8 s and 0.15 s, the eyes' resistance at 74 GOhm, near the
+  chip's 77; doubt's threshold, the boredom level and the poison eye's gain at their limits): it wants filtering B's
+  structure doesn't have. The knobs are gains, offsets and time constants of B's existing elements, not added
+  capacitance or structure, so this says B as drawn can't be tuned into robustness; the minimal line's leaders,
+  searched over structure too, survive biology at about 500 parts and 130 nW, so robustness can be built, not tuned
+  (scratchpad `sepsearch.py`, `v/sep_search_silicon_biology_biologyx2.json`).
+- Robustness built by size (2026-10-31): the silicon-tuned design with every node's capacitance and every current into
+  it scaled by K (resistances by 1/K: the same dynamics, a node's noise down about sqrt(K), its power up K), the inputs
+  (eyes, taste: the body's pulses are fixed charges) and boredom (already 50 pF, the limit) left alone. Held out:
+
+  | scaled | silicon | biology | biology x2 | power |
+  |---|---|---|---|---|
+  | nothing (K 1) | 2.06, job | -0.90 | -1.53 | 31 nW |
+  | all, K 4 | 1.92, job | **0.86 [0.49, 1.19], job** | -1.24 | 99 nW |
+  | all, K 16 | 1.56, job | 0.84, job | -0.91 | 367 nW |
+  | the bit's chain (bit, its copy, doubt, flip), K 4 | 2.04, job | **0.67 [0.24, 1.07], job** | -1.29 | 48 nW |
+  | the bit's chain, K 16 | 1.97, job | 0.82, job | -1.09 | 113 nW |
+
+  So biology's noise is survived by size, not by tuning, and mostly in one place: the bit flipping by itself. Four
+  times the capacitance on the bit's chain alone does the job with biology's noise for 48 nW (half again B's), still
+  841 parts (the minimal line's leaders: about 500 parts, 130 nW). Beyond K 4 biology gains nothing and silicon
+  slowly loses; twice biology's noise fails at every size, so what remains is in the nodes not scaled, the inputs
+  most likely (the taste node's noise stepping doubt, an eye's faking a sighting), which size can't fix: they need
+  structure (a filter that waits for a pulse's whole charge). Untraced. (scratchpad `sepscale.py`, `ONLY=` for a
+  subset; `v/sepscale.log`, `v/sepscale_bit.log`.)
+
+## D15: can a brain tune its own spending? (2026-10-29)
+
+Phase 2 of the plan (QUESTIONS.md), at the block level (the user's choice, D14): a brain that notices it isn't doing
+well and compensates, tuning towards better outcomes (never a setpoint, AGENTS.md). Testbed: B's five spending knobs
+(hold, boredom, scan, drive and run rates) drawn at birth up to 3 times off its searched values (log-uniform, each
+life its own), against the floor (fixed there) and the ceiling (B's values, fixed), on the same lives, robustly judged
+(`scratchpad/selftune.py`; 16 held-out seeds x 2).
+
+**The tuner**: simultaneous perturbation (SPSA; node perturbation, as in Fiete and Seung's birdsong model, 2006).
+Each epoch, every knob nudges itself by its own random sign for one half and the other way for the other half; the
+brain's efficiency in each half (food - 2 poison, against resting and its own firings, all counted from taste and its
+own motors) moves each knob along its own nudge by their difference. Each knob knows only its own sign, its own
+setting and one broadcast outcome, and the outcome only taste and the brain's own firings (one imperfect timer
+serves both halves, so its error cancels). **Not local in one way** (the user asked, 2026-10-29): a shared epoch
+clock switches every knob's halves in lockstep, and a central accountant holds the first half's tally, divides and
+compares: a controller over the knobs. A broadcast outcome is plausible (as dopamine); a brain-wide metronome for
+every unit's experiment is not. The coordinator-free form, continuous-time node perturbation (Fiete and Seung):
+each knob wiggles at its own random moments, one leaky integrator turns taste and firings into an outcome rate, its
+difference from its own slower average is broadcast, and each knob correlates it with its own recent wiggle through
+a trace of its own. And a block model in Python, not a circuit: in one, each knob a memory node setting a block's
+bias.
+
+| tuner | life | efficiency | against the floor (paired) |
+|---|---|---|---|
+| ceiling (B, fixed) | 2,000 s | 2.52 [2.45, 2.59] | |
+| floor (mistuned, fixed) | 2,000 s | 1.74 [1.51, 1.97] | |
+| meals, nudges 15%, epochs 40 s | 2,000 s | 1.72 [1.51, 1.93] | none |
+| + food sightings 0.02 of a meal each | 2,000 s | 1.67 | none |
+| + nudges 30% | 2,000 s | 1.86 [1.73, 2.00] | |
+| meals, nudges 30%, epochs 80 s | 2,000 s | 1.73 | none |
+| sightings 0.02, nudges 30% | **10,000 s** | **1.93 [1.87, 1.99]** (last third 1.95) | **+0.18 [+0.03, +0.32]**; gain tied |
+
+Why so weak: **the landscape is flat near B and steep only far from it** (`landscape.py`, each knob alone scaled,
+64 lives): within about x0.7 to x1.4 no knob moves efficiency by more than 0.2; beyond x2 hold, scan and drive cost
+0.3 to 1.2; the run rate barely matters anywhere, and boredom is flat but for x1/3. So a nudge has signal only where
+a knob is badly off, and there a 30% nudge separates the halves by about 0.36 of efficiency against noise of about
+40% (some 12 meals in a 20 s half); five knobs nudging at once add each other's effects to every knob's noise. A
+life of 2,000 s holds about 1,200 meals; telling a few per cent apart takes about 1,000 meals per comparison. Given
+10,000 s, knobs starting beyond x2 come about halfway back (hold 0.93 to 0.53 in the log, drive 0.95 to 0.54, run
+0.90 to 0.46; boredom least, 0.87 to 0.71), and lives' spread narrows (the bad lives rescued); it saves by firing
+less (298 firings per 10 s against 405) rather than eating more.
+
+So **knowing it isn't doing well is possible from outcomes alone, but slowly**: a quarter of the gap closed in
+10,000 s. The limit is the signal (sparse meals, flat near the optimum), as for the body (D13), not the mechanism.
+
+**A yardstick: the best use of the brain's information** (the user, 2026-10-29: what does "perfect" look like, given
+how sparse the feedback is?). Not the ceiling (told the best setting from birth) but the best a learner could do
+with only what the brain senses (meals, food sightings, its own firings) and unlimited computation: a Bayesian
+optimiser inside the life (`scratchpad/bo2.py`: each 40 s window one setting of the knobs, its efficiency recorded;
+a Gaussian process over the knobs, a length scale per knob and the noise fitted from the life's own windows; the next
+setting by Thompson sampling, so it explores while unsure and settles as it learns). Godlike in computation, never in
+information, and never a brain. Run on the standard body (spending only) and on lopsided bodies (thrusters 0.5-2,
+the drive's balance a sixth knob, starting level; the ceiling told its balance, as D13's oracle), against floor and
+ceiling on the same lives; 32 held-out seeds x 2, lives of 10,000 s. Efficiency over the whole life (what learning
+costs counts), and the last third's gain rate (food less 2 poison per 10 s: where learning ended up), paired:
+
+| body | arm | efficiency | against the floor | last third's gain | against the floor |
+|---|---|---|---|---|---|
+| standard | floor (mistuned, fixed) | 1.74 [1.58, 1.91] | | 3.16 | |
+| standard | local tuner (sightings 0.02, nudges 30%) | **1.90 [1.86, 1.95]** | **+0.17 [+0.04, +0.28]** | 3.06 | -0.10 [-0.35, +0.15] |
+| standard | yardstick | 1.61 [1.55, 1.68] | -0.13 [-0.27, +0.01] | 2.66 | -0.50 [-0.78, -0.22] |
+| standard | ceiling (B, fixed) | 2.47 [2.39, 2.53] | | 4.21 | +1.05 [+0.79, +1.32] |
+| lopsided | floor | 0.19 [0.06, 0.35] (58% stranded) | | 0.49 | |
+| lopsided | local tuner (+ a balance knob) | 0.66 [0.55, 0.77] (3% stranded) | +0.48 [+0.34, +0.60] | 1.32 | +0.83 [+0.45, +1.19] |
+| lopsided | yardstick | **0.92 [0.85, 0.99]** | **+0.73 [+0.61, +0.84]** | 2.05 | +1.56 [+1.20, +1.90] |
+| lopsided | ceiling (told its balance) | 1.94 [1.82, 2.06] | | 3.41 | +2.92 [+2.53, +3.28] |
+
+**The yardstick is no yardstick on the standard body: the local tuner beats it** (+0.30 [+0.21, +0.37] in
+efficiency, +0.47 in gain). It never converges: its settings stay a median of about twice off B in every knob in
+every third of the life, and almost no window (0.3%) has all five within x1.5. With some 12 meals in a window and
+the landscape flat within x1.4 of B (above), 250 windows can't locate an optimum in five dimensions, so it keeps
+paying to explore settings far off. Its window (20 s, 80 s) and the sightings' weight (0) change nothing surely.
+On lopsided bodies, where the floor is a catastrophe, wandering pays: it closes about 40% of the gap from floor to
+ceiling in efficiency and half in the last third's gain.
+
+On lopsided bodies the local tuner, given the balance as a sixth knob, rescues the stranded lives too but reaches
+only two thirds of the yardstick's gain (-0.25 [-0.36, -0.14] in efficiency). The difference is the balance: the
+yardstick finds each body's almost exactly (its last third's setting against the true balance: correlation 0.98,
+slope 0.93), the local tuner moves it only a quarter of the way (0.27; median error 0.29 in the log from 0.38). The
+balance is steep, a strong signal, so there the local tuner is limited by its step, not by information; it moves
+every knob at one rate, set for the flat spending knobs.
+
+**Without a coordinator** (`discrete/tuner.py`, checked by `test_model.py`; continuous-time node perturbation, Fiete
+and Seung): each knob wiggles at its own random moments (on average every 20 s, by up to +-0.3 in the log); one
+outcome node, a leaky efficiency rate (gain over spending, each a leaky tally, 20 s), and its own slower average (200
+s); the difference broadcast; each knob keeps a trace of its own wiggle (20 s) and moves by rate x broadcast x trace.
+No epochs, no shared clock, no accountant; every quantity a node. Same lives (paired):
+
+| body | tuner | efficiency | against the floor | against the epoch tuner |
+|---|---|---|---|---|
+| standard | rate 0.03 | 1.56 [1.47, 1.65] | -0.18 [-0.32, -0.02] | -0.34 |
+| standard | **rate 0.01** | **1.98 [1.89, 2.08]** | **+0.24 [+0.15, +0.34]** | +0.08 [-0.01, +0.16], tied |
+| standard | rate 0.03, annealed (wiggles 4 times as wild at birth, calming over 2,000 s) | 1.50 | -0.24 | -0.40 |
+| lopsided | rate 0.03 | 0.45 | +0.26 | -0.22 |
+| lopsided | **rate 0.01** | **0.90 [0.69, 1.10]** | **+0.71 [+0.56, +0.86]** | **+0.24 [+0.12, +0.35]**; the yardstick's 0.92 tied (-0.01 [-0.17, +0.14]) |
+| lopsided | rate 0.03, annealed | 0.33 | +0.14 | -0.33 |
+
+So the coordinator was never needed: the local form ties the epoch tuner on the standard body (a third of the gap
+from floor to ceiling closed) and beats it on lopsided bodies, where it ties the Bayesian optimiser. **Annealing
+hurts**, as the optimiser's exploring did: wild tries cost more than they find when meals are sparse. Too fast a rate
+(0.03) is worse than none, its knobs chasing noise; slower ones (0.005, 0.003) tie 0.01 on the standard body
+(-0.02, -0.07) and fall behind on lopsided bodies (-0.08 [-0.14, -0.02], -0.19), so 0.01, broadly. **A fault, mended** (the user's
+question, 2026-10-30): the rate was chosen on the held-out seeds it was then judged on. Chosen again on training
+seeds 0-31: on the standard body 0.003 to 0.01 tie (1.98, 2.02, 1.95; 0.02 1.78; fixed 1.85), on lopsided bodies
+0.01 is best (0.79; 0.003 0.67, 0.005 0.73, 0.02 0.67; fixed 0.16): 0.01 again, so the held-out scores stand. A rate
+fixed for every individual, suited to the kind of world, is evolution's knowledge like B's other numbers, and
+legitimate; set per individual from its body it would not be (AGENTS.md). Whether one fixed rate survives a world
+with sparser signals is open (QUESTIONS.md). Knobs end nearer B than the epoch tuner's (median log error
+falling about a third; the scan least), and the balance's median error from 0.38 to 0.14, though its fit to the
+true balances is loose (correlation 0.31).
+
+**Each knob its own rate** (the user's layers, 2026-10-30: how fast to turn the knobs is itself to be learned;
+`discrete/tuner.py`, meta=1): delta-bar-delta (Jacobs 1988; Sutton's IDBD 1992), each knob's log-rate rising while
+its step agrees with its own memory of its steps, falling while it disagrees, within x10 of 0.01. Compared with its
+fresh memory, every rate climbed to the ceiling and the knobs chased noise (standard 0.91 to 1.15, -0.83 to -1.08
+against one rate; lopsided 0.15, -0.75): the steps come from slow signals (a 20 s trace, a slower outcome), so a step
+agrees with its own recent past even in noise. Compared with its memory as it was 100 s ago, beyond that
+correlation, the rates stay near 0.01 (the balance's drifting slower, not faster) and gain nothing: standard 1.95,
+tied (-0.04 [-0.10, +0.03]); lopsided 0.82, -0.08 [-0.15, -0.02] (meta-rate 0.0005; 0.002 worse, -0.18 and -0.16).
+There was no headroom to find: 0.003 to 0.01 tie on the standard body, and the balance made faster by hand loses
+(x3: 0.57, -0.34 [-0.46, -0.21]; x10: 0.21, -0.70).
+
+**Shadows that compete** (the user's idea, 2026-10-29; `scratchpad/shadow.py`): sixteen copies of the hold (0.03
+to 1.5 s), each judged counterfactually from every drive without driving, its meals kept less the drive's extra
+firings at the brain's own price of energy; the hold used the best shadow's (winner takes all), on a random fifth of
+drives twice that, so longer shadows are judged too. **A dead end**: 1.28 against the floor's 1.74 (-0.46 [-0.56,
+-0.36]), the hold driven to a median of 8.6 times B's. Each way of replaying a drive was biased, and the last bias
+can't be removed:
+- judged per gap between sightings, short holds won (0.05 s): the sightings after a gap came only because the drive
+  went on, so a short hold seemed to keep meals it would have lost;
+- judged per drive, a shadow's drive ending at the first gap it wouldn't bridge, long shadows judged also on drives
+  poison ended won 1.5 s: a sample that leaves out the drives where a long hold wastes its firings; judged only on
+  drives whose hold was drawn before the drive, still long, because a shorter hold is charged with every meal after
+  losing the block, when in truth the creature scans and often finds it again; what it would have seen scanning was
+  never seen.
+So off-policy judging works only for a choice whose alternative leaves what is seen unchanged; hold and boredom both
+change it. On the same lives, the hold alone restored to B's is worth +0.17 [+0.08, +0.27]; the coordinator-free
+tuner on the hold alone recovers about half of that (+0.09 [+0.01, +0.17]).
+
+So **within a life, perfect is local**: from a life's own sparse outcomes even unlimited computation can't search
+the space globally; small careful steps from a decent start do better. The global search belongs to evolution
+(searching designs across lives, as this project's searches do), a life's own tuning only to polish, and to rescue
+it where something is badly wrong (a lopsided body). This yardstick is a lower bound on "perfect", not an upper one:
+an optimiser that explored less would score higher, and the ceiling stays the only true upper bound. Shadows that compete were a dead end (above).
+
+In a world with sparser meals (2026-10-31; QUESTIONS step 2's open: does one fixed rate survive?). Six blocks of
+each colour instead of 18 (`world.BLOCKS`, patched for the experiment, scratchpad `sparse.py`), standard body,
+mistuned at birth, 10,000 s, seeds 0-31: food falls to about 1.4 per 10 s and efficiency to 0.29 for the floor; B's
+own knobs, untuned, get 0.45, so there is at least 0.16 to gain (B's knobs were chosen for the dense world, so the
+true ceiling is higher). The tuner barely moves: rates 0.003 and 0.01 both 0.32 (+0.02 [-0.01, +0.06] over the
+floor, tied with each other), 0.03 0.27 (below 0.01, -0.05 [-0.09, -0.00]). So the rate's order holds (0.01 or
+slower; 0.03 chases noise), but no rate recovers much: with meals four times sparser, a 20 s wiggle judged on a 20 s
+outcome tally holds almost no signal. What fails is the signal, not the rate: a tuner for a sparse world would need
+outcome windows scaled to the meals' spacing (which would itself have to be learned), or a proxy available every
+moment, as D19 and D20 use for the balance. Windows scaled by hand don't rescue it: wiggles, outcome tally and its
+average all 3 times slower (60, 60, 600 s), rate 0.01: 0.34, the first sure gain over the floor (+0.05 [+0.00,
++0.09]) but tied with the 20 s windows (+0.02 [-0.01, +0.06]); 6 times slower 0.30; 3 times slower at rate 0.003,
+0.31. A longer window holds more meals but leaves fewer trials in a life (some 170 of 60 s for five knobs in 10,000
+s), so the information a life holds, not how it is windowed, is what runs out. In a sparse world, judged by meals
+alone, a life can't tune its spending; it needs a proxy seen every moment. Food sightings, the obvious one (far more
+frequent than meals), don't serve: weighted 0, 0.1 or 0.3 in the outcome (0.02 normally), 0.31, 0.31 and 0.27, the
+heaviest below the usual weight (-0.05 [-0.08, -0.01]): a sighting rewards looking at food, which the knobs can buy
+without eating it (a long hold on a block it doesn't reach). Unlike the balance (D19, D20), spending has no proxy that
+tracks meals closely; found here, none.
+
+## D16: can a brain learn tricks nobody designed? (2026-10-30)
+
+Phase 3 of the plan (QUESTIONS.md; the user's idea, 2026-10-29): beside B (fixed, its own tolerances), a reservoir
+of 200 random sequence detectors over the brain's own events (`scratchpad/trick.py`): each fires when its event b
+(an eye, or a motor's beat) comes its own delay (up to 1 s) after its event a, within 50 ms, and may then add a beat
+to its own motor, with probability 0.01 + w, w its memory node. Each keeps a fading tag (2 s) of whether it acted
+against its odds (+(1 - p) if it did, -p if not, so the tag averages zero whatever the meals: REINFORCE); taste
+credits every tag (food +1, poison -2, rate 0.01), and each extra beat is charged its cost at once. Three-factor
+learning on a random reservoir (Izhikevich 2007; Fremaux and Gerstner 2016). The trick hoped for: steering a lopsided
+body. 32 held-out seeds x 2, lives of 10,000 s, paired:
+
+| body | brain | efficiency | stranded | against plain B |
+|---|---|---|---|---|
+| lopsided | plain B | 0.29 [0.11, 0.50] | 61% | |
+| lopsided | detectors, learning off | -0.12 [-0.35, 0.11] | 0% | -0.41 [-0.56, -0.27] |
+| lopsided | **detectors, learning** | **0.59 [0.36, 0.83]** | 14% | **+0.30 [+0.16, +0.44]**; +0.71 [+0.55, +0.88] over learning off |
+| standard | plain B | 2.47 [2.39, 2.53] | 0% | |
+| standard | detectors, learning | 2.21 [2.07, 2.33] | 0% | -0.26 [-0.37, -0.16] |
+
+Learning is real, but **no steering was learned**: detectors that grew beat the weaker thruster's motor half the
+time (51% of 582), and those that survived are mostly keyed to the eyes (rare, so cheap); two thirds died. The
+random beats alone unstrand a lopsided creature but spoil its choices (food:poison in the last third 1.9);
+learning prunes the harmful ones and keeps most of the rescue. On the standard body nothing needs rescuing, and
+exploring is pure cost. Below the coordinator-free tuner with a balance knob (0.90): a designed knob beats an
+undesigned trick here, as expected, since a random detector has to be lucky to be the right correction, and its
+credit comes only through sparse meals, a thousand of them per life.
+
+## D17: recruitment, case 1: taste wired to nothing (2026-10-30)
+
+The plan's step 4 (QUESTIONS.md; the user: how can a brain realise it isn't solving the problem and recruit more
+neurons?), at the block level. The unwired brain is B without its learning: either eye starts a drive, taste goes
+nowhere (`scratchpad/grow.py`). Beside it, per eye, a generic grower: **predict** (a fading tag of the eye's pulses,
+1 s; at each taste the eye's prediction moves towards it by its tag); **notice the gap** (frustration: a leaky count,
+50 s, of poisons tasted while the eye was tagged and predicted bad); **grow** (frustration past 2 grows a recruit on
+that eye's pathway, the declared primitive); **experiment** (the recruit knows nothing of the circuit: it tries the
+generic operations on its pathway, block and reverse, the eye then ending a drive, 20 s each, judging each by the
+taste that follows its own eye, against the pathway as it was, judged by the same running rate before it grew;
+win-stay lose-shift). Lives of 100 s, 32 held-out seeds x 2, robust:
+
+| brain | efficiency | last third food:poison | |
+|---|---|---|---|
+| unwired | -3.35 | 1.00 | eats both colours alike |
+| **grower** | **1.43 [1.21, 1.65]** | 4.31 | grew in 64 of 64 lives, always on the poison eye, the food eye kept; in all-food lives, 0 of 64 |
+| B (designed learning) | 2.01 [1.83, 2.20] | 5.27 | |
+
+It grows early (a median 7 s into the life) and in the right place every time, and never without cause. It is
+-0.58 [-0.86, -0.30] behind B. Its first version re-tested the pathway as it was for 20 s before trying anything
+(0.20); judging that from what had already followed the eye mended it. What remains: the recruit settles on block
+in 61 lives, reverse in 3; both make the taste after the poison eye vanish, so its own judge can't tell them apart,
+but reverse (B's way: the poison eye ends a drive, turning away) also avoids poison bumped into, which only the
+whole outcome shows. The menu of operations (drive, block, reverse) is generic for a pathway, but it holds B's
+answer; whether a grower finds what no menu holds is case 2's question.
+
+**Mended: try everything once.** Judging by the whole outcome (all taste, the broadcast) changed nothing (1.44,
++0.01): the recruit never tried reverse, since block already beat the pathway as it was and it stayed. Trying every
+operation once before keeping the best: **1.80 [1.63, 1.96], tied with B** (-0.21 [-0.50, +0.07]; +0.37 [+0.19,
++0.55] over win-stay), reverse kept in 40 lives and block in 24, and still grown in every poison life and no all-food
+life. With the whole-outcome judge as well, 1.73 (tied with the eye's own judge, +0.07 [-0.03, +0.17] for the eye's).
+So the judge's reach mattered less than exploring before settling: a recruit has to see every option before win-stay.
+
+**A lopsided body: not a recruitment case** (the user, 2026-10-30: a case must be one no tuning of the brain's
+parts can solve; one more knob, a gain per motor, solves this one, D15). Tried anyway (`scratchpad/grow2.py`). B with D16's detectors grown only where the gap is:
+frustration, a leaky count of drives that end with the block lost, grows batches of detectors over the events of
+driving (the food eye, the motors' beats); a lost drive is also credited as a bad outcome through the tags, as taste
+is. 8 seeds x 2, 2,000 s, lopsided bodies: all 200 grown at once (drives fail constantly on such a body), 130 extra
+beats per 10 s, 0.30 against D16's random detectors' 0.65; with 40 and less exploration 0.96, B alone 0.79, all
+within noise; the lost-drive teacher changes nothing (0.97 without). No steering was learned. The building block is
+wrong for the job: a detector adds single beats, while steering a lopsided body means changing one motor's rate by
+1.5 to 2 times on every drive, hundreds of coordinated beats, each credited only through rare outcomes. The eyes say only how much of a
+colour is in view, not where, so prediction can't read a veer's direction either.
+
+**A world that frustrates: guarded food** (the user's idea, 2026-10-30; `scratchpad/guarded.py`). Still a random
+world, one statistic changed: each food block has a poison guard beside it (2.5 mm from its centre, at a random
+angle), the pair kept together. The rays stop at the first block, so the food hides behind its guard from one side.
+100 s lives, 32 held-out seeds x 2:
+
+| brain | plain world | guarded (2.5 mm) |
+|---|---|---|
+| B | 2.01 | 1.06 (2.1 mm: 0.46; 4 mm: 2.07, no effect) |
+| B told the colour, learning off | 2.54 | 1.38 |
+| B's knobs searched in the guarded world (200 random settings, learning steps too; best of 5 held out) | | 1.08 |
+
+Tuning can't recover it (B's own values are as good as any found). The loss is mostly driving (told the colour, B
+loses as much), and more from learning: guards eaten while chasing food add doubt, flipping the bit 3.1 times a life
+against 1.7. But no extra structure has recovered it either: a scripted detour (poison seen just after food: swing
+away on one motor, pass, swing back), told the colour, scores below plain told B on training seeds (0.43 to 0.96
+against 1.58): the eyes say how much of a colour is in view, not where, so a detour can't be aimed, and half the
+time it swings into the guard. Not yet certified as a recruitment case: the limit may be the eyes, not the brain.
+
+## D18: the arena, robots that eat each other (2026-10-30)
+
+The user's idea (QUESTIONS.md, step 6): no food or poison, only N robots, each the creature's body, trying to eat each
+other; the arms race as the engine of frustration, with no hand-made worlds. The user's rules: each robot two-tone,
+its mouth half red and its tail half blue (so the eyes, two colours wired at random, say mouth from tail); born with
+a full belly; eating takes time (while a mouth touches another's tail, energy flows to the biter, who tastes +1 each
+tick; the bitten can pull away); mouth to mouth nothing happens; collisions; an empty belly is death, and a newborn
+(a fresh brain, its own wiring) appears at random at once, so N stay alive and newborns are the world's food. My
+choices: belly 20 meals, a bite 1 meal a second, soft springs between discs slow against the tick, and no pain for
+the bitten (taste is what touches the mouth; a pain sense would be a new body-to-brain signal, the user's decision).
+`scratchpad/arena.py`, watched live by `scratchpad/arena_watch.py` (mouth M and tail T lettered, bites drawn).
+
+First look, four robots with B's brain, 16 arenas of 1,000 s (559 robots): robots bite, get bitten, starve and are
+replaced (lives of about 115 s), and clump in biting chains. B can't learn the colour here: it learns from poison
+alone (doubt rises with each and flips the bit), and nothing tastes bad, so the bit never flips (0 flips in every
+life). Belief barely matters: robots believing blue (tails) is food eat 0.57 a 10 s, those believing red 0.65 (and
+lose 0.72 against 0.56); all eat far less than they spend (about 1.3), so nearly all starve, their meals mostly
+accidental. Chasing a tail at the same speed rarely catches it unless it turns.
+
+Mended after the user watched (2026-10-30): robots drove through each other, since only the two coloured discs
+collided; now five discs cover each triangle (mouth, tail, rear corners, centre) and the spring is stiffer (K 3000;
+still slow against the tick). Over 300 s, robots touch in 32% of ticks, overlapping by a median 0.16 mm, 0.66 mm at
+the 99th percentile, 1.3 mm at worst (a disc is 2 mm across). The bitten now taste -1 a tick (pain as bad taste:
+the user's decision); B's doubt now rises with pain whatever its eyes see, flipping its bit 10 to 14 times a life.
+The view shows its speed against real time and slows to 1/100 of it.
+
+Robots sprinted blindly (the user, watching): B's own program, made for scattered static blocks. With 8 coloured
+discs in the world against 36 blocks, sightings are rare, so B is often bored and runs (17% of the time) or drives at
+whatever it believes is food (13%), both at full speed (35 mm/s, nine body lengths a second); robots alike in speed
+can't catch a runner. The user's changes: ten robots, and each thruster pushing a third as hard (top speed a third,
+turning as before). Now (200 s): driving 37% of the time, running 6%, scanning 57%; speed a median 4 mm/s, 11 at the
+90th percentile; still 0.24 meals eaten a robot a 10 s, so all starve (16 deaths in 200 s); collisions overlap a
+median 0.17 mm when touching, 1.7 mm at worst.
+
+Two eyes (the user's decision, 2026-10-30: one eye per colour can't track; robots mostly circled each other): each
+a fan of 12 rays from the mouth, from 5 degrees across the middle out to 40 degrees on its own side, so four
+sensors; the body draws which colour feeds which pair and which of a pair is the left eye. Brains: B adapted (each
+colour's pair summed: it can't steer), B told the colour (learning off), and a hand-built Braitenberg tracker (told
+its wiring and the colour: while driving, the thruster that turns it towards the eye seeing more tail fires more).
+The tracker first spun (a firing turns the body about 18 degrees once settled, and with a third of the push turning
+dominates); its gain scanned 0.03, 0.1, 0.25: 0.1 best. 10 robots, arenas of 300 s, meals eaten a robot a 10 s:
+
+| arena | eaten (95%) | |
+|---|---|---|
+| all B | 0.15 [0.14, 0.16] | believing tails food 41% |
+| all told B | 0.33 [0.32, 0.35] | |
+| all trackers | 0.40 [0.38, 0.41] | |
+| told B with trackers, half each (16 arenas) | told 0.33 [0.32, 0.35], tracker 0.42 [0.40, 0.44] | |
+| B with trackers | B 0.21 [0.19, 0.22], tracker 0.39 [0.37, 0.41] | |
+
+So the arena is certified for two kinds of growth: steering (the tracker beats told B in the same arena, by about a
+quarter), and learning the colour, which B now learns wrongly: pain comes from behind while it chases a tail ahead,
+so it blames the tail and believes it is food only 41% of the time. Eating is zero-sum (all eaten is lost by
+another) and every robot spends, so on average every robot starves: success is outliving the others, the newborns
+the world's food.
+
+The arena made three times faster (each step's mouths and tails computed once, every robot's eyes in one compiled
+call, bites found at once: 1.2 to 0.4 ms a step; the same eyes, shapes and collisions to the bit, only the order of
+random draws changed: told 0.33, tracker 0.40 on 16 arenas). The viewer draws every robot's rays.
+
+Steering grown (`grow_arena.py`): told B and a grower; a failed chase (a drive with no bite) is frustration, which
+grows one recruit linking the food pair's two sensors' difference to the motors' balance, trying no link, one sign,
+the other, each for a timed trial, keeping the best. Catches are too few to judge by (a "chase" lasts 0.08 s, 53 a
+10 s, 6% caught; robots live about 96 s), but how much food it sees separates the signs (forced, `steer_probe.py`:
+right 28.6 tail pulses a second, eating 0.41; none 25.4, 0.31; wrong 17.4, 0.14). Judged so, it kept the right sign
+in 180 of 240 lives (15 s trials; wrong 25), yet ate no more than told B (0.32 vs 0.33; trials of 6 and 3 s the
+same, choosing worse): in a life of 96 s the wrong sign's trial costs what the right one gains. The trigger fired in
+every life (chases nearly always fail), so it discriminates nothing. The user's verdict: in this world the colour
+and the thruster wiring are the same every life, so evolution's: the baseline brain becomes the Braitenberg tracker.
+
+Escape from bites (`escape.py`), certified before a grower looks for it: trackers half, the other half the tracker
+with a scripted response to pain (a bad taste: being bitten), for 0.5 s firing 50 a second. Both thrusters (speed
+away) is worse: lost 0.46 a 10 s vs 0.29, dying younger (the biter, behind, simply follows). One thruster (a turn)
+cuts the loss from 0.37 to 0.14 and nets (eaten minus lost) +0.23 [+0.20, +0.26] a 10 s over the tracker, paired
+by arena (16 arenas; either side the same within noise). Eating alone misjudges it: the net is what the belly sees.
+
+The escape grower (`grow_escape.py`), told nothing of what it is for, beside the tracker: each sensor a fading tag and
+a running rate of pain onsets while tagged; a bite no tagged sensor predicted (none above twice the rate at any
+time) is frustration, which grows one recruit on the taste's pathway to the motors: on a bad taste's onset it fires,
+for 0.5 s at 50 a second, one generic operation (nothing, motor 0, motor 1, both), each tried for a timed trial,
+judged by the taste summed over it (+ biting, - bitten: what bites move in and out of the belly), the best kept. A
+first predictor (towards -1 at each bite, slowly back otherwise) let every sensor "predict" pain, as robots see each
+other nearly always, so it grew in 14 lives of 247; compared with the rate at any time, the user's point held: no sense
+predicts a bite (40,610 of 40,631 unpredicted) and it grew in every life, about 8 s in. Half the arena growers, half
+trackers, net over the tracker: trial 15 s +0.078 [+0.055, +0.103] (16 arenas); 8 s +0.102 [+0.083, +0.122] (48
+arenas: kept a turn in 463 of 720, nothing 103, both 154); 30 s +0.127 (16 arenas, but no robot lived through four
+trials: the gain of trying turns, not of choosing). The control, one operation drawn and kept without judging: +0.067
+[+0.044, +0.092] (48 arenas). Judged minus drawn, paired: +0.035 [+0.012, +0.061]. So escape grows and pays, surely;
+of the scripted turn's +0.23 it gets 0.10, most of that because half its operations are turns; judging adds a third
+of it, held back by lives of 96 s and a judge as noisy as 8 s of taste (it keeps the harmful "both" in a fifth of
+lives). Watch: `arena_watch.py 1 --kinds grow,tracker` (each grower labelled with its operation, "?" while trying,
+OUCH while bitten).
+
+Judged bite by bite instead (`bite=1`, now the default): at each bite's onset the four operations compete, each its
+running mean plus its own noise (sd / sqrt(1 + tries)), the winner responds, and the taste of the next `win` s is its
+outcome. Chosen on arenas 0-15 (net over the tracker): win 1 s, sd 0.3: +0.138; win 0.5: +0.172; 2: +0.128; sd 0.1:
++0.184; 1: +0.090; win 0.5 and sd 0.1: +0.202; **win 0.25, sd 0.1: +0.215** (a turn kept in 230 of 240); win 0.5,
+sd 0.03: +0.202. Judged on fresh arenas 100-147: **+0.186 [+0.173, +0.199]**, a turn kept in 696 of 721 lives, its
+loss to bites halved (0.37 to 0.18 a 10 s); the scripted turn on the same arenas +0.241 [+0.223, +0.259]: the grower
+gets 77% of it. (Motor 0 kept 410 times, motor 1 286: B's drive is not symmetric in its motors, its lone first beat
+on motor 1.) Traced (`findbite.py`): bitten, the grower fires its motor and the bite is broken within a tick, then
+it spins on, 480 degrees in the 0.5 s response; a shorter scripted response does as well (0.1 s +0.241, 0.04 s
++0.244 on arenas 0-15), so the response's length doesn't matter and the scripted ceiling stands.
+
+The control (`phantom=1`): pain no response can stop, the grower's bad tastes replaced by phantom ones at random
+(0.6 onsets a second, 0.3 s each; its real bites still drain its belly, unfelt). Arenas 0-15: net over the tracker
++0.011 [-0.008, +0.029], tied (escapable: +0.215); kept nothing 54, motor 0 104, motor 1 45, both 41 (escapable: 4,
+146, 84, 6): a turn 61%, near chance's 50%. Motor 0 is favoured here too, as in the real arena (410 to 286): perhaps
+firing it disturbs B's drive less (its lone first beat is motor 1's), so fewer of its own bites are lost; untraced.
+With no bites at all it can't grow (frustration counts only bad tastes).
+
+The arms race (QUESTIONS.md, the plan, 4, candidate a; `pursuit.py`), certified first: every robot the tracker with
+the escape grower; half also respond to a bite ending (good taste stopping) by firing at 50 a second. Net minus the
+plain escape growers', arenas 0-15: left 0.2 s -0.027 [-0.040, -0.016], right -0.021 [-0.032, -0.009], both -0.024
+[-0.037, -0.013]; 0.04 s: left -0.003 [-0.014, +0.007], both -0.030 [-0.044, -0.016]. No pursuit pays: the victim
+turns to its own side, differing between robots, so a fixed response is right half the time, and the tracker already
+steers to a tail still in view. So escape leaves the biter nothing simple to grow, and the arms race stops at one
+round here. With every robot escaping, each eats less than half as much (0.16 a 10 s against 0.39 among trackers):
+the world grows hungrier, which every robot pays for alike.
+
+Candidate (c), a memory of a recent bite (`alert.py`), certified first: half the escape growers, for T s after a bite
+ends, unless escaping or chasing, keep moving (both thrusters at B's running rate) or keep still. Net minus the plain
+escape growers', arenas 0-15: run 3 s -0.043 [-0.057, -0.034] (lost 0.124 vs 0.133, but ate 0.098 vs 0.150, dying
+younger), run 10 s -0.069 [-0.082, -0.056], still 3 s -0.065 [-0.076, -0.055] (losing more). No response to a recent
+bite pays, so there is no memory to grow either. In this arena, escape is the one reflex worth growing in the life;
+steering pays more but is evolution's (the same every life).
+
+A recruit with no menu (QUESTIONS.md, the plan, 4: "a menu that doesn't already hold the answer"; `grow_escape.py
+knob=1`): the recruit two knobs, firing motor k at 50 sigmoid(w_k + e_k) a second for 0.5 s after a bite's onset,
+e_k its own noise (sd 1) drawn each bite; the taste of the next 0.25 s against its running mean (10 bites) moves each
+knob by (outcome - mean) e_k (node perturbation). Its first form replaced the brain's output while it responded, so a
+weak response stopped the robot dead (from w0 = -2: -0.054 [-0.088, -0.020]); a recruit adds beats to its pathway, so
+now they are added to the brain's own. With beats added the scripted responses change: a turn +0.241 [+0.214,
++0.274], and both thrusters, harmful when replacing, +0.242 [+0.224, +0.261] (on top of the tracker's own firing,
+uneven while it steers, it is a turn and a burst), so the ceiling stays about +0.24. Arenas 0-15, net over the
+tracker: from w0 = 0 (both at half rate) +0.236 [+0.216, +0.256], learning off +0.165 (the jitter alone turns it,
+one motor firing harder each bite); from w0 = -2 (barely responding) +0.161 [+0.142, +0.182], learning off +0.049.
+Held out (arenas 100-147): **from w0 = 0 +0.229 [+0.212, +0.246]** (95% of the scripted turn; the menu grower got
++0.186), ending firing both in 502 of 755 lives, motor 0 harder in 228, motor 1 in 24; **from w0 = -2 +0.152
+[+0.136, +0.167]** (63%), ending motor 0 in 443 of 729, motor 1 in 56, both 82, nothing 148. So no menu is needed:
+two knobs and per-bite perturbation find the escape; where they start matters (from nothing, in some 75 bites a
+life, a fifth of lives haven't left it). Motor 0 is favoured strongly here (443 to 56), as before, untraced.
+
+Why motor 0 (`spincheck.py`): B scanning fires motor 0 alone, so a robot not chasing is always spinning motor 0's
+way. At 71% of 9,945 bites' onsets the tracker wasn't chasing, spinning +1.82 rad/s motor 0's way (chasing, -0.01);
+two bites in three found it turning so. A motor 0 response adds to that spin, a motor 1 response first cancels it.
+Scripted by motor (arenas 0-15): m0 +0.264 [+0.244, +0.282], m1 +0.238 [+0.215, +0.258]; added to the tracker's own
+beats, m0 +0.274 [+0.250, +0.306], m1 +0.266 [+0.242, +0.291]. At full strength the difference is small; at the
+weak responses a knob recruit starts from it is large, so every jitter towards motor 0 tastes better and the knobs go
+that way. So the ceiling was low: the best scripted response, m0 added, held out (arenas 100-147) +0.253 [+0.244,
++0.262]. Against it: the knob recruit from w0 = 0 91%, from w0 = -2 60%, the menu grower 74% (replacing, against m0
+replacing, not measured held out).
+
+Why a fifth of lives never leave the low start: near w = -2 the response barely changes with the jitter, so each of
+some 75 bites teaches little. Larger steps and jitter (arenas 0-15, from w0 = -2): eta 3 +0.193, jitter sd 2 +0.197,
+both +0.217 [+0.195, +0.241], those left responding hardly at all 14 of 253 (42 before); from w0 = 0, both +0.262
+[+0.241, +0.282]. Held out (arenas 100-147), now the defaults (eta 3, sd 2): **from w0 = -2 +0.218 [+0.203, +0.232],
+86% of the best scripted escape** (38 of 739 left responding hardly at all); **from w0 = 0 +0.245 [+0.230, +0.261],
+97%**. So where it starts barely matters once its steps are large enough for a short life.
+
+A disc body (the user's decision, 2026-10-31: the triangle's five colliding discs hooked each other as robots turned
+past; then the disc everywhere, `NOTEBOOK.md`, The disc). Each robot is now the creature's disc (radius 2.3 mm, the
+triangle's circumradius), its front half red and its rear half blue, its mouth the front point of its rim, its
+thrusters on its rear rim (their physics unchanged: a firing adds forward speed and a turn); collisions a spring along
+the line of centres, frictionless, so no push spins a robot; the eyes see the colour of the half each ray meets; a
+mouth within 0.3 mm of another's rim, on its rear half, bites. The triangle arena is kept as
+`scratchpad/arena_triangle.py`. Over 200 s, robots touch in 92% of ticks (they clump), overlapping a median 0.07 mm,
+0.25 mm at the 99th percentile (rarely far more, 3.9 mm once: probably a newborn placed on another robot, untraced).
+A rear half is a far bigger target than a tail disc, so robots eat two to three times as much (16 arenas of 300 s,
+meals eaten a robot a 10 s): told B 0.76 [0.73, 0.78] (0.33 on the triangle), the tracker 1.08 [1.06, 1.11] (0.40), so
+steering still pays (the arena stays certified for it).
+
+Escape and the failed certifications re-run on the disc; then **a flaw in the arena's accounting** (2026-10-31): the
+net every arena script reported (eaten minus lost to bites) never charged firing, though each firing drains the belly
+by `spec.THRUST` (0.002 meals; a 0.5 s burst at 50 a second, 0.05). So any response that added firing looked free,
+and some looked good: on the disc, firing more seemed to pay whatever triggered it (keeping moving for 10 s after a
+bite +0.12, always +0.14; bursts after a bite ends +0.13, at random moments +0.14; escape's control, pain no response
+stops, +0.07). Every arena result before this, on the triangle too, was judged so (the escape grower's 86-97% above
+included); they stand only as uncharged. Firing now charged (`AR.THRUST * r.firings` in lost), on the disc, net over
+the plain tracker or escape grower a 10 s, paired by arena:
+
+| | net, firing charged |
+|---|---|
+| escape, scripted, beats added, a turn (held out) | +0.088 [+0.061, +0.117] |
+| escape, scripted, both thrusters (held out) | +0.123 [+0.101, +0.146] |
+| **escape grown, two knobs from w0 = 0 (held out)** | **+0.136 [+0.115, +0.157]** |
+| its control, pain no response stops (held out) | -0.094 [-0.118, -0.070] |
+| pursuit, both thrusters 0.5 s after a bite ends (0-15) | -0.191 [-0.220, -0.157] |
+| the same bursts at random moments (0-15) | -0.321 [-0.344, -0.298] |
+| keep moving always (both at B's run rate, not driving or escaping; 0-15) | -0.489 [-0.514, -0.464] |
+| **keep still always (no scanning; 0-15)** | **+0.426 [+0.390, +0.460]** |
+
+So: escape grows and pays, surely, and its control now costs, as a control should; the grower matches or beats the
+scripted bursts (it learns its rates, so it needn't fire at full rate). No pursuit pays. And the tracker's scanning
+is its biggest waste in a crowded arena: robots that never scan net +0.43 a 10 s more, three times escape's gain.
+That looked like a standing policy to fix (evolution's), but it isn't one: **what pays depends on who else is in the
+arena.** The tracker's standing policy hill-climbed by invasion, firing charged (`arena_tune.py`: B's hold, boredom,
+scan, drive and run rates and the tracker's gain, each doubled or halved in turn, kept if surely better than the best
+so far, arenas 0-15): scanning twice as fast (+0.14 [+0.11, +0.17]), then holding half as long (+0.06 [+0.01,
++0.10]); held out (arenas 100-147) the tuned tracker nets **+0.139 [+0.114, +0.165]** over the plain one. Never
+scanning, among trackers, costs: -0.37 [-0.41, -0.31] (scanning at a quarter rate -0.30; without running too, -0.45).
+Decomposed (arenas 0-7, a 10 s): among trackers, a robot that keeps still eats half as much (0.64 against 1.26) and
+loses more to bites (1.14 against 0.94); among escape growers it eats as much (0.62 against 0.61) and loses as much
+(0.64 against 0.65) while firing far less (0.66 against 1.04). Robots that escape are hard to catch, so chasing and
+scanning for them is wasted; robots that don't are worth hunting. So the best standing policy is
+frequency-dependent: evolution's answer shifts with the population, as in any arms race, and a growth case must be
+certified against the population it will live in. Firing is costly here: about a meal a 10 s, as much as a robot eats.
+
+Escape against the tuned tracker (every robot's standing policy scaled, `grow_escape.py t_scan=2 t_hold=0.5`, held
+out, arenas 100-147, firing charged): grown from w0 = 0 **+0.029 [+0.004, +0.054]**, from w0 = -2 +0.018 [-0.011,
++0.044], its control -0.073 [-0.092, -0.054]. Against the plain tracker it was +0.136. So most of escape's value was
+the plain tracker's poor standing policy: once evolution's part is tuned (faster scanning, shorter holds: a biter
+that re-finds its prey quickly, so a broken bite costs it little), a grown escape barely pays for its firing. The
+grower still beats its control by about +0.10 (it does find the response that helps most), but the case no longer
+certifies well: a growth case must be certified against a tuned baseline, and in this arena, with firing charged,
+there is little left that the life must learn.
+
+## D19: a lopsided body learned from every drive (2026-10-30)
+
+The plan's step 5 (QUESTIONS.md: learn from what happens every moment, not only from meals), its first experiment,
+with D18's lesson (judge each try at once, against its own jitter). B (its tolerances drawn, its learning as
+designed) on bodies with each thruster 0.5 to 2 (`bodies.THRUSTERS`), lives of 2,000 s, the other knobs B's
+(`drivebal.py`, in the scratchpad). The drive's balance x (log of motor 0's rate over motor 1's) is jittered afresh
+by e at each drive's start; the drive's outcome, the food pulses it saw (a drive lasts while the block stays in view,
+so one that curves off loses it sooner), against its running mean (20 drives), moves x by eta (outcome - mean) e.
+About 9 drives a 10 s, so some 1,800 lessons a life, against a few hundred meals.
+
+Seeds 0-31 (choosing): floor (balance 0) 0.22 [0.02, 0.43], stranded 38%; ceiling (told its body, the
+drive balanced) 2.11 [2.04, 2.20]. Jitter sd 0.3: eta 0.01 0.74 [0.57, 0.89]; 0.03 0.80 [0.63, 0.95] (the balance
+within 0.13 of the oracle's by 200 s, 0.08 by 500 s, median; correlation 0.87 at the end); 0.003 0.38. Close to
+the right balance, yet far below the ceiling: born at the oracle's balance, learning off, it gets the ceiling (2.11)
+with no jitter and 1.07 with jitter 0.3, so the exploring costs half, the score being steep in the balance. Smaller
+jitter with the step scaled by 1/sd^2 is unstable (sd 0.1: 0.22; 0.05: 0.06; the outcome's noise swamps it); sd 0.1
+with eta 0.1 0.82, last third 4.31 but 19% stranded. Paired opposite jitters (0.77) and outcomes relative to the
+usual (0.53, barely learning) don't help. The stranded lives stop driving, so their balance freezes where it was,
+often still near 0: learning needs successful drives to learn from (with eta 0.03, 4 of 64 stranded, the most
+lopsided: median |oracle| 0.75 against 0.47). Jitter shrinking with experience, sd 0.3 / sqrt(1 + drives / N):
+N 200 1.14 [0.96, 1.31]; 500 1.07; 1000 1.09 [0.96, 1.22], stranded 3%, the job done, the balance's correlation with
+the oracle's 0.96 (slope 0.92). (In D15, annealing hurt the meal-judged tuner; here the balance converges in a few
+hundred drives, so there is time to settle.)
+
+Held out (seeds 50000-50031), N 1000, eta 0.03: **0.98 [0.78, 1.17]**, stranded 8%, last third 4.30; floor 0.36
+[0.14, 0.61], 31% stranded; ceiling 1.92 [1.80, 2.04]: 40% of the gap closed in 2,000 s. D15's tuner (`discrete.
+tuner body=1 mistune=1`: every knob and the balance, starting at B's, judged by meals and sightings per energy) on
+the same lives: 0.72 [0.54, 0.90], none stranded; **per-drive minus it +0.26 [+0.07, +0.45]**, paired. Judging each
+drive by what it saw learns the balance far faster than judging by meals (D15's SPSA tuner moved it about 27% of the way
+in 10,000 s; this one 54-92% in 2,000 s). What's left: the exploring's cost (even shrinking, a jitter on a steep
+knob), and the lives that strand before they learn. Next: is it prediction? Not yet: the outcome is a fixed proxy
+(food seen), not a learned model of what a beat does to the eyes; a unit predicting its eyes from its beats is the
+next step.
+
+## D20: the body learned by prediction: what comes round again (2026-10-30)
+
+The plan's step 5 proper: a model of this body learned from what its own beats do to its eyes, no outcome and no
+jitter. While B scans, one motor alone turns it at a steady rate, so whatever it sees comes round again once a
+revolution, and a revolution's period goes as 1 / that thruster's strength. So scanning with each motor in turn and
+finding each one's period gives the thrusters' ratio, and the drive's balance x = log(T0 / T1) straightens the drive
+(k0 g0 = k1 g1). The goal (keep what is chased ahead) is the same every life, evolution's; the model of this body
+is the life's (QUESTIONS.md, step 5). `periodbal.py`, in the scratchpad; lopsided bodies (each thruster 0.5 to 2),
+lives of 2,000 s, B's other knobs as designed.
+
+Feasibility (`period_probe.py`, 60 s of one-motor scanning): the eye pulses' intervals recur at 0.79 of the period
+the body's spin predicts, in every one of 16 scans (the factor, from beats' discrete timing, cancels in the ratio),
+once the estimator finds the fundamental rather than a multiple. In a life, though, B's own scans are short (a
+median 0.4 to 0.6 s, ended by the first food sighting; 4 to 29% last a revolution), and their intervals gave
+nonsense (correlation with the right balance -0.36, then -0.14 with intervals counted against chance per scan, each
+scan's pulses placed at random within it). So the brain makes its own experiments: sweeps, every `cal_every` s for
+`cal_len` s, ignoring what it sees and turning with one motor alone at its scan rate, the motor alternating; only
+the sweeps' pulses counted. Pooled with B's own scans the estimate is worse (47% within 0.2): they aren't a steady
+spin, starting from rest or a drive's momentum.
+
+The estimator, in four steps, each traced on lives whose periods are known: the shortest comb within 90% of the best
+picked halves; the best comb picked multiples (teeth beyond a 5 s sweep have no data: now only teeth chance expects
+data in count); the shortest fraction of the best recurring at its own lag left 3 of 16 wrong (5x, 3x, 1.5x); then
+subharmonic summation (Hermes 1988, from pitch detection: each multiple k of a candidate period weighted 0.84^(k-1)
+and summed, so a multiple of the period loses the teeth between and a fraction gains empty ones), each tooth's
+evidence the excess over chance in units of chance's spread ((observed - expected) / sqrt(expected): a ratio over a
+tiny expectation was noisy). Then 16 of 16 lives found both periods, every balance within 0.02 of the right one.
+
+Seeds 0-31 (choosing): sweeps of 5 s every 50 s, 1.50 [1.40, 1.60] (98% of balances within 0.2; the sweeps alone,
+balance fixed at 0, 0.23); sweeping stopped once its last 3 estimates agree within 0.03 (its own adjustment stalled:
+a body doesn't change within a life) but with too little evidence locks in wrong ones (1.18 to 1.38, 70 to 75%
+within 0.2); requiring 2,000 intervals a motor first, 1.74 [1.60, 1.87]; 5,000, sweeps every 20 s: **1.80 [1.72,
+1.89]**, every balance within 0.2, none stranded, sweeping stopped after a median of 36 sweeps (some 700 s).
+
+Held out (seeds 50000-50031): **1.66 [1.55, 1.76]**, none stranded, 98% of balances within 0.2 (correlation 0.99);
+floor 0.36, ceiling 1.92: 83% of the gap closed. Paired, on the same lives: above D19's per-drive learner by +0.68
+[+0.51, +0.86], above D15's meal-judged tuner by +0.93 [+0.73, +1.14], below the ceiling by -0.27 [-0.36, -0.16].
+Its price on the standard body, where there is nothing to learn: plain B 2.46 [2.34, 2.54], the period learner 2.15
+[2.07, 2.22] (-0.31: the sweeps, about 9% of the life turning blind, and small errors).
+
+So prediction beats outcome here by far: a model of what its own turning does to what it sees, learned from a few
+minutes of deliberate experiment, finds the body almost exactly, where learning from outcomes (meals, or food seen
+per drive) found it roughly and slowly, and paid for exploring all life long. What it needed that B lacked:
+experiments of its own (a sweep is a question asked of the body), a bank of coincidence counters (the intervals'
+histogram, with chance's), and a way to tell a period from its multiples.
+
+Cheaper sweeps. On the standard body the cost is all early: in the last third the period learner equals plain B
+(6.14 against 6.10, seeds 0-31). Seeds 0-31, standard body (plain B 2.52) and lopsided: 5 s sweeps every 20 s
+stopping at 5,000 intervals 2.13 and 1.80; at 3,000 2.14 and 1.83; 3 s every 12 s 1.99 and 1.67 (a short sweep holds
+few long intervals); 8 s every 32 s (3,000) 2.29 and 1.83, 13 sweeps; 12 s every 48 s 2.32 and 1.73 (94% within 0.2).
+Pairs grow as a sweep's length squared, so longer sweeps gather evidence faster, until too few sweeps leave some
+estimates wrong. Held out, **8 s every 32 s, stopping at 3,000 intervals and 0.05**: standard body 2.27 [2.16,
+2.36], **-0.18 [-0.31, -0.04] against plain B** (5 s sweeps: -0.31); lopsided **1.71 [1.52, 1.88]**, tied with
+5 s sweeps (+0.05 [-0.12, +0.19]), 87% of the gap closed, below the ceiling by -0.21 [-0.39, -0.07]; sweeping ends
+after a median 12 to 14 sweeps (about 7 minutes).
+
+Watched (`watch_pb.py`, seed 50001): the panel shows each sweep as it happens and the motor sweeping; run on without
+drawing, after 2 sweeps (100 s) both periods match what its thrusters give (1.37 and 1.12 s against 1.37 and 1.13)
+and the balance is the one it needs (+0.20); sweeping stopped after 10.
+
+Bodies varied in every factor (`allbody=1`: overall strength, an asymmetry between the thrusters, the eyes'
+sensitivity and drag, beside each thruster), held out: floor 0.34 [0.16, 0.56], 31% stranded; ceiling 1.75 [1.48,
+2.00]; **the period learner 1.28 [0.99, 1.56]**, 8% stranded, two thirds of the gap, 84% of balances within 0.2.
+Each failure is off by log 2 (0.69 to 0.71): one motor's period found at half or double. Traced (seed 50027, a weak
+thruster): excess 22 at the true 2.48 s and 13 at twice it, but a real 7 at half it (cause untraced: not a wider
+circle, since a one-motor sweep's circle has radius PUSH / TURN, about 1.25 mm, whatever the thruster's strength). The multiples' weight doesn't help (seeds 0-31:
+0.84 89% within 0.2, 0.7 88%, 0.6 83%); choosing among the best, its double and its half by the strength of each
+one's own first recurrence is much worse (61% and 66%: shorter lags hold more chance pairs, so their excess in chance's
+spread is smaller). In one long sweep on that body (`halftrace.py`, 120 s) there are no pulse pairs at half the
+period at all, so the half period comes from pooling short sweeps: within a sweep any two blocks give intervals at
+their bearings' difference plus whole revolutions, a few times over, and a pass is a burst of pulses, so each
+coincidence counts the burst's size squared; such clumps land at random lags, noisier than chance's Poisson spread
+allows. Counting a pass, not a pulse (pulses within 0.15 s one event) doesn't help (seeds 0-31: 86% within 0.2 on
+fully varied bodies, 97% on lopsided ones, but 23 sweeps against 12, efficiency 1.16 and 1.61). Nor does making each
+sweep one vote (its pairs scaled to one before pooling, each lag's excess over the votes' spread: 83% and 91%, against
+89% and 98% without), nor more evidence before sweeping stops (6,000 intervals, fully varied: 91%, efficiency 1.30
+against 1.34): the errors persist, so they are systematic for some bodies, not noise. Traced (seed 50027, motor 0,
+the first 240 s): one sweep gives nearly all the half-period pairs (99 pulses, 279 pairs at half the period, 387 at
+the period; the others 0 to 27), the sweep with the nearest block (2.6 to 5.1 mm from the body's centre as it
+circles, against 5 to 12 mm in the others): a block that close plausibly crosses the 2 mm corridor twice a
+revolution (unproven). Discarding sweeps denser than 8 pulses a second: 91% within 0.2 on fully varied bodies (89%
+without), 98% on lopsided ones, but 20 to 22 sweeps against 12, efficiency unchanged (1.35, 1.80); 10 a second, 88%.
+So a near block is likely the cause, and none of five remedies is worth its cost; left at 89% on fully varied bodies.
+
+Sweeps only when frustrated (2026-10-31; QUESTIONS.md, step 5's open "cheaper sweeps"). A body that already drives
+well needn't be swept, and the brain knows it is doing badly from its own taste: at each slot (every 32 s) it sweeps
+only if it has eaten fewer than `gate` meals since the last slot (`gate=8`). Once the balance is right the meals rise
+and the sweeps stop of themselves: the bad outcome ends the experiments, as step 4's candidate answer says. The gate
+is a meal rate, an outcome, not a property of the body, but it is tied to this world's food (B eats about 20 meals
+in 32 s on the standard body, about 5 on a lopsided one before it learns): evolution's, for this world. Seeds 0-31,
+standard body (B with no sweeps 2.52) / lopsided / fully varied: gate 6, 2.55 / 1.79 / 1.25 (sweeps 0 / 4 / 5);
+gate 8, 2.49 / 1.88 / 1.31 (0 / 5 / 7); gate 10, 2.45 / 1.92 / 1.38 (2 / 7 / 10); ungated, 2.29 / 1.83 / 1.34 (13 /
+12 / 12). Held out (seeds 50000-50031), **gate 8**: standard body **2.47 [2.43, 2.51], tied with plain B (+0.01
+[-0.06, +0.11])** and surely above ungated sweeps (+0.20 [+0.11, +0.31]): the sweeps' cost is gone; lopsided **1.68
+[1.50, 1.84]**, tied with ungated (-0.03 [-0.11, +0.06]), 85% of the gap, with 5 sweeps instead of 12; fully varied
+**1.39 [1.11, 1.66]**, against ungated 1.28 (+0.11 [-0.06, +0.30], not sure), 88% of balances within 0.2, three
+quarters of the gap. A mildly lopsided body is swept late, since it is frustrated only now and then: seed 50001
+(balance +0.20) eats 8 meals in most slots, first sweeps after some 400 s and has its balance (+0.19) by 600 s;
+seed 50027 (-0.50) sweeps from the start, a first estimate wrong (+1.21, too little evidence) corrected by 220 s
+(-0.49). Standard bodies (seeds 50001, 50005) never sweep. `gatetrace.py`, `gatepair.py`; the viewer
+(`watch_pb.py`, now gated, with `--standard` for the standard body) shows the meals counted since the last slot.
+
+What a circuit would have to hold (2026-10-31; QUESTIONS.md, step 5's open "a circuit for the counters and the
+period-finder"), before designing one: not a fine histogram (1,700 bins of 10 ms) with chance computed from each
+sweep's length and pulse count, but a bank of K coincidence counters at log-spaced lags (0.1 to 17 s), each counting
+the intervals within half a spacing of its lag; each candidate period one counter, scored by fixed wiring from the
+counters nearest its multiples (weights 0.84^(k-1): evolution's wiring); chance taken from the counters' neighbours
+(the mean of those within 25% of a counter's lag, excluding itself: lateral inhibition), not computed
+(`fundamental_bank`, `bank=K local=1`). Seeds 0-31, lopsided bodies, gated sweeps (the fine histogram 1.88, 98%
+within 0.2), chance computed: K = 32, 1.49 (88% within 0.2, 31% within 0.05); 48, 1.52; 64, 1.69 (91%, 69%); 96,
+1.86 (98%, 91%). Chance from the neighbours: 96, **1.87 (100%, 92%)**; 128, 1.90; neighbours within 50%, 1.82; and
+the excess as a plain difference, not over chance's spread (no square root), 1.87 again. Held out, 96 counters with
+neighbours' chance, paired with the fine histogram on the same lives: standard body 2.48 (+0.01 [-0.00, +0.03]; B
+2.46), lopsided 1.66 (-0.02 [-0.17, +0.16], 97% within 0.2), fully varied 1.34 (-0.06 [-0.25, +0.16], 84%): tied
+everywhere. So the period-finder needs about 100 counters (a 4% spacing: a period's quantisation then costs the
+balance under 0.05), lateral inhibition and a fixed comb, and nothing computed. Left for the circuit: the delay line
+that holds a sweep's pulses for up to 17 s (a sweep has some 100), so that each new pulse can be compared with every
+earlier one; the counters as memory nodes written by coincidences; the winner-take-all over the candidates.
+The natural delay line, a chain of 96 one-bit stages at the counters' lags (a stage marks that some pulse passed
+that long ago; pulses within a stage merge, and each new pulse adds at most one to each occupied stage's counter,
+`binary=1`), loses: seeds 0-31, lopsided 1.70 [1.54, 1.84] (94% within 0.2) against 1.87 (100%) counting, fully
+varied 1.31 against 1.34. Traced (seed 3, motor 0, 600 s): the stages saturate as they widen with lag, keeping 78%
+of the coincidences at 0.1 to 1 s, 46% at 1 to 3 s and 32% at 3 to 8 s, so the comb's higher teeth flatten. So the
+line's stages must carry how many pulses passed, not whether one did: charge packets, as in a bucket-brigade line,
+each coincidence adding its stage's charge to its counter. (A sweep lasts 8 s, so lags beyond 8 s hold nothing;
+the line need only be 8 s long, still beyond a chip's slowest leak, 3.9 s, so its stages are memory-like.)
+
+Where the rest of the gap goes (2026-10-31). Held out, gated (gate 8), lopsided: food per 10 s by third 4.30, 5.19,
+5.26, against the ceiling's 5.47, 5.45, 5.35: the loss is in the first third, the time to learn (the balance within
+0.1 for good after a median 140 s; 380 s for mildly lopsided bodies, swept late), plus 7 of 64 lives whose balance
+stays 0.05 or more out and lose a third of the last third's food. So learn sooner: a first sweep at birth and slots
+every 12 s until each motor has 1,000 intervals, then every 32 s (`cal_first=0 cal_fast=12`). Seeds 0-31, lopsided:
+the first sweep at birth alone 1.87 (gated 1.88); with 12 s slots 2.00, but the standard body falls to 2.36 (8
+sweeps), since no body eats 8 meals in a 12 s slot. So the gate became a rate (`gate_rate=1`: frustrated if the
+last 32 s hold fewer than 8 meals, or pro rata early in life): standard 2.35, still 7 sweeps, because a sweep is 8 s
+of fasting that itself trips the gate. Counted on a foraging clock that stops during sweeps (a sweep's own fast
+isn't frustration): standard **2.48**, lopsided **2.02** (100% within 0.2), fully varied 1.37 (seeds 0-31). Held
+out (seeds 50000-50031), paired with the plain gate on the same lives: standard **2.48** (+0.01 [-0.06, +0.07]; B
+2.46, 2 sweeps); lopsided **1.81 [1.68, 1.93]**, +0.13 [-0.01, +0.31], 98% within 0.2, 8 sweeps, **93% of the gap**,
+below the ceiling by -0.12 [-0.22, -0.02] (gated: -0.24); fully varied **1.51**, +0.12 [-0.15, +0.35], 91% within
+0.2, 83% of the gap, below the ceiling by -0.23 [-0.45, -0.08]. These are now the period learner's settings
+(`watch_pb.py`).
+
+A flaw in the drive whenever it is balanced (2026-10-31), found while trying B's own scans (below). With equal gains
+the fast model's drive fires both thrusters on each beat; with any balance at all (g0 != g1) each motor has an
+oscillator of its own (`model.Model.step`), and motor 1's only runs while driving or running, so each drive starts
+with the two out of step, by whatever its phase was left at and motor 0's moved on during the scan. B with gains
+1.0001 and 0.9999 on the standard body: 2.29 against 2.52 (seeds 0-31): unpaired first beats turn the body off the
+block it has just seen. Two fixes, as options in `model.py` (off by default, so earlier results stand): `paired=1`,
+the slower motor firing beside some of the faster one's beats: 2.51 there, but the lopsided ceiling falls (1.93
+against 2.11); `sync=1`, the two oscillators set in step at each drive's start: **2.56** there, and the lopsided
+ceiling **2.24** (seeds 0-31). So the cost was the drive's start, not unpaired beats as such. Held out (seeds
+50000-50031), with `sync=1`: the ceiling (told its balance) **2.15 [2.03, 2.26]** on lopsided bodies, +0.23 [+0.10,
++0.35] over the old drive's 1.92, and **1.94** on fully varied ones (+0.20 [+0.07, +0.32] over 1.75); the floor
+(B, balance 0, so equal gains) unchanged, 0.36. The period learner with it: lopsided **2.03 [1.89, 2.16]**, +0.22
+[+0.12, +0.33] over the same learner without, 98% within 0.2, **93% of the new gap**, below the ceiling by -0.12
+[-0.25, +0.02] (no longer surely); standard body 2.45, tied with B (-0.01 [-0.15, +0.13]); fully varied 1.59 (+0.08
+[-0.08, +0.24]), 78% of the new gap. Every balanced result before this (D13's oracle, D15's tuner, D19, D20 above)
+paid this flaw, ceilings and learners alike; the gaps quoted there are on the old drive. Re-judged on the fixed
+drive (held out, floor 0.36, ceiling 2.15): D15's tuner (`discrete.tuner body=1 mistune=1`, 2,000 s) 0.80 (+0.08
+[+0.02, +0.15] over the old drive), 25% of the gap; D19's per-drive learner 1.02 (+0.04 [-0.09, +0.17]), 37%; the
+period learner 2.03, 93%. The order holds: D19 above the tuner by +0.21 [+0.02, +0.40], the period learner above
+D19 by +1.01 [+0.83, +1.19]. The flaw cost the learners judged by outcomes little (their balances are rough
+anyway) and the ones that find the balance almost exactly most. A circuit's drive would
+start both thrusters from one oscillator anyway: this is the fast model being fairer to a balance, not a new
+mechanism. (QUESTIONS.md's "B's drive starts cleanly, in transistors" is the same cost in SPICE: a drive's first
+beat matters.)
+
+B's own scans again (2026-10-31; step 5's open "B's own scans made usable"). Counting only their steady part (after
+0.5 s, scans of 1 s or more) made little difference (seeds 0-31, lopsided, no sweeps: 0.68, 64% within 0.2,
+correlation 0.79). The cause was in the model: B's scan rate is its drive oscillator's, so scaled by g0, which moves
+as the balance is learned, smearing the periods pooled over the life (the sweeps run at the bare scan rate). With
+the scan at its own rate (`scan_rate=1`): 1.38, 92% within 0.2, correlation 0.93, with no sweeps at all; with the
+drive also started in step, 1.75 (94%). So B's scans do carry the body; D20's first finding, that they gave
+nonsense, was mostly this smear. But they are worse than sweeps: on the standard body scans alone cost 0.24 (2.28
+against 2.52, the balance re-estimated all life from evidence a little biased by scans' starts), and added to the
+sweeps they lower the lopsided score (2.08 against 2.21). Left out.
+
+How many pulses a delay stage must hold (2026-10-31). Re-tried on the current settings (early, rate-gated sweeps;
+the drive started in step), lopsided bodies: on seeds 0-31 one-bit stages tie the bank (2.06 against 2.10, -0.04
+[-0.18, +0.09]; stages holding 2 pulses 2.07, any number 2.08). The old deficit (1.70) was mostly the old settings:
+one-bit stages with the early sweeps 1.96 (+0.26 [+0.14, +0.39]), with the drive in step 1.88 (+0.19 [-0.02,
++0.38]). Held out (seeds 50000-50031, floor 0.36, ceiling 2.15), paired on the same lives: the bank with counting
+stages 1.92, below the exact histogram (2.03) by -0.11 [-0.25, -0.01] (tied before the drive was fixed: a finer
+balance now pays); stages holding any number 1.93, the same as the bank (+0.01 [-0.01, +0.04]); stages holding up
+to 3 pulses (`cap=3`) **1.88, tied with the bank** (-0.04 [-0.18, +0.08]); one-bit stages 1.78, -0.14 [-0.29,
++0.01] against the bank, -0.25 [-0.43, -0.07] against the exact histogram. On other bodies one-bit stages tie the
+exact histogram (fully varied 1.63 against 1.59, standard 2.38 against 2.45, both within noise). So a stage needs to
+count to about 3 (two bits, or a charge packet that saturates at three), not to carry exact counts; the remaining
+cost of counters over the exact histogram, about 0.1 on lopsided bodies, may be the bank's quantisation (96
+counters, 4% apart) now that the drive's balance is finer. Held out, lopsided, against the exact histogram: 128
+counters 1.90 (-0.12 [-0.31, +0.02]), 192 counters 2.01 (-0.01 [-0.15, +0.09]), 128 counters with 3-pulse stages
+1.97 (-0.05 [-0.16, +0.03]); 128 against 96 -0.01 [-0.22, +0.19], 192 against 96 +0.10 [-0.05, +0.24]. No
+ordering is sure: differences of 0.1 are within these 64 lives' noise. So 96 to 192 counters with stages counting
+to 3 come within about 0.1 of the exact histogram, and 192 ties it; more lives would be needed to price the spacing.
+The period learner restricted to what a circuit could hold (still the block model, not built: 192 counters, chance from neighbours, a fixed comb, a delay line of
+stages holding up to 3 pulses; `bank=192 binary=1 cap=3`), held out on all three bodies, paired on the same lives:
+lopsided **1.93**, tied with the exact histogram (-0.10 [-0.30, +0.06]), 88% of the gap, below the ceiling (-0.22
+[-0.44, -0.01]); fully varied **1.68**, tied with the exact histogram (+0.09 [-0.09, +0.33]), 84% of the gap, below
+the ceiling (-0.26 [-0.44, -0.11]); standard **2.49**, tied with B (+0.03 [-0.09, +0.16]). So nothing in it needs
+exact counting: some 200 counters and a short delay line of 2-bit stages would do. Building them in SKY130 is not
+started.
 
 ## Lessons from this line, in full (moved from the old LESSONS.md)
 

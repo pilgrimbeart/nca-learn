@@ -56,7 +56,9 @@ The point is a brain that learns in situ, so the brain must do the work.
   do (credit assignment, choosing which cells learn, timing, filtering) is not a simplification. Say plainly what job
   moves out of the brain before proposing it, and expect no. Ask before adding or changing any body-to-brain signal.
   If the brain stops needing a mechanism after a body change, ask where its work went (`NOTEBOOK.md`: reward at
-  contact).
+  contact). Nor is any property of the body (a pulse's length, a thruster's strength) a reference the brain may tune
+  itself against: the body should be as variable as the brain (the user, 2026-10-29); a brain tunes itself towards
+  better outcomes, not to a setpoint the body supplies.
 - **Nor may the simulator.** An optimiser, an agent included, finds anything a design can exploit. So: random timing
   (no lockstep, no inputs only on tick boundaries), noise on everything, nothing carried below the noise; a result
   must hold on fresh seeds and at a finer step, with the simulator's error control tight enough that the step doesn't

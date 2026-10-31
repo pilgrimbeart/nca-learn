@@ -100,8 +100,24 @@ class Model:
         running = not driving and self.t - self.last_food > p["bored"]
         self.dq = max(0.0, self.dq - p["drift"] * TICK)
         lone = [1] if p["lone"] and driving and not self.was_on and self.phase < p["lone"] else []
+        if p.get("sync") and (driving or running) and not self.was_on:
+            self.phase1 = self.phase                    # sync=1: each drive's two oscillators start in step
         self.was_on = driving or running
         r = p["drive"] if driving else p["run"] if running else p["scan"]
+        if p.get("paired") and p["g1"] != p["g0"] and (driving or running):
+            hi = max(p["g0"], p["g1"])                  # paired=1: a balance keeps the beats paired, the slower
+            self.phase += r * hi * TICK                 # motor firing beside some of the faster one's beats, not
+            beats = int(self.phase)                     # on an oscillator of its own (D20: unpaired beats wobble)
+            self.phase -= beats
+            out = list(lone)
+            for _ in range(beats):
+                self.phase1 += min(p["g0"], p["g1"]) / hi
+                if self.phase1 >= 1:
+                    self.phase1 -= 1
+                    out += [0, 1]
+                else:
+                    out.append(0 if p["g0"] > p["g1"] else 1)
+            return out
         self.phase += r * p["g0"] * TICK
         beats = int(self.phase)
         self.phase -= beats

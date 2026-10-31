@@ -20,7 +20,7 @@ import mixed_feedback as mf  # noqa: E402
 import world  # noqa: E402
 from brains.circuit import PULSES  # noqa: E402
 from units import PULSE, TICK  # noqa: E402
-from world import BODY, DRAG, EAT, PUSH, SENSE, TURN, WORLD  # noqa: E402
+from world import BODY, DRAG, EAT, PUSH, RADIUS, SENSE, TURN, WORLD  # noqa: E402
 
 SQ3 = math.sqrt(3)
 
@@ -59,7 +59,7 @@ def _life(V, Vx, armed, node, el, link, q, rest, sensors, motors, taste_node, wr
     decay = math.exp(-DRAG * TICK)
     for t in range(ticks):
         f0, f1 = math.cos(heading), math.sin(heading)
-        h = np.array([pos[0] + f0 * BODY / SQ3, pos[1] + f1 * BODY / SQ3])
+        h = np.array([pos[0] + f0 * RADIUS, pos[1] + f1 * RADIUS])
         far, hit = world._look(xy, kind, h, np.array([f0, f1]))
         seen = world._sees(far, hit, 2)
         for c in range(2):                                          # each eye fires at random moments (as Life)
@@ -83,7 +83,7 @@ def _life(V, Vx, armed, node, el, link, q, rest, sensors, motors, taste_node, wr
         if fired and moving < 0:
             moving = t
         g0, g1 = math.cos(heading), math.sin(heading)
-        h0 = np.array([pos[0] + g0 * BODY / SQ3, pos[1] + g1 * BODY / SQ3])   # where the point starts the tick
+        h0 = np.array([pos[0] + g0 * RADIUS, pos[1] + g1 * RADIUS])   # where the point starts the tick
         pos[0] = (pos[0] + speed[0] * TICK) % WORLD                 # move
         pos[1] = (pos[1] + speed[1] * TICK) % WORLD
         heading += spin * TICK
@@ -93,7 +93,7 @@ def _life(V, Vx, armed, node, el, link, q, rest, sensors, motors, taste_node, wr
         g0, g1 = math.cos(heading), math.sin(heading)
         if speed[0] * g0 + speed[1] * g1 <= 0:
             continue
-        eaten = world._touching(xy, h0, np.array([pos[0] + g0 * BODY / SQ3, pos[1] + g1 * BODY / SQ3]))
+        eaten = world._touching(xy, h0, np.array([pos[0] + g0 * RADIUS, pos[1] + g1 * RADIUS]))
         taste = 0.0
         for b in eaten:
             xy[b] = _somewhere(wrng, pos)

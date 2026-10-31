@@ -1,9 +1,9 @@
 """The world and the creature's body: blocks of two colours on a torus, the eyes, the two thrusters and the mouth.
 Nothing here knows about brains.
 
-The body: an equilateral triangle, point forward; the point is its mouth. Both thrusters, at the tail's two corners,
-push it forward; one alone also turns it, away from its own side, so the creature veers; both at once drive it
-straight ahead. Its eyes at the point look along parallel rays across the corridor its mouth will sweep, up to RANGE;
+The body: a disc (the user's decision, 2026-10-31; it was a triangle), its mouth the front point of its rim. Both
+thrusters, on its rear rim 120 degrees either side of the mouth, push it forward; one alone also turns it, away from
+its own side, so the creature veers; both at once drive it straight ahead. Its eyes at the point look along parallel rays across the corridor its mouth will sweep, up to RANGE;
 each ray stops at the first block it meets, so a near block hides what is behind it. A block counts less the farther
 off it is, and each eye sees only its own colour. A block the point moves into is eaten, and reappears elsewhere.
 """
@@ -17,7 +17,8 @@ from numba import njit
 
 from units import MILLI, TICK
 
-BODY = 4 * MILLI    # m: the triangle's side (an insect's size, matching a 10 ms tick: units.py)
+BODY = 4 * MILLI    # m: the body's size (an insect's, matching a 10 ms tick: units.py): its radius is ...
+RADIUS = BODY / math.sqrt(3)   # ... the triangle's it replaced (the mouth as far ahead, so every life is unchanged)
 WORLD = 60 * MILLI  # m: the world's side (a torus)
 BLOCKS = 18         # blocks of each colour
 EAT = 1 * MILLI     # m: a block this near the point (the mouth) is eaten; the eyes' corridor is twice this wide
@@ -30,7 +31,7 @@ PUSH = 20 * MILLI   # m/s: a thruster firing adds this much forward speed ...
 TURN = 16.0         # rad/s: ... and this much turning speed, away from its side: both at once go straight
 DRAG = 50.0         # per s: speed and turning fade at this rate
 COLOURS = ("red", "blue")
-THRUSTERS = ("left", "right")                           # at the tail's two corners, both pushing forward
+THRUSTERS = ("left", "right")                           # on the rear rim, both pushing forward
 ACROSS = -EAT + (np.arange(RAYS) + 0.5) * 2 * EAT / RAYS   # each ray's offset across the corridor
 SHARE = (2 * EAT / RAYS) / (2 * BLOCK)                  # one ray's share of a block's width
 
@@ -109,15 +110,13 @@ class Body:
         return np.array([math.cos(self.heading), math.sin(self.heading)])
 
     def head(self):
-        """The point: the mouth."""
-        return self.pos + self.forward() * BODY / math.sqrt(3)
+        """The mouth: the front point of the rim."""
+        return self.pos + self.forward() * RADIUS
 
-    def corners(self) -> list:
-        """The body's outline, for drawing: the point, then the tail's left and right corners (the thrusters)."""
-        f = self.forward()
-        r = np.array([f[1], -f[0]])
-        back = self.pos - f * BODY / (2 * math.sqrt(3))
-        return [self.head(), back - r * BODY / 2, back + r * BODY / 2]
+    def thrusters(self) -> list:
+        """For drawing: the left and right thrusters, on the rim 120 degrees either side of the mouth."""
+        return [self.pos + RADIUS * np.array([math.cos(self.heading + a), math.sin(self.heading + a)])
+                for a in (2 * math.pi / 3, -2 * math.pi / 3)]
 
     def look(self) -> tuple:
         """The eyes' rays, parallel, across the corridor its mouth will sweep: for each, its offset across, how far it
