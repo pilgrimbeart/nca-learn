@@ -669,6 +669,8 @@ The open questions, most valuable first, are in [`QUESTIONS.md`](QUESTIONS.md).
   is death, and a newborn takes its place (`discrete/NOTEBOOK.md`, D18).
 - **Grower**: generic machinery beside a brain that notices a gap (a bad outcome nothing predicted), grows a recruit
   where it is, and lets the recruit try the simplest operations, keeping what works; told nothing of what it is for.
+- **Ideal observer** (Geisler's term, the user's choice, 2026-11-01): a brain of unlimited reasoning but only the
+  senses, beats and tastes a real one has; not omniscient. What it could do bounds what any brain could learn.
 
 **Names**: in prose "the sheet brain", "the designed circuit", "the knowing circuit"; on the command line `sheet`,
 `designed-circuit`, `knowing-circuit` and so on. Recruitment's baseline, the **baseline circuit**, was called the

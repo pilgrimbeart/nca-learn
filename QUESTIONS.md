@@ -45,7 +45,32 @@ and when, why it matters, the line it belongs to, and the experiment that would 
    (Marr 1969, Albus 1971). In blocks: a slow tag node and a write gated by taste per part. Slow (sparse, mostly
    unearned meals: long lives); taste's broadcast is legal in a circuit, but in the sheet must diffuse. Tricks to
    find: a lopsided body's steering (credit the motor patterns before meals), sweeping back for a block just lost,
-   and ones we haven't thought of. Phase 2's recruitment route, after self-tuning on spending.
+   and ones we haven't thought of. Phase 2's recruitment route, after self-tuning on spending. Since
+   (`discrete/NOTEBOOK.md`, D16 and its continuation, 2026-10-30 to 11-01): random detectors learned by taste rescue
+   a lopsided body without steering it; a planted right steer pays and is learned from meals with one exploring coin
+   per burst, but among random detectors every scheme so far fails. Open: why, against the bounds below.
+   **First, the bounds** (the user, 2026-11-01): what could an ideal observer (unlimited reasoning, only the brain's
+   own senses, beats and tastes; Geisler's ideal observer analysis) do, granted every node of a primitive brain that
+   is failing? Seeing the nodes adds no information about the world (each is a function of the senses, beats and
+   tastes, and its own noise: the data processing inequality); it says only where to intervene, and lets natural
+   variation be read without exploring (off-policy evaluation). Two bounds: its value, a Bayes-adaptive POMDP's,
+   between B and the policy told the body; and how fast it could confirm a change worth Delta in meals, about
+   z^2 sigma^2 / Delta^2 (Wald's sequential test), with a log K for the best of K candidates (best-arm
+   identification; Lai and Robbins for the cost of trying them). From lives: meals' spread per unit time on each
+   body; Delta for the planted steer and for a sample of random detectors at fixed odds, learning off; how much each
+   detector's natural firing predicts meals with nobody exploring; the bits per second taste carries about the body.
+   Each kind of trick then sorts into learnable from meals, learnable only with free signals (prediction), or not
+   within a life (evolution's), telling steps 3 to 5 where to look. Watching and intervening are one problem (dual
+   control, Feldbaum 1960): the brain's own noise is a free randomised experiment where it reaches the candidate,
+   and probing pays only where it doesn't (no overlap) or is too faint. **Mind the wall** (the user, 2026-11-01):
+   learning is impossible when a life carries too little signal about the change for its length (signal to noise
+   per second, Delta^2 / sigma^2, against the life; taste's bits per second about the body), and collapses, as
+   ALOHA's throughput does past its load, when explorers share one taste within a credit window (stages 6 to 12's
+   collapse from 20 random detectors to 50 and 200). Track both in every experiment, and treat a negative result
+   beyond the wall as saying nothing about the mechanism. Plan (2026-11-01): an exact Bayesian ideal observer over
+   the body's wiring and strengths with B's knobs as its levers first; a strong learner (a network, trained across
+   lives as evolution, run within one) only if a large gap remains; then the cheapest process reaching most of the
+   best one's gain.
 
 4. **How can a brain realise it isn't solving the problem, and recruit more neurons to do so?** (the user,
    2026-10-30: the most interesting question; work through several cases until the generic answer shows.) At the
@@ -164,10 +189,11 @@ and when, why it matters, the line it belongs to, and the experiment that would 
   fires alone at a drive's first beat in over half the drives, costing about 20% of its score in SPICE; a latch on
   the beat halved it, but motor A still misses some first beats (its starved inverter, which also drives the
   oscillator, is the suspect).
-- **What biology's noise costs at Sepulchre's level** (D14): no setting of B's knobs survives biology's noise, but
+- **What biology's noise costs at Sepulchre's level** (D14; parked by the user, 2026-10-31: a side-quest done, to return to if it matters): no setting of B's knobs survives biology's noise, but
   size does: four times the capacitance (and currents) on the bit's chain does the job with it for 48 nW. Twice
-  biology's noise fails at any size, likely the inputs' noise (taste, eyes), which size can't reach. Open: what
-  input structure survives twice biology (a filter on taste and the eyes), and at what cost.
+  biology's noise fails at any size: the inputs' noise (taste, eyes), which size can't reach and faster input leaks
+  don't fix. Open: B's doubt with the minimal leaders' bit (a perfect integrator written by seen times taste, where
+  noise averages out) in place of a thresholded tally, judged at all three noises.
 - High-value resistors (500 MOhm to 1 GOhm) are rarely better than 5% and leak across a board's surface: the bipolar
   circuits' 1% (`life.TOL`) was optimistic.
 

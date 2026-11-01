@@ -37,6 +37,10 @@ this repository lives in one place (below); other files link to it.
   terms a newcomer understands, with a link to the notebook. Keep each notebook's "Where it stands" current.
 - **Measure, and trace each failure to a cause before fixing it.** **Show a working behaviour live**
   (`python creature.py`, `python -m discrete.watch`) before reporting it.
+- **Mind the noise wall** (the user, 2026-11-01): for a learning experiment, estimate its signal to noise per second
+  against the life's length, and its explorers per credit window, before reading a result; a negative result where
+  learning was impossible (too little signal, or credit colliding as ALOHA's packets do) says nothing about the
+  mechanism (`QUESTIONS.md`, step 3).
 - **The user is colour-blind**: use colour, never as the only cue (pair it with shape, line style or a label), and no
   hues hard to tell apart, such as red and green (Okabe-Ito).
 - **Long runs** share one laptop: one job at a time. Kill processes only by explicit PID, never by a pattern. To pause

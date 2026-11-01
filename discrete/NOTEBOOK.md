@@ -54,6 +54,9 @@ per meal spent resting, moving and thinking), gain rate (meals per 10 s), food, 
   by taste through fading tags. On lopsided bodies +0.30 [+0.16, +0.44] over B (0.59, stranding 61% to 14%), by
   learning (+0.71 over the same detectors not learning), but not by steering: it prunes the harmful random beats and
   keeps those that unstrand. On the standard body it costs 0.26.
+  Taken apart (D16, continued): the right steer, planted, pays (0.68, job done, against B's 0.11), and meals credit
+  it only if exploring runs at the outcome's timescale (one coin per burst: 0.67, job done); among random detectors
+  every scheme failed so far, credit colliding as they multiply.
 - **Recruitment, case 1** (D17): with taste wired to nothing, a generic grower (predict what follows each eye, grow a
   recruit where a bad outcome is predicted and happens anyway, let it try the pathway's operations) grows in every
   poison life on the poison eye, in no all-food life, and, trying every operation once before keeping the best,
@@ -1162,8 +1165,24 @@ What it says:
   841 parts (the minimal line's leaders: about 500 parts, 130 nW). Beyond K 4 biology gains nothing and silicon
   slowly loses; twice biology's noise fails at every size, so what remains is in the nodes not scaled, the inputs
   most likely (the taste node's noise stepping doubt, an eye's faking a sighting), which size can't fix: they need
-  structure (a filter that waits for a pulse's whole charge). Untraced. (scratchpad `sepscale.py`, `ONLY=` for a
-  subset; `v/sepscale.log`, `v/sepscale_bit.log`.)
+  structure (a filter that waits for a pulse's whole charge). (scratchpad `sepscale.py`, `ONLY=` for a subset;
+  `v/sepscale.log`, `v/sepscale_bit.log`.)
+- Why twice biology's noise still fails (2026-10-31, `sepdiag.py`: the brain alone, no input, 60 s). The inputs:
+  at twice biology's noise the taste node rests past doubt's step thresholds (+-0.3 V) 15% of the time (biology's 2%)
+  and an eye past where its gates open 12% (biology's 0.1%); a taste pulse swings the node about 0.9 V, against
+  noise of 0.29 V (biology's 0.15). Scaling an input node can't help (the body's pulse a fixed charge: the signal
+  falls as 1/C, the noise as 1/sqrt(C)); a faster leak should (resting noise goes as the square root of the time
+  constant, while a pulse that nearly fills the node keeps its peak). Tried by hand, the readers' gains raised to keep
+  each pulse's effect (`sepfast.py`), bit's chain at K 4, held out: taste 4 times faster 1.95 / 0.85 / -1.30 (silicon
+  / biology / x2), eyes 1.99 / 0.65 / -1.43, both **1.87 / 1.08 [0.62, 1.51] / -1.18**, 65 nW (8 times faster
+  breaks a limit). Biology a little better, twice biology no nearer. A search of the same knobs with the inputs'
+  leaks free, judged by the worst of the three (`sepsearch2.py`, 30 generations), was flat again and worse
+  everywhere (0.77 / -0.16 / -0.73): with one noise hopeless the worst-case gives no slope. One seed (3) is
+  pathological at biology's noise: its flip's monostable fires again and again with doubt low (untraced).
+  The likely cause is B's structure: doubt is a thresholded tally, so each noise excursion past a threshold is a
+  step, and steps random-walk to the flip; the minimal line's hold-and-roam circuits, which survive twice biology
+  (README), keep the bit on a perfect integrator written by a three-factor rule (seen times taste), where noise
+  averages out unless it coincides with a sighting.
 
 ## D15: can a brain tune its own spending? (2026-10-29)
 
@@ -1356,6 +1375,39 @@ learning prunes the harmful ones and keeps most of the rescue. On the standard b
 exploring is pure cost. Below the coordinator-free tuner with a balance knob (0.90): a designed knob beats an
 undesigned trick here, as expected, since a random detector has to be lucky to be the right correction, and its
 credit comes only through sparse meals, a thousand of them per life.
+
+### D16, continued: can meals credit a trick at all? (2026-10-31 to 11-01)
+
+D16 asked a random reservoir to find steering and it didn't. Taken apart (`scratchpad/trick2.py`, a `Trick2` over
+D16's detectors; runs `scratchpad/night1.sh` to `night13.sh`, logs `scratchpad/v/night*.log`): lopsided bodies,
+training seeds 0-15 x 2, lives of 10,000 s unless said. A **planted** detector is the right steer by hand (a beat of
+motor 1, then another 2 later: add a beat to the weaker thruster's motor), its **wrong twin** the same to the stronger.
+
+| stage | what | result |
+|---|---|---|
+| 1 | credit by taste, or by **sight** (each tick, the food eye's pulse less its running mean, 200 s) | plain B 0.14 (69% stranded; food per 1000 s falls 134 to 71 over the life); D16's trick 0.14; sight 0.003-0.1: -0.08 to 0.17, more food but food:poison 2-3. 55-63% of grown detectors on the weak motor: no steering |
+| 2 | the planted pair, D16's per-beat REINFORCE | no credit separates right from wrong: each beat's charge, immediate, drives both to zero odds |
+| 3 | does the trick exist? fixed odds, learning off, 2000 s | right steer at 0.9: **0.66 [0.24, 1.09], job done**; wrong 0.09; plain B 0.13 |
+| 4-5 | **one coin per burst** (a burst begins after 0.3 s without firing, capped at 2 s; uncapped, one endless burst through B's run stuck the coin), the planted pair alone, start 0.5 | learning off -0.06; taste **0.67 [0.34, 1.00], job done**; taste and sight 0.69 (right above wrong in 81%); sight alone 0.58 (84%); food rises over the life |
+| 6 | burst coins on random reservoirs | 20 detectors about B (0.05); 50: -0.65; 200: -0.84, 160 grown, ~1800 extra beats per 10 s, food:poison 1.05: sight credit gamed |
+| 7 | each beat charged its cost | planted pair 0.65; 20 random 0.17; 200 still -0.83: a floor at w >= 0 (start at the minimum odds) reflects noise upward, a ratchet |
+| 8 | forgetting (w fading) | erases the planted signal (0.30); a low start floods (-0.95) |
+| 9 | explore only in 10% of bursts (tagged, even coin), else act at the learned odds | planted pair 0.39, job done; the planted among 50: -0.41 to -0.84, the floor (w >= -start) ratcheting again |
+| 10 | and act only on clear evidence (w over the root of its summed squared steps above 3), w free | planted pair 0.28; 50: -0.13 to -0.24, ~12 grown, the charge dragging w below 0 |
+| 11 | poison worth 4 or 8, charge x0.5 or x2 | all about -0.23, food:poison 1.6 against B's 4: exploring a beat keyed to an eye spoils B's colour choices, and explorers at once confound each other's credit |
+| 12 | lives of 100,000 s judged on the last 10,000, exploring 1% of bursts | plain B 0.11 (88% stranded, food per 10,000 s 845 to 417); planted pair 0.10 (right w +0.93, above wrong in 88%); planted among 50 0.02 (right +0.88, 84%), the same not learning 0.02, 50 random 0.03; food:poison about 2.3 against 6 |
+| 13 | the fixed right steer (odds 0.9, learning off) in those lives | **0.68 [0.30, 1.07], job done** (per beat 0.68 [0.28, 1.08]); the wrong twin 0.04. So stage 12's learner learned the steer but hardly acted on it (7 extra beats per 10 s against 97): its evidence gate compared w (at most 1) with the root of every step it had ever taken, growing without end, so the gate shut. A flaw of the scheme, not a finding |
+
+So: **the trick exists and pays** (stage 3); **meals can credit it, but only if exploring runs at the timescale
+the outcome reveals**: one coin per burst of beats, not per beat (stage 5; Fiete and Seung 2006, the songbird's
+perturbation by bursts). **Among random candidates every scheme failed**, and the causes compound with their
+number: exploring grows with candidates; any floor on w ratchets credit noise upward; candidates exploring at once
+take each other's credit; exploring a beat keyed to an eye spoils the colour choice B makes; sight credit is gamed
+by moving more. Even with the right detector learned among 50 (stage 12), the learned odds earn nothing over the
+same detectors not learning: the exploring of the other 49 costs what the right one gains. Credit from outcomes
+scales badly with candidates (stage 12 is being rerun with the gate's evidence fading, stage 14), so structure
+has to come from somewhere cheaper: prediction (phase 5) or growth aimed
+where the brain is frustrated (phase 4, D17), not a random reservoir.
 
 ## D17: recruitment, case 1: taste wired to nothing (2026-10-30)
 
