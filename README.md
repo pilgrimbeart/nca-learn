@@ -10,7 +10,7 @@ wires them, like the "lizard" of [Growing Neural Cellular Automata](https://dist
 et al., Distill 2020), but growing a nervous system instead of a picture. Then the creature it drives learns.
 
 This repository is a small, self-contained demo of that one brain. (The wider exploration it started carries on in
-[simple_learner](https://github.com/pilgrimbeart/simple_learner).)
+[simple-learner](https://github.com/pilgrimbeart/simple-learner).)
 
 ![A life with the sheet brain: the brain (left) builds a coordinate frame, names its organs and grows its wiring,
 then the creature (right) learns which colour is food](media/life.gif)
