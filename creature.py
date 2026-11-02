@@ -32,24 +32,13 @@ class Brains(dict):
         return v
 
 
-BRAINS = Brains({
-    "sheet": ("brains.sheet", "SheetBrain", {}), "designed-circuit": ("brains.designed", "DesignedBrain", {}),
-    "baseline-circuit": ("brains.baseline", "BaselineBrain", {}),
-    "adjusting-circuit": ("brains.adjusting", "AdjustingBrain", {}),
-    "knowing-circuit": ("brains.knowing", "KnowingBrain", {}),
-    "recruiting-circuit": ("brains.recruiting", "RecruitingBrain", {}),
-    "healing-circuit": ("brains.healing", "HealingBrain", dict(listen="all", sign="inh", judge="share", tire=0.05)),
-    "healing-cascade": ("brains.healing", "HealingBrain", dict(menu="inputs", listen="all", sign="inh", cascade=True,
-                                                               trigger="root", judge="share", tire=0.05,
-                                                               starve=200.0))})
+BRAINS = Brains({"sheet": ("brains.sheet", "SheetBrain", {})})
 FPS = 30            # watching: frames a second, at most
 FAST, SLOW = 10, 1  # watching: ticks per frame (at 10 ms a tick, 3 x and a third of real time), slow while the brain
                     # wires itself and first drives the body
 SLOWEST = 1 / 32    # watching: down halves the speed to this, a tick every 32 frames (about 1 a second)
-SCHEMATIC = "media/designed_circuit.png"    # watching: the designed circuit (drawn by schematic.py)
 SETTLE = 2.0        # watching: seconds after the creature starts moving before speeding up again
-BLOCKS = 300        # watching: the height of the block view below (blocks.py), in the window as it opens
-TEXT = 108          # watching: the height of the lines and buttons between the panels and the block view
+TEXT = 108          # watching: the height of the lines and buttons below the panels
 BLOCK_RGB = {"red": (205, 40, 40), "blue": (40, 100, 225)}   # watching: the blocks in their own colours, each also
                     # lettered (R, B), so that colour is never the only cue (the user is colour-blind)
 LEARNED = 0.2       # measuring: a sensor has learned once its chance of firing both is this near right
@@ -157,29 +146,25 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
     the creature a disc with its mouth marked, and what its eyes see. It runs FAST ticks a frame, but SLOW while the
     brain wires itself and until a little after the creature starts moving; up and down take over the speed (down, past
     a tick a frame, waits 2, 4 ... 32 frames between ticks, so single spikes can be followed). The window can be
-    resized (or maximised): the panels stay square, centred, in the proportions it opens with. Buttons
-    below: switch brain (a new world, the same seed), the rules the simulation enforces (i), and with the designed
-    circuit, its schematic (the life waits while either is open). With record, no window: every frame is saved there as a PNG, until `until` seconds. all_food:
-    both colours are food."""
+    resized (or maximised): the panels stay square, centred. A button below shows the rules the simulation enforces
+    (i; the life waits while they are open). With record, no window: every frame is saved there as a PNG, until
+    `until` seconds. all_food: both colours are food."""
     import os
-    import pathlib
     from world import EAT, RAYS, REACH
     if record:
         os.environ["SDL_VIDEODRIVER"] = "dummy"
         os.makedirs(record, exist_ok=True)
     import pygame
     pygame.init()
-    from blocks import BlockView, NodeView
     OPEN = 490                                                      # the panels' side as the window opens
-    screen = pygame.display.set_mode((2 * OPEN + 12, OPEN + TEXT + BLOCKS), 0 if record else pygame.RESIZABLE)
+    screen = pygame.display.set_mode((2 * OPEN + 12, OPEN + TEXT), 0 if record else pygame.RESIZABLE)
 
     def layout():
         """The two square panels' side and the left one's x, from the window's present size."""
         w, h = screen.get_size()
-        side = max(100, min((w - 12) // 2, (h - TEXT) * OPEN // (OPEN + BLOCKS)))
+        side = max(100, min((w - 12) // 2, h - TEXT))
         return side, max(0, (w - 2 * side - 12) // 2)
     side, x0 = layout()
-    view = None                                                     # the block view of a circuit brain
     pygame.display.set_caption("a brain learns which colour is food")
     font, small = pygame.font.SysFont(None, 22), pygame.font.SysFont(None, 18)
     per_frame, auto, paused, clock = FAST, True, False, pygame.time.Clock()   # auto: speed set by the stage
@@ -200,7 +185,7 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
     wait_note()
     life = Life(seed, poison, brain=brain)
     to_px = lambda p: (x0 + side + 12 + int(p[0] / WORLD * side), int((WORLD - p[1]) / WORLD * side))
-    viewer = None                                                   # the schematic, while it is open
+    viewer = None                                                   # the rules, while they are open
 
     def speed():
         """The speed, as shown: ticks per frame, and against real time (a tick is units.TICK; FPS frames a second)."""
@@ -212,26 +197,16 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
 
     def buttons():
         """The buttons below, as (key, label, rect)."""
-        names = list(BRAINS)
-        other = names[(names.index(brain) + 1) % len(names)]
         out, x = [], 6
-        for key, label in (("b", f"brain: {brain}   switch to {other}  (b)"), ("i", "rules  (i)")) + \
-                          ((("s", "schematic  (s)"),) if brain == "designed-circuit" else ()):
+        for key, label in (("i", "rules  (i)"),):
             w = font.size(label)[0] + 20
             out.append((key, label, pygame.Rect(x, side + 74, w, 28)))
             x += w + 10
         return out
 
     def press(key):
-        nonlocal brain, life, auto, viewer
-        if key == "b":                                              # another brain, in a new world
-            names = list(BRAINS)
-            brain = names[(names.index(brain) + 1) % len(names)]
-            wait_note()
-            life, auto, viewer = Life(seed, poison, brain=brain), True, None
-        elif key == "s" and brain == "designed-circuit":
-            viewer = SchematicViewer(pygame, screen, pathlib.Path(__file__).parent / SCHEMATIC, font)
-        elif key == "i":
+        nonlocal viewer
+        if key == "i":
             viewer = RulesViewer(pygame, font, small)
 
     while True:
@@ -241,7 +216,7 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return
-            if viewer is not None:                                  # the schematic has the mouse and keys
+            if viewer is not None:                                  # the rules have the mouse and keys
                 if not viewer.handle(event):
                     viewer = None
                 continue
@@ -252,8 +227,8 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
                 for key, _, rect in buttons():
                     if rect.collidepoint(event.pos):
                         press(key)
-            if event.type == pygame.KEYDOWN and event.key in (pygame.K_b, pygame.K_s, pygame.K_i):
-                press({pygame.K_b: "b", pygame.K_s: "s", pygame.K_i: "i"}[event.key])
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_i:
+                press("i")
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     paused = not paused
@@ -342,16 +317,6 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
             pygame.draw.rect(screen, (90, 90, 90) if rect.collidepoint(hover) else (50, 50, 50), rect, border_radius=4)
             pygame.draw.rect(screen, (200, 200, 200), rect, 1, border_radius=4)
             screen.blit(font.render(label, True, (255, 255, 255)), (rect.x + 10, rect.y + 6))
-        strip = pygame.Rect(0, side + TEXT, screen.get_width(), max(0, screen.get_height() - side - TEXT))   # below:
-                                                                                        # the brain as blocks
-        if hasattr(life.brain, "circuit"):
-            if view is None or view.brain is not life.brain:
-                view = (NodeView if getattr(life.brain, "level0", False) else BlockView)(life.brain)
-            view.draw(screen, strip, life, font, small)
-        else:
-            pygame.draw.rect(screen, (18, 18, 18), strip)
-            screen.blit(font.render("block view: for the circuit brains (b to switch)", True, (120, 120, 120)),
-                        (8, side + TEXT + 4))
         pygame.display.flip()
         if record:
             pygame.image.save(screen, os.path.join(record, f"{life.t:06d}.png"))
@@ -365,18 +330,15 @@ def watch(seed: int = 0, brain: str = "sheet", record: str | None = None, until:
 def rules() -> list:
     """Watching: the rules the simulation enforces, as (depth, text): 0 a heading, 1 a point, 2 a point under it. The
     numbers are read from the code, so the list can't drift from what is enforced."""
-    import mixed_feedback as mf
     import sheet
     import units as u
     import world
-    from minimal import spec
     sb = _constants("brains/sheet.py", ("SIZE", "RATE", "UPDATE"))   # (read, not imported: importing compiles the rules)
     return [
         (0, "Units"),
         (1, f"Everything in SI units, every number derived from a few axioms (units.py): a tick of the body is"
-            f" {u.si(u.TICK, 's')}, the circuit integrated in steps of {u.si(u.DT, 's')}; lengths in mm (the body"
-            f" {u.si(world.BODY, 'm')} long, the world {u.si(world.WORLD, 'm')} across); a typical circuit current"
-            f" {u.si(u.I_TYP, 'A')}, capacitor {u.si(u.C_TYP, 'F')}, resistor {u.si(u.R_TYP, 'Ω')}."),
+            f" {u.si(u.TICK, 's')}; lengths in mm (the body about {u.si(world.BODY, 'm')} in size, the world"
+            f" {u.si(world.WORLD, 'm')} across)."),
         (0, "The body and the brain"),
         (1, "A brain meets the body only through two sensors, two motors and one taste: nothing else passes either way."),
         (1, f"Each eye fires at random moments (a Poisson process), up to {world.SENSE:g} times a second for its"
@@ -386,8 +348,7 @@ def rules() -> list:
             " path its point moved that tick), else 0, and never says which sensor it is about."),
         (1, "Which colour feeds which sensor, and which motor drives which thruster, is drawn at random for each life:"
             " no brain can be built knowing it."),
-        (1, "A thruster fires once for each spike of its motor; a motor spikes when its voltage rises through"
-            f" {mf.SPIKE:g} V, and can spike again only once it has fallen below {mf.RESET:g} V."),
+        (1, "A thruster fires once for each thrust its motor gives."),
         (1, "The body must never become part of the solution: it does no job a brain could do (credit, timing,"
             " filtering, choosing what learns)."),
         (0, "The sheet brain"),
@@ -402,62 +363,11 @@ def rules() -> list:
             " counted from M1 and M2."),
         (1, "No hidden size or fixed waits, no magic knowledge: a path finds its target by a signal the target itself"
             " sends."),
-        (0, "The circuit simulator (every circuit brain)"),
-        (1, "Everything that affects behaviour is explicit circuit: nodes (capacitors, with any leak) and elements (a"
-            " current from a node's voltage, possibly filtered and gated); no program beside it."),
-        (1, f"Continuous time, integrated in steps of {u.si(mf.DT, 's')}; the body's pulses arrive anywhere within a"
-            " tick, never on tick boundaries, so nothing can lock to the clock."),
-        (1, f"Noise is a substrate's, never turned off or dodged: {', '.join(mf.SUBSTRATES)}. Shot noise on every"
-            f" device's current, in events of {u.si(u.Q_BIO, 'C')} in biology and of one electron in silicon, summed"
-            " gross, not net: two currents that cancel still flicker."),
-        (1, f"Resting noise: in biology, membrane noise in proportion to a node's capacitance (a resting current of"
-            f" {u.J_REST:g} A per farad); in silicon, a leak's thermal noise (kT/C); none on a memory node, whose only"
-            " noise is its writes'."),
-        (1, f"Mismatch: every part off by about {mf.MISMATCH:.0%} of itself at birth, drawn once per circuit."),
-        (1, "A result must hold at a finer step and on fresh seeds."),
-        (0, "The minimal circuit search: what a circuit may be"),
-        (1, f"Within the supply: every node within +-{u.RAIL:g} V; a clamp inside the rails is a part."),
-        (1, f"Not faster than the step: nothing may move a node faster than {u.si(u.SLEW, 'V/s')}"
-            f" ({u.STEP_MOVE:g} V a step), and a device fed back to itself acts no faster than a time constant of"
-            f" {u.si(u.TAU_LOOP, 's')} (10 steps)."),
-        (1, f"Buildable on a chip: no resistance above {u.si(u.R_MAX, 'Ω')}, no capacitor above {u.si(u.C_MAX, 'F')},"
-            f" no leak or filter slower than {u.si(u.TAU_MAX, 's')}, no current below {u.si(u.I_MIN, 'A')}."),
-        (1, "An illegal circuit can't be built or lived (minimal/spec.py, check)."),
-        (1, "Sepulchre's rules, when a circuit declares them: every node leaks except memory nodes, no clamps; gates"
-            " and memory nodes (floating gates) allowed, as Sepulchre is silent on learning and storage."),
-        (0, "Judging: seeds and lives"),
-        (1, "A seed is a world: where the blocks are, where the creature starts, which colour is poison, the circuit's"
-            " noise and mismatch. The same seed gives the same life."),
-        (1, "Each seed is lived twice, red then blue as poison, so a circuit that ignores taste scores below 0."),
-        (1, "Searches choose on seeds of their own, fresh each generation: the polish from 10,000, pruning"
-            " 15,000-15,031, the open search from 20,000."),
-        (1, "Held out: seeds 100-163 judge what a search produced and are never used to choose."),
-        (1, "Headline claims are confirmed once on a block of 64 seeds never used to choose anything (500-563,"
-            " 600-663, ...), each block then retired for choosing."),
-        (1, f"Judged with the noise of {', '.join(spec.JUDGED)}, the worst counting, the job required with each"
-            " (polish, pruning, open search and held-out judging alike): a design must work as built in silicon too."),
-        (0, "Judging: the job and the score"),
-        (1, f"The job: at least {spec.JOB[0]:g} food per {spec.SPAN:g} s; food:poison at least {spec.JOB[1]:g} over"
-            f" the last third of a {spec.LIFE:g} s life; at most {spec.JOB[2]:.0%} of lives stranded (no food in their"
-            " last third)."),
-        (1, f"The score, per {spec.SPAN:g} s: food, less {spec.COST:g} x poison, less {spec.COST:g} x the food each"
-            f" third of each life falls short of {spec.NEED:g}, less moving and thinking, a meal worth"
-            f" {u.si(spec.MEAL, 'J')}."),
-        (2, f"Moving: a thruster firing costs {u.si(spec.FIRING, 'J')} ({spec.THRUST:g} of a meal)."),
-        (2, "Thinking: the energy the circuit's devices dissipate (a few nW: about a hundredth of moving)."),
-        (2, f"Resting: {u.si(spec.METABOLISM, 'W')} ({spec.NEED:g} meal per {spec.SPAN:g} s), whatever a creature"
-            " does, counted in efficiency."),
-        (0, "Judging: what is measured"),
-        (1, "Parts: capacitors, resistors, diodes and transistors."),
-        (1, f"Area, by analogy with analogue chips, in unit transistors ({u.UNIT_AREA / u.MICRO ** 2:g} um² each)"
-            f": an element {spec.AREA['element']}, a gate {spec.AREA['gate']} more, a leak {spec.AREA['leak']},"
-            f" a capacitor its own area ({u.CAP_DENSITY * 1e3:g} fF per um²); shown, not ranked on."),
-        (1, f"Three objectives, never traded, each among circuits doing the job: the simplest (parts); the best for"
-            f" energy (efficiency: meals gained, food less {spec.COST:g} a poison, per meal spent resting, moving and"
-            f" thinking); the best for speed and accuracy (gain rate: meals gained per {spec.SPAN:g} s). Thrift (food per"
-            " 1,000 firings) shown, not ranked."),
-        (1, "Confidence: every measure with its 95% interval; two designs compared paired, on the same seeds, and"
-            " one is above the other only if the interval of the difference excludes 0. Otherwise: tied."),
+        (0, "Judging"),
+        (1, "A seed is a world: where the blocks are, where the creature starts, which colour is poison. The same seed"
+            " gives the same life, and brains are compared on the same lives."),
+        (1, "All-food lives (both colours food) are the control for anything that should happen only when there is"
+            " something to learn."),
     ]
 
 
@@ -615,84 +525,9 @@ class RulesViewer:
             screen.blit(self.font.render(label, True, (255, 255, 255)), (rect.x + 10, rect.y + 5))
 
 
-class SchematicViewer:
-    """Watching: an image over the whole window. The wheel zooms at the mouse, dragging pans; Esc, or close, shuts it."""
-    BAR = 30
-
-    def __init__(self, pygame, screen, path, font):
-        self.pg, self.screen, self.font = pygame, screen, font
-        self.image = pygame.image.load(str(path)).convert()
-        w, h = screen.get_size()
-        iw, ih = self.image.get_size()
-        self.fit = min(w / iw, (h - self.BAR) / ih)
-        self.zoom, self.ox, self.oy = self.fit, 0.0, 0.0            # screen pixels per image pixel; image at top left
-        self.drag = None
-        self._clamp()
-
-    @property
-    def close(self):
-        return self.pg.Rect(self.screen.get_width() - 110, 2, 104, self.BAR - 4)
-
-    def _clamp(self):
-        self.screen = self.pg.display.get_surface()                 # (resized with the window)
-        w, h = self.screen.get_size()
-        iw, ih = self.image.get_size()
-        vw, vh = w / self.zoom, (h - self.BAR) / self.zoom          # the view, in image pixels
-        self.ox = min(max(self.ox, 0.0), max(iw - vw, 0.0)) if vw < iw else (iw - vw) / 2
-        self.oy = min(max(self.oy, 0.0), max(ih - vh, 0.0)) if vh < ih else (ih - vh) / 2
-
-    def handle(self, event) -> bool:
-        """Takes an event; False once it is closed."""
-        pg = self.pg
-        if event.type == pg.KEYDOWN and event.key in (pg.K_ESCAPE, pg.K_s):
-            return False
-        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            if self.close.collidepoint(event.pos):
-                return False
-            self.drag = (event.pos, self.ox, self.oy)
-        elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
-            self.drag = None
-        elif event.type == pg.MOUSEMOTION and self.drag:
-            (x0, y0), ox, oy = self.drag
-            self.ox, self.oy = ox - (event.pos[0] - x0) / self.zoom, oy - (event.pos[1] - y0) / self.zoom
-            self._clamp()
-        elif event.type == pg.MOUSEWHEEL:                           # zoom, keeping the point under the mouse still
-            mx, my = pg.mouse.get_pos()
-            my -= self.BAR
-            ix, iy = self.ox + mx / self.zoom, self.oy + my / self.zoom
-            self.zoom = min(max(self.zoom * 1.25 ** event.y, self.fit), 1.0)
-            self.ox, self.oy = ix - mx / self.zoom, iy - my / self.zoom
-            self._clamp()
-        return True
-
-    def draw(self) -> None:
-        self.screen = self.pg.display.get_surface()                 # (resized with the window)
-        pg, screen = self.pg, self.screen
-        w, h = screen.get_size()
-        iw, ih = self.image.get_size()
-        screen.fill((235, 235, 235))
-        x0, y0 = max(int(self.ox), 0), max(int(self.oy), 0)        # the part of the image in view, scaled alone
-        x1 = min(int(self.ox + w / self.zoom) + 1, iw)
-        y1 = min(int(self.oy + (h - self.BAR) / self.zoom) + 1, ih)
-        if x1 > x0 and y1 > y0:
-            part = self.image.subsurface((x0, y0, x1 - x0, y1 - y0))
-            size = (max(1, round((x1 - x0) * self.zoom)), max(1, round((y1 - y0) * self.zoom)))
-            screen.blit(pg.transform.smoothscale(part, size),
-                        (round((x0 - self.ox) * self.zoom), self.BAR + round((y0 - self.oy) * self.zoom)))
-        pg.draw.rect(screen, (40, 40, 40), (0, 0, w, self.BAR))
-        screen.blit(self.font.render("the designed circuit   wheel: zoom   drag: pan", True, (255, 255, 255)),
-                    (8, 7))
-        hover = self.close.collidepoint(pg.mouse.get_pos())
-        pg.draw.rect(screen, (90, 90, 90) if hover else (60, 60, 60), self.close, border_radius=4)
-        pg.draw.rect(screen, (200, 200, 200), self.close, 1, border_radius=4)
-        screen.blit(self.font.render("close (Esc)", True, (255, 255, 255)), (self.close.x + 10, self.close.y + 5))
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--brain", default="sheet", help="the brain to watch or record: one of BRAINS, or a --spec")
-    parser.add_argument("--spec", nargs="+", default=[], metavar="RESULTS",
-                        help="also offer these circuits of the minimal search (minimal/results/*.json), named by file")
+    parser.add_argument("--brain", default="sheet", help="the brain to watch or record: one of BRAINS")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--measure", type=int, metavar="LIVES", help="measure every brain over this many lives (headless)")
     parser.add_argument("--seconds", type=float, default=100.0, help="seconds per life when measuring or recording")
@@ -705,11 +540,6 @@ if __name__ == "__main__":
     if args.rules:
         print(rules_text(), end="")
         raise SystemExit
-    for path in args.spec:                                  # a minimal-search circuit, as a brain like any other
-        import json
-        import os
-        from minimal.spec import load, make
-        BRAINS[os.path.basename(path)[:-5]] = make(load(path))
     args.brains = args.brains or list(BRAINS)
     for b in [args.brain, *args.brains]:
         if b not in BRAINS:
